@@ -488,11 +488,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                         });
 
                         const style = {
-                          transform: CSS.Transform.toString(transform),
-                          transition: transition || 'transform 200ms ease',
+                          transform: CSS.Transform.toString(transform) + (isDragging ? ' scale(1.05) rotate(1deg)' : ''),
+                          transition: transition || 'transform 200ms ease, opacity 200ms ease',
                           opacity: isDragging ? 0.7 : 1,
                           zIndex: isDragging ? 50 : 1,
-                          scale: isDragging ? 1.05 : 1,
                         };
 
                         const image = getImageForDefect(defect.selectedFile || '');
@@ -504,8 +503,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           <div 
                             ref={setNodeRef}
                             style={style}
-                            className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200 ${
-                              isDragging ? 'shadow-xl scale-105 rotate-1' : 'shadow-sm hover:shadow-md'
+                            className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-shadow duration-200 ${
+                              isDragging ? 'shadow-xl' : 'shadow-sm hover:shadow-md'
                             }`}
                             {...attributes}
                             {...listeners}
