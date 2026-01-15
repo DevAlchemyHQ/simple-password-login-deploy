@@ -701,16 +701,22 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             </div>
                             <div className="relative aspect-square">
                               {image ? (
-                                <img
-                                  src={image.preview}
-                                  alt={image.file.name}
-                                  className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEnlargedImage(image.preview);
-                                  }}
-                                  draggable="false"
-                                />
+                                <>
+                                  <img
+                                    src={image.preview}
+                                    alt={image.file.name}
+                                    className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEnlargedImage(image.preview);
+                                    }}
+                                    draggable="false"
+                                  />
+                                  {/* Photo number badge - top right corner like images assigned tile */}
+                                  <div className="absolute top-2 right-2 bg-indigo-500 w-6 h-6 rounded-full flex items-center justify-center z-30">
+                                    <span className="text-white text-sm font-medium">{defect.photoNumber}</span>
+                                  </div>
+                                </>
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-gray-600 text-slate-400 dark:text-gray-500 text-xs">
                                   No image
@@ -836,10 +842,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                     </div>
                                   </div>
                                 )}
-                              </div>
-                              {/* Photo number - non-editable, changes on drag */}
-                              <div className="text-sm font-medium text-slate-700 dark:text-gray-300">
-                                #{defect.photoNumber}
                               </div>
                               <div 
                                 onMouseDown={(e) => {
