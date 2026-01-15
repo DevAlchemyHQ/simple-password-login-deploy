@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, GripVertical, ChevronDown, AlertCircle, Search } from 'lucide-react';
+import { X, GripVertical, ChevronDown, AlertCircle, Search, Plus } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
@@ -16,6 +16,7 @@ interface DefectTileProps {
   onDescriptionChange: (value: string) => void;
   onFileChange: (value: string) => void;
   onPhotoNumberClick?: (photoNumber: string) => void;
+  onAddBelow?: () => void;
 }
 
 export const DefectTile: React.FC<DefectTileProps> = ({
@@ -28,6 +29,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
   onDescriptionChange,
   onFileChange,
   onPhotoNumberClick,
+  onAddBelow,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -335,9 +337,9 @@ export const DefectTile: React.FC<DefectTileProps> = ({
                 </button>
 
                 {filteredFiles.length > 0 ? (
-                  filteredFiles.map((file) => (
+                  filteredFiles.map((file, index) => (
                     <button
-                      key={file}
+                      key={`${searchQuery}-${file}-${index}`}
                       onClick={() => handleFileSelect(file)}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 ${
                         file === selectedFile
@@ -369,6 +371,19 @@ export const DefectTile: React.FC<DefectTileProps> = ({
         >
           <X size={16} />
         </button>
+
+        {onAddBelow && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddBelow();
+            }}
+            className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+            title="Add defect below"
+          >
+            <Plus size={16} />
+          </button>
+        )}
       </div>
       {error && (
         <div className="px-3 pb-3">
