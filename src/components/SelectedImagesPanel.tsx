@@ -132,7 +132,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
-      <div className="p-4 border-b border-slate-200 dark:border-gray-700 min-h-[102px] flex flex-col justify-between">
+      <div className="p-4 border-b border-slate-200 dark:border-gray-700 h-[102px] flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <div className="flex-1">
           </div>
@@ -178,13 +178,13 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             </button>
           </div>
         </div>
-        {viewMode === 'text' && (
-          <div className="mt-2">
+        <div className="h-5">
+          {viewMode === 'text' && (
             <h3 className="text-sm font-medium text-slate-500 dark:text-gray-400">
               TILES ({bulkDefects.length})
             </h3>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       <div className="flex-1 overflow-hidden">

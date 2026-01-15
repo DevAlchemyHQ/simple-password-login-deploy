@@ -10,18 +10,20 @@ export const ImageGrid: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full flex flex-col">
-      <div className="p-4 border-b border-slate-200 dark:border-gray-700 min-h-[102px] flex flex-col justify-between">
+      <div className="p-4 border-b border-slate-200 dark:border-gray-700 h-[102px] flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-white">
             Uploaded Images
           </h2>
           <GridWidthControl value={gridWidth} onChange={setGridWidth} />
         </div>
-        {images.length > 0 && (
-          <h3 className="text-sm font-medium text-slate-500 dark:text-gray-400 mt-2">
-            EXAM PHOTOS ({images.length})
-          </h3>
-        )}
+        <div className="h-5">
+          {images.length > 0 && (
+            <h3 className="text-sm font-medium text-slate-500 dark:text-gray-400">
+              EXAM PHOTOS ({images.length})
+            </h3>
+          )}
+        </div>
       </div>
       
       <div className="flex-1 min-h-0 overflow-hidden">
