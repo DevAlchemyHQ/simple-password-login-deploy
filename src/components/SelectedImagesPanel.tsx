@@ -517,23 +517,24 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             style={{
                               transform: CSS.Transform.toString(transform),
                               transition: isDragging ? 'none' : (transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'),
-                              opacity: isDragging ? 0.5 : 1,
+                              opacity: isDragging ? 0.4 : 1,
+                              rotate: isDragging ? '2deg' : '0deg',
                             }}
-                            className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-shadow duration-200 ${
+                            className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-all duration-200 ${
                               isDragging 
-                                ? 'shadow-2xl ring-2 ring-indigo-500 ring-opacity-50 z-50 cursor-grabbing' 
+                                ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing scale-105' 
                                 : 'cursor-grab hover:shadow-lg hover:ring-1 hover:ring-indigo-300 dark:hover:ring-indigo-600'
                             }`}
                             {...attributes}
                             {...listeners}
                           >
-                            {/* Drag handle indicator - always visible */}
-                            <div className={`absolute top-2 left-2 p-1.5 bg-white dark:bg-gray-800 rounded-md shadow-sm z-10 transition-all ${
+                            {/* Drag handle indicator - always visible and prominent */}
+                            <div className={`absolute top-2 left-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10 transition-all border-2 ${
                               isDragging 
-                                ? 'opacity-100 scale-110' 
-                                : 'opacity-70 hover:opacity-100 hover:scale-105'
+                                ? 'opacity-100 scale-125 border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30' 
+                                : 'opacity-90 hover:opacity-100 hover:scale-110 border-slate-300 dark:border-gray-600'
                             }`}>
-                              <GripVertical size={16} className="text-slate-500 dark:text-gray-400" />
+                              <GripVertical size={18} className={`${isDragging ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-gray-400'}`} />
                             </div>
                             <div className="relative aspect-square group">
                               {image ? (
@@ -548,26 +549,26 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                     }}
                                     draggable="false"
                                   />
-                                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                  <div className="absolute top-1 right-1 flex gap-1 z-10">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
                                       }}
-                                      className="p-1 bg-indigo-500 text-white rounded-full hover:bg-indigo-600 transition-colors shadow-sm"
+                                      className="p-1.5 bg-indigo-500 text-white rounded-full hover:bg-indigo-600 transition-colors shadow-lg opacity-90 hover:opacity-100"
                                       title="Change image"
                                     >
-                                      <Search size={12} />
+                                      <Search size={14} />
                                     </button>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         updateBulkDefectFile(defect.photoNumber, '');
                                       }}
-                                      className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                                      className="p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg opacity-90 hover:opacity-100"
                                       title="Remove image"
                                     >
-                                      <X size={12} />
+                                      <X size={14} />
                                     </button>
                                   </div>
                                   {isSelectorOpen && (
