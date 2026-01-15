@@ -486,26 +486,55 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                         };
 
                         const filteredImages = React.useMemo(() => {
-                          if (!searchQuery.trim()) return images;
-                          const query = searchQuery.trim().toLowerCase();
+                          // Early return if no search query
+                          if (!searchQuery) {
+                            return images;
+                          }
+
+                          const query = String(searchQuery).trim();
+                          if (!query || query.length === 0) {
+                            return images;
+                          }
+
+                          // Check if query is purely numeric (only digits, no letters, spaces, or special chars)
+                          // This must be checked BEFORE any other processing
                           const isNumericQuery = /^\d+$/.test(query);
                           
+                          // If numeric, we MUST only search by last 4 digits, never by title
                           if (isNumericQuery) {
-                            return images.filter(img => {
+                            const filtered = images.filter(img => {
                               const lastFour = getLastFourDigits(img.file.name);
-                              if (!lastFour || lastFour.length !== 4) return false;
+                              
+                              // Must have exactly 4 digits
+                              if (!lastFour || lastFour.length !== 4) {
+                                return false;
+                              }
+                              
                               if (query.length === 1) {
+                                // Single digit: must be the last digit, and all preceding digits must be zeros
                                 const lastDigit = lastFour.slice(-1);
                                 const precedingDigits = lastFour.slice(0, -1);
-                                return lastDigit === query && /^0+$/.test(precedingDigits);
+                                
+                                // Strict check: last digit must match AND all preceding must be zeros
+                                const digitMatches = lastDigit === query;
+                                const precedingAreZeros = /^0+$/.test(precedingDigits);
+                                
+                                return digitMatches && precedingAreZeros;
+                              } else {
+                                // Multi-digit: must end with query
+                                return lastFour.endsWith(query);
                               }
-                              return lastFour.endsWith(query);
                             });
+                            
+                            return filtered;
                           }
                           
-                          return images.filter(img => 
-                            img.file.name.toLowerCase().includes(query)
-                          );
+                          // Non-numeric query: search by title/filename
+                          const queryLower = query.toLowerCase();
+                          return images.filter(img => {
+                            const fileName = img.file.name.toLowerCase();
+                            return fileName.includes(queryLower);
+                          });
                         }, [images, searchQuery]);
                         
                         // #region agent log
@@ -536,235 +565,21 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             }`}>
                               <GripVertical size={18} className={`${isDragging ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-gray-400'}`} />
                             </div>
-                            <div className="relative aspect-square group">
+                            <div className="relative aspect-square">
                               {image ? (
-                                <>
-                                  <img
-                                    src={image.preview}
-                                    alt={image.file.name}
-                                    className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEnlargedImage(image.preview);
-                                    }}
-                                    draggable="false"
-                                  />
-                                  <div className="absolute top-1 right-1 flex gap-1 z-10">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
-                                      }}
-                                      className="p-1.5 bg-indigo-500 text-white rounded-full hover:bg-indigo-600 transition-colors shadow-lg opacity-90 hover:opacity-100"
-                                      title="Change image"
-                                    >
-                                      <Search size={14} />
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        updateBulkDefectFile(defect.photoNumber, '');
-                                      }}
-                                      className="p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg opacity-90 hover:opacity-100"
-                                      title="Remove image"
-                                    >
-                                      <X size={14} />
-                                    </button>
-                                  </div>
-                                  {isSelectorOpen && (
-                                    <div 
-                                      className="image-selector-dropdown absolute inset-0 bg-white dark:bg-gray-800 border-2 border-indigo-500 rounded-lg z-20 overflow-hidden flex flex-col shadow-2xl"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <div className="p-2 border-b border-slate-200 dark:border-gray-700">
-                                        <div className="flex items-center justify-between mb-2">
-                                          <span className="text-xs font-medium text-slate-700 dark:text-gray-300">Change image</span>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setImageSelectorOpen(null);
-                                              setImageSearchQuery(prev => {
-                                                const next = { ...prev };
-                                                delete next[defect.photoNumber];
-                                                return next;
-                                              });
-                                            }}
-                                            className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded"
-                                          >
-                                            <X size={14} />
-                                          </button>
-                                        </div>
-                                        <div className="relative">
-                                          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
-                                          <input
-                                            type="text"
-                                            value={searchQuery}
-                                            onChange={(e) => {
-                                              setImageSearchQuery(prev => ({
-                                                ...prev,
-                                                [defect.photoNumber]: e.target.value
-                                              }));
-                                            }}
-                                            placeholder="Search by title or last 4 digits..."
-                                            className="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
-                                            autoFocus
-                                            onClick={(e) => e.stopPropagation()}
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Escape') {
-                                                setImageSelectorOpen(null);
-                                              }
-                                            }}
-                                          />
-                                        </div>
-                                      </div>
-                                      <div className="overflow-y-auto flex-1">
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            updateBulkDefectFile(defect.photoNumber, '');
-                                            setImageSelectorOpen(null);
-                                            setImageSearchQuery(prev => {
-                                              const next = { ...prev };
-                                              delete next[defect.photoNumber];
-                                              return next;
-                                            });
-                                          }}
-                                          className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-600"
-                                        >
-                                          None
-                                        </button>
-                                        {filteredImages.length > 0 ? (
-                                          filteredImages.map((img) => (
-                                            <button
-                                              key={img.id}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                updateBulkDefectFile(defect.photoNumber, img.file.name);
-                                                setImageSelectorOpen(null);
-                                                setImageSearchQuery(prev => {
-                                                  const next = { ...prev };
-                                                  delete next[defect.photoNumber];
-                                                  return next;
-                                                });
-                                              }}
-                                              className={`w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 truncate ${
-                                                img.file.name === defect.selectedFile ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : ''
-                                              }`}
-                                            >
-                                              {img.file.name}
-                                            </button>
-                                          ))
-                                        ) : (
-                                          <div className="px-2 py-3 text-xs text-slate-500 dark:text-gray-400 text-center">
-                                            No photos found matching "{searchQuery}"
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                </>
+                                <img
+                                  src={image.preview}
+                                  alt={image.file.name}
+                                  className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEnlargedImage(image.preview);
+                                  }}
+                                  draggable="false"
+                                />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-gray-600 text-slate-400 dark:text-gray-500 text-xs relative group">
-                                  <span>No image</span>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
-                                    }}
-                                    className="absolute top-1 right-1 p-1.5 bg-indigo-500 text-white rounded-full hover:bg-indigo-600 transition-colors shadow-sm z-10"
-                                    title="Select image"
-                                  >
-                                    <Plus size={14} />
-                                  </button>
-                                  {isSelectorOpen && (
-                                    <div 
-                                      className="image-selector-dropdown absolute inset-0 bg-white dark:bg-gray-800 border-2 border-indigo-500 rounded-lg z-20 overflow-hidden flex flex-col"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <div className="p-2 border-b border-slate-200 dark:border-gray-700">
-                                        <div className="flex items-center justify-between mb-2">
-                                          <span className="text-xs font-medium text-slate-700 dark:text-gray-300">Select image</span>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setImageSelectorOpen(null);
-                                              setImageSearchQuery(prev => {
-                                                const next = { ...prev };
-                                                delete next[defect.photoNumber];
-                                                return next;
-                                              });
-                                            }}
-                                            className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded"
-                                          >
-                                            <X size={14} />
-                                          </button>
-                                        </div>
-                                        <div className="relative">
-                                          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
-                                          <input
-                                            type="text"
-                                            value={searchQuery}
-                                            onChange={(e) => {
-                                              setImageSearchQuery(prev => ({
-                                                ...prev,
-                                                [defect.photoNumber]: e.target.value
-                                              }));
-                                            }}
-                                            placeholder="Search by title or last 4 digits..."
-                                            className="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
-                                            autoFocus
-                                            onClick={(e) => e.stopPropagation()}
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Escape') {
-                                                setImageSelectorOpen(null);
-                                              }
-                                            }}
-                                          />
-                                        </div>
-                                      </div>
-                                      <div className="overflow-y-auto flex-1">
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            updateBulkDefectFile(defect.photoNumber, '');
-                                            setImageSelectorOpen(null);
-                                            setImageSearchQuery(prev => {
-                                              const next = { ...prev };
-                                              delete next[defect.photoNumber];
-                                              return next;
-                                            });
-                                          }}
-                                          className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-600"
-                                        >
-                                          None
-                                        </button>
-                                        {filteredImages.length > 0 ? (
-                                          filteredImages.map((img) => (
-                                            <button
-                                              key={img.id}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                updateBulkDefectFile(defect.photoNumber, img.file.name);
-                                                setImageSelectorOpen(null);
-                                                setImageSearchQuery(prev => {
-                                                  const next = { ...prev };
-                                                  delete next[defect.photoNumber];
-                                                  return next;
-                                                });
-                                              }}
-                                              className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 truncate"
-                                            >
-                                              {img.file.name}
-                                            </button>
-                                          ))
-                                        ) : (
-                                          <div className="px-2 py-3 text-xs text-slate-500 dark:text-gray-400 text-center">
-                                            No photos found matching "{searchQuery}"
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
+                                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-gray-600 text-slate-400 dark:text-gray-500 text-xs">
+                                  No image
                                 </div>
                               )}
                             </div>
@@ -780,8 +595,114 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 return null;
                               })()}
                               {/* #endregion */}
-                              <div className="text-xs text-slate-500 dark:text-gray-400 truncate">
+                              <div className="text-xs text-slate-500 dark:text-gray-400 truncate mb-1">
                                 {image?.file.name || 'No file selected'}
+                              </div>
+                              
+                              {/* Image selector dropdown - like DefectTile */}
+                              <div className="relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
+                                  }}
+                                  className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors ${
+                                    defect.selectedFile
+                                      ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                                      : 'text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-600'
+                                  }`}
+                                >
+                                  <div className="flex-1 text-left truncate">
+                                    {defect.selectedFile || 'Select image'}
+                                  </div>
+                                  <ChevronDown size={14} className={isSelectorOpen ? 'rotate-180' : ''} />
+                                </button>
+
+                                {isSelectorOpen && (
+                                  <div 
+                                    className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 z-30 flex flex-col"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {/* Search Input */}
+                                    <div className="p-2 border-b border-slate-200 dark:border-gray-700">
+                                      <div className="relative">
+                                        <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
+                                        <input
+                                          type="text"
+                                          value={searchQuery}
+                                          onChange={(e) => {
+                                            setImageSearchQuery(prev => ({
+                                              ...prev,
+                                              [defect.photoNumber]: e.target.value
+                                            }));
+                                          }}
+                                          placeholder="Search by title or last 4 digits..."
+                                          className="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
+                                          autoFocus
+                                          onClick={(e) => e.stopPropagation()}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Escape') {
+                                              setImageSelectorOpen(null);
+                                            }
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+
+                                    {/* File List */}
+                                    <div className="overflow-y-auto max-h-48">
+                                      {/* None option at the top */}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateBulkDefectFile(defect.photoNumber, '');
+                                          setImageSelectorOpen(null);
+                                          setImageSearchQuery(prev => {
+                                            const next = { ...prev };
+                                            delete next[defect.photoNumber];
+                                            return next;
+                                          });
+                                        }}
+                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-700 ${
+                                          !defect.selectedFile
+                                            ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
+                                            : 'text-slate-600 dark:text-gray-300'
+                                        }`}
+                                      >
+                                        <div className="truncate">None</div>
+                                      </button>
+
+                                      {filteredImages.length > 0 ? (
+                                        filteredImages.map((img, index) => (
+                                          <button
+                                            key={`${searchQuery}-${img.id}-${index}`}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              updateBulkDefectFile(defect.photoNumber, img.file.name);
+                                              setImageSelectorOpen(null);
+                                              setImageSearchQuery(prev => {
+                                                const next = { ...prev };
+                                                delete next[defect.photoNumber];
+                                                return next;
+                                              });
+                                            }}
+                                            className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 ${
+                                              img.file.name === defect.selectedFile
+                                                ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
+                                                : 'text-slate-600 dark:text-gray-300'
+                                            }`}
+                                          >
+                                            <div className="truncate">{img.file.name}</div>
+                                          </button>
+                                        ))
+                                      ) : (
+                                        <div className="px-3 py-3 text-xs text-slate-500 dark:text-gray-400 text-center">
+                                          No photos found matching "{searchQuery}"
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                               <div className="relative">
                                 <div className="flex items-center gap-1">
