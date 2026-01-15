@@ -213,20 +213,20 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           }}
           onClick={(e) => {
             e.stopPropagation();
-            e.preventDefault();
           }}
           onMouseDown={(e) => {
             e.stopPropagation();
-            e.preventDefault();
           }}
           onPointerDown={(e) => {
             e.stopPropagation();
-            e.preventDefault();
           }}
           onKeyDown={(e) => {
             e.stopPropagation();
           }}
           onKeyUp={(e) => {
+            e.stopPropagation();
+          }}
+          onKeyPress={(e) => {
             e.stopPropagation();
           }}
           onInput={(e) => {
@@ -844,15 +844,12 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               <div 
                                 onMouseDown={(e) => {
                                   e.stopPropagation();
-                                  e.preventDefault();
                                 }}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  e.preventDefault();
                                 }}
                                 onPointerDown={(e) => {
                                   e.stopPropagation();
-                                  e.preventDefault();
                                 }}
                                 className="pb-0 mb-0"
                                 style={{ pointerEvents: 'auto' }}
