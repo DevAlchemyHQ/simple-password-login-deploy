@@ -171,10 +171,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     }, [defect.description]);
 
     return (
-      <div>
+      <div className="flex flex-col">
         <textarea
           ref={textareaRef}
-          value={defect.description}
+          value={defect.description || ''}
           onChange={(e) => {
             updateDescription(e.target.value);
             // Auto-resize textarea
@@ -187,6 +187,15 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             textarea.style.height = 'auto';
             textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
           }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+          onFocus={(e) => {
+            e.stopPropagation();
+          }}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+          }}
           maxLength={100}
           className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-none overflow-hidden ${
             !isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
@@ -195,7 +204,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           rows={1}
           style={{ minHeight: '2.5rem', maxHeight: '120px' }}
         />
-        <div className="flex items-center justify-between mt-1 text-xs">
+        <div className="flex items-center justify-between text-xs mt-0.5">
           <div className="text-slate-400 dark:text-gray-500">
             {defect.description?.length || 0}/100
           </div>
@@ -853,7 +862,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   </div>
                                 )}
                               </div>
-                              <div onMouseDown={(e) => e.stopPropagation()}>
+                              <div 
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                onPointerDown={(e) => e.stopPropagation()}
+                              >
                                 {renderBulkDefectDescriptionField(defect)}
                               </div>
                             </div>
