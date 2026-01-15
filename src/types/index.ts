@@ -4,7 +4,6 @@ export interface ImageMetadata {
   photoNumber: string;
   description: string;
   preview: string;
-  isSketch?: boolean;
   publicUrl?: string;
   userId?: string;
 }

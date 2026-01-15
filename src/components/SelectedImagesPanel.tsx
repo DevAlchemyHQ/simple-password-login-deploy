@@ -52,19 +52,18 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     updateImageMetadata,
     clearSelectedImages,
     defectSortDirection,
-    sketchSortDirection,
     setDefectSortDirection,
-    setSketchSortDirection,
-    getSelectedCounts
+    getSelectedCounts,
+    viewMode,
+    setViewMode
   } = useMetadataStore();
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('images');
   
   const selectedImagesList = React.useMemo(() => {
     return images.filter(img => selectedImages.has(img.id));
   }, [images, selectedImages]);
 
-  const { sketches, defects } = getSelectedCounts();
+  const { defects } = getSelectedCounts();
 
   const sortImages = (images: ImageMetadata[], direction: 'asc' | 'desc' | null) => {
     if (!direction) return images;
@@ -85,17 +84,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   };
 
   const defectImages = sortImages(
-    selectedImagesList.filter(img => !img.isSketch),
+    selectedImagesList,
     defectSortDirection
   );
 
-  const sketchImages = sortImages(
-    selectedImagesList.filter(img => img.isSketch),
-    sketchSortDirection
-  );
-
   const renderDescriptionField = (img: ImageMetadata) => {
-    if (img.isSketch) return null;
 
     const { isValid, invalidChars } = validateDescription(img.description || '');
 
@@ -139,12 +132,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
       <div className="p-4 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
-            {viewMode === 'images' ? `Selected Images (${selectedImagesList.length})` : 'Bulk Defect Entry'}
-          </h3>
-          {viewMode === 'images' && <div className="text-sm text-slate-500 dark:text-gray-400 mt-1">
-            {sketches} Sketches, {defects} Exam Photos
-          </div>}
         </div>
         
         <div className="flex items-center gap-4 mx-4">
@@ -158,7 +145,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
               }`}
             >
               <Images size={18} />
-              <span className="text-sm font-medium">Images</span>
+              <span className="text-sm font-medium">Single Select</span>
             </button>
             <button
               onClick={() => setViewMode('text')}
@@ -169,7 +156,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
               }`}
             >
               <FileText size={18} />
-              <span className="text-sm font-medium">Coming Soon !</span>
+              <span className="text-sm font-medium">Batch drag</span>
             </button>
           </div>
         </div>
@@ -203,55 +190,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                 ? 'grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8' 
                 : 'grid-cols-2 lg:grid-cols-4'
             }`}>
-              {/* Sketches Section */}
-              {sketchImages.length > 0 && (
-                <>
-                  <div className="col-span-full flex items-center justify-between py-2">
-                    <h4 className="text-sm font-medium text-slate-500 dark:text-gray-400">
-                      SKETCHES ({sketchImages.length})
-                    </h4>
-                    <div className="flex items-center gap-2">
-                      <SortButton
-                        direction={sketchSortDirection}
-                        onChange={setSketchSortDirection}
-                      />
-                    </div>
-                  </div>
-                  {sketchImages.map((img) => (
-                    <div key={img.id} className="flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden">
-                      <div className="relative aspect-square">
-                        <img
-                          src={img.preview}
-                          alt={img.file.name}
-                          className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
-                          onClick={() => setEnlargedImage(img.preview)}
-                          draggable="false"
-                        />
-                        <button
-                          onClick={() => toggleImageSelection(img.id)}
-                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                      
-                      <div className="p-2">
-                        <div className="text-xs text-slate-500 dark:text-gray-400 truncate mb-1">
-                          {img.file.name}
-                        </div>
-                        <input
-                          type="number"
-                          value={img.photoNumber}
-                          onChange={(e) => updateImageMetadata(img.id, { photoNumber: e.target.value })}
-                          className="w-full p-1 text-sm border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
-                          placeholder="Sketch #"
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
-
               {/* Defects Section */}
               {defectImages.length > 0 && (
                 <>

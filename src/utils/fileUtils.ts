@@ -18,32 +18,17 @@ export const generateMetadataContent = (
   try {
     const formattedDate = formatDate(date);
     
-    // Separate sketches and defects
-    const sketches = images.filter(img => img.isSketch)
-      .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
-    
-    const defects = images.filter(img => !img.isSketch)
+    // Sort images by photo number
+    const sortedImages = images
       .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
 
     // Build content sections
     const content = [];
 
-    // Add Sketches section with aligned format
-    if (sketches.length > 0) {
-      content.push('Sketches:');
-      sketches.forEach(img => {
-        if (!img.photoNumber?.trim()) {
-          throw new Error(`Missing photo number for sketch: ${img.file.name}`);
-        }
-        content.push(`Sketch ${img.photoNumber.trim().padStart(2, '0')}.JPG    ${img.file.name}`);
-      });
-      content.push(''); // Add blank line between sections
-    }
-
     // Add Defects section with aligned format
-    if (defects.length > 0) {
+    if (sortedImages.length > 0) {
       content.push('Defects:');
-      defects.forEach(img => {
+      sortedImages.forEach(img => {
         if (!img.photoNumber?.trim()) {
           throw new Error(`Missing photo number for defect: ${img.file.name}`);
         }

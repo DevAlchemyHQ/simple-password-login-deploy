@@ -3,58 +3,26 @@ import { AlertCircle, FileText, Upload, Plus } from 'lucide-react';
 import { useMetadataStore } from '../store/metadataStore';
 import { validateDescription } from '../utils/fileValidation';
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { DefectTile } from './DefectTile';
+import { BatchDefectImageViewer } from './BatchDefectImageViewer';
+import { ImageMetadata } from '../types';
 
 interface ParsedEntry {
   photoNumber: string;
   description: string;
-  isSketch: boolean;
 }
 
 export const BulkTextInput: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
-  const { updateImageMetadata, images, bulkDefects, setBulkDefects } = useMetadataStore();
+  const { updateImageMetadata, images, bulkDefects, setBulkDefects, updateBulkDefectFile } = useMetadataStore();
   const [bulkText, setBulkText] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-
-    if (active.id !== over?.id) {
-      setBulkDefects((items) => {
-        const oldIndex = items.findIndex((item) => item.photoNumber === active.id);
-        const newIndex = items.findIndex((item) => item.photoNumber === over.id);
-
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        // Update photo numbers based on new order
-        return newItems.map((item, index) => ({
-          ...item,
-          photoNumber: String(index + 1),
-        }));
-      });
-    }
-  };
 
   const addNewDefect = () => {
     const newPhotoNumber = String(bulkDefects.length + 1);
@@ -63,7 +31,6 @@ export const BulkTextInput: React.FC = () => {
       {
         photoNumber: newPhotoNumber,
         description: '',
-        isSketch: false,
       },
     ]);
   };
@@ -118,6 +85,59 @@ export const BulkTextInput: React.FC = () => {
     );
   };
 
+  const updateDefectFile = (photoNumber: string, fileName: string) => {
+    updateBulkDefectFile(photoNumber, fileName);
+  };
+
+  const handlePhotoNumberClick = (photoNumber: string) => {
+    // Get all defects with images, sorted by photo number
+    const defectsWithImages = bulkDefects
+      .filter(defect => defect.selectedFile)
+      .sort((a, b) => parseInt(a.photoNumber) - parseInt(b.photoNumber));
+
+    // Find the index of the clicked defect
+    const index = defectsWithImages.findIndex(defect => defect.photoNumber === photoNumber);
+    
+    if (index !== -1) {
+      setViewerInitialIndex(index);
+      setViewerOpen(true);
+    }
+  };
+
+  const handleDeleteImageFromDefect = (defectId: string) => {
+    // Clear the selectedFile for this defect
+    updateBulkDefectFile(defectId, '');
+    
+    // If this was the last image, close viewer
+    const remainingDefects = bulkDefects.filter(defect => 
+      defect.selectedFile && defect.photoNumber !== defectId
+    );
+    
+    if (remainingDefects.length === 0) {
+      setViewerOpen(false);
+    }
+  };
+
+  // Prepare defects for viewer
+  const defectsForViewer = React.useMemo(() => {
+    if (!viewerOpen) return [];
+    
+    return bulkDefects
+      .filter(defect => defect.selectedFile)
+      .sort((a, b) => parseInt(a.photoNumber) - parseInt(b.photoNumber))
+      .map(defect => {
+        const image = images.find(img => img.file.name === defect.selectedFile);
+        if (!image) return null;
+        return {
+          photoNumber: defect.photoNumber,
+          description: defect.description,
+          image: image,
+          defectId: defect.photoNumber
+        };
+      })
+      .filter((item): item is { photoNumber: string; description: string; image: ImageMetadata; defectId: string } => item !== null);
+  }, [bulkDefects, images, viewerOpen]);
+
   const handleApplyChanges = () => {
     setShowConfirmation(true);
   };
@@ -144,9 +164,7 @@ export const BulkTextInput: React.FC = () => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex-1 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
-              Defect List
-            </h3>
+            <div></div>
             <button
               onClick={addNewDefect}
               className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
@@ -178,34 +196,32 @@ export const BulkTextInput: React.FC = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+        <SortableContext
+          items={bulkDefects.map((d) => d.photoNumber)}
+          strategy={verticalListSortingStrategy}
         >
-          <SortableContext
-            items={bulkDefects.map((d) => d.photoNumber)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="space-y-2">
-              {bulkDefects.map((defect) => (
-                <DefectTile
-                  key={defect.photoNumber}
-                  id={defect.photoNumber}
-                  photoNumber={defect.photoNumber}
-                  description={defect.description}
-                  selectedFile={defect.selectedFile}
-                  availableFiles={images.map((img) => img.file.name)}
-                  onDelete={() => deleteDefect(defect.photoNumber)}
-                  onDescriptionChange={(value) =>
-                    updateDefectDescription(defect.photoNumber, value)
-                  }
-                  onFileChange={() => {}}
-                />
+          <div className="space-y-2">
+            {/* Sort defects by photo number to ensure correct order */}
+            {[...bulkDefects]
+              .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
+              .map((defect) => (
+              <DefectTile
+                key={defect.photoNumber}
+                id={defect.photoNumber}
+                photoNumber={defect.photoNumber}
+                description={defect.description}
+                selectedFile={defect.selectedFile}
+                availableFiles={images.map((img) => img.file.name)}
+                onDelete={() => deleteDefect(defect.photoNumber)}
+                onDescriptionChange={(value) =>
+                  updateDefectDescription(defect.photoNumber, value)
+                }
+                onFileChange={(fileName) => updateDefectFile(defect.photoNumber, fileName)}
+                onPhotoNumberClick={handlePhotoNumberClick}
+              />
               ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+          </div>
+        </SortableContext>
       </div>
 
       {error && (
@@ -251,6 +267,16 @@ export const BulkTextInput: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Batch Defect Image Viewer */}
+      {viewerOpen && defectsForViewer.length > 0 && (
+        <BatchDefectImageViewer
+          defects={defectsForViewer}
+          initialIndex={viewerInitialIndex}
+          onClose={() => setViewerOpen(false)}
+          onDeleteImage={handleDeleteImageFromDefect}
+        />
       )}
     </div>
   );

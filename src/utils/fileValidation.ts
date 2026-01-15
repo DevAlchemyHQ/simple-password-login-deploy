@@ -24,36 +24,31 @@ export const validateImages = (images: ImageMetadata[]): string | null => {
   // Check if any image is missing required metadata
   for (const img of images) {
     if (!img.photoNumber?.trim()) {
-      return `Photo number is required for ${img.isSketch ? 'sketch' : 'defect'}: ${img.file.name}`;
+      return `Photo number is required for defect: ${img.file.name}`;
     }
     
-    // Only check description for defect images
-    if (!img.isSketch && !img.description?.trim()) {
+    // Check description for all images
+    if (!img.description?.trim()) {
       return `Description is required for defect: ${img.file.name}`;
     }
     
-    // Check for slashes in defect descriptions only
-    if (!img.isSketch) {
+    // Check for slashes in descriptions
       const { isValid } = validateDescription(img.description);
       if (!isValid) {
         return 'Remove slashes (/ or \\) from descriptions before downloading';
-      }
     }
   }
   
-  // Check for duplicate photo numbers within each type (sketches and defects separately)
-  const sketchNumbers = new Set();
-  const defectNumbers = new Set();
+  // Check for duplicate photo numbers
+  const photoNumbers = new Set();
 
   for (const img of images) {
     const number = img.photoNumber.trim();
-    const set = img.isSketch ? sketchNumbers : defectNumbers;
 
-    if (set.has(number)) {
-      const type = img.isSketch ? 'sketch' : 'photo';
-      return `Duplicate ${type} number found: ${number}`;
+    if (photoNumbers.has(number)) {
+      return `Duplicate photo number found: ${number}`;
     }
-    set.add(number);
+    photoNumbers.add(number);
   }
   
   return null;

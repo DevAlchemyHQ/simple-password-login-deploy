@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { X, GripVertical, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, GripVertical, ChevronDown, AlertCircle, Search } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { validateDescription } from '../utils/fileValidation';
+import { useMetadataStore } from '../store/metadataStore';
 
 interface DefectTileProps {
   id: string;
@@ -13,6 +15,7 @@ interface DefectTileProps {
   onDelete: () => void;
   onDescriptionChange: (value: string) => void;
   onFileChange: (value: string) => void;
+  onPhotoNumberClick?: (photoNumber: string) => void;
 }
 
 export const DefectTile: React.FC<DefectTileProps> = ({
@@ -24,24 +27,76 @@ export const DefectTile: React.FC<DefectTileProps> = ({
   onDelete,
   onDescriptionChange,
   onFileChange,
+  onPhotoNumberClick,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localDescription, setLocalDescription] = useState(description);
+  const [searchQuery, setSearchQuery] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLocalDescription(description);
   }, [description]);
 
+  // Reset search when dropdown closes
+  useEffect(() => {
+    if (!isDropdownOpen) {
+      setSearchQuery('');
+    }
+  }, [isDropdownOpen]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isDropdownOpen]);
+
+  const { viewMode } = useMetadataStore();
+  
   const {
     attributes,
     listeners,
-    setNodeRef,
+    setNodeRef: setSortableRef,
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({ 
+    id,
+    disabled: false, // Always allow defect reordering
+  });
+
+  const {
+    setNodeRef: setDroppableRef,
+    isOver,
+  } = useDroppable({
+    id: `drop-${id}`,
+  });
+
+  // Debug logging
+  useEffect(() => {
+    if (isOver) {
+      console.log('🎯 Defect tile isOver:', {
+        defectId: id,
+        dropZoneId: `drop-${id}`,
+        photoNumber
+      });
+    }
+  }, [isOver, id, photoNumber]);
+
+  // Use sortable ref for the outer container (for reordering)
+  // Use droppable ref for the inner content (for image drops)
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -70,17 +125,112 @@ export const DefectTile: React.FC<DefectTileProps> = ({
   const handleFileSelect = (fileName: string) => {
     onFileChange(fileName);
     setIsDropdownOpen(false);
+    setSearchQuery('');
   };
+
+  const handleSelectNone = () => {
+    onFileChange('');
+    setIsDropdownOpen(false);
+    setSearchQuery('');
+  };
+
+  // Filter files based on search query (by title/filename or last 4 digits)
+  const getLastFourDigits = (filename: string): string => {
+    // Remove file extension first
+    const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
+    
+    // Strategy: Always get the LAST 4 digits from the filename
+    // This is the most reliable method - extract all digits and take the last 4
+    // For "PB080001" -> "0001", "PB080001 copy" -> "0001", "PB080002" -> "0002"
+    
+    // Extract ALL digits from the filename
+    const allDigits = nameWithoutExt.match(/\d/g);
+    if (!allDigits || allDigits.length < 4) {
+      return ''; // Not enough digits
+    }
+    
+    // Get the last 4 digits (this is the most reliable method)
+    const lastFour = allDigits.slice(-4).join('');
+    
+    return lastFour;
+  };
+
+  const filteredFiles = React.useMemo(() => {
+    if (!searchQuery || !searchQuery.trim()) {
+      return availableFiles;
+    }
+
+    const query = searchQuery.trim();
+    if (!query) {
+      return availableFiles;
+    }
+
+    // Check if query is purely numeric (only digits, no letters, spaces, or special chars)
+    // This must be checked BEFORE any other processing
+    const isNumericQuery = /^\d+$/.test(query);
+    
+    // If numeric, we MUST only search by last 4 digits, never by title
+    if (isNumericQuery) {
+      const filtered = availableFiles.filter(file => {
+        const lastFour = getLastFourDigits(file);
+        
+        // Always log for debugging
+        console.log(`[Search] File: "${file}", Last 4: "${lastFour}", Query: "${query}"`);
+        
+        if (!lastFour || lastFour.length !== 4) {
+          console.log(`  → REJECTED: No valid last 4 digits`);
+          return false;
+        }
+        
+        let matches = false;
+        if (query.length === 1) {
+          // Single digit: must be the last digit, and all preceding digits must be zeros
+          const lastDigit = lastFour.slice(-1);
+          const precedingDigits = lastFour.slice(0, -1);
+          matches = lastDigit === query && /^0+$/.test(precedingDigits);
+          console.log(`  → Single digit: last="${lastDigit}", preceding="${precedingDigits}", match=${matches}`);
+        } else {
+          // Multi-digit: must end with query
+          matches = lastFour.endsWith(query);
+          console.log(`  → Multi-digit: endsWith=${matches}`);
+        }
+        
+        return matches;
+      });
+      
+      console.log(`[Search] Numeric query "${query}": ${filtered.length} matches from ${availableFiles.length} files`);
+      return filtered;
+    }
+    
+    // Non-numeric query: search by title/filename
+    const queryLower = query.toLowerCase();
+    
+    // Non-numeric query: search by title/filename
+    const filtered = availableFiles.filter(file => {
+      const fileName = file.toLowerCase();
+      return fileName.includes(queryLower);
+    });
+    
+    console.log(`[Search] Title query "${query}": ${filtered.length} matches from ${availableFiles.length} files`);
+    return filtered;
+  }, [availableFiles, searchQuery]);
 
   return (
     <div
-      ref={setNodeRef}
+      ref={setSortableRef}
       style={style}
-      className={`bg-white dark:bg-gray-800 rounded-lg border border-slate-200 dark:border-gray-700 shadow-sm ${
-        isDragging ? 'shadow-lg' : ''
+      className={`bg-white dark:bg-gray-800 rounded-lg border-2 shadow-sm transition-all ${
+        isDragging ? 'shadow-lg opacity-50' : ''
+      } ${
+        isOver 
+          ? 'ring-4 ring-indigo-500 border-indigo-500 bg-indigo-100 dark:bg-indigo-900/30 shadow-lg scale-[1.02]' 
+          : 'border-slate-200 dark:border-gray-700'
       }`}
     >
-      <div className="p-3 flex items-center gap-3">
+      <div 
+        ref={setDroppableRef}
+        className="p-3 flex items-center gap-3"
+      >
         <div
           {...attributes}
           {...listeners}
@@ -89,9 +239,23 @@ export const DefectTile: React.FC<DefectTileProps> = ({
           <GripVertical size={20} />
         </div>
 
-        <div className="w-12 text-center font-medium text-slate-700 dark:text-gray-300">
-          {photoNumber}
-        </div>
+        {/* Make photo number clickable if image is assigned */}
+        {selectedFile && onPhotoNumberClick ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onPhotoNumberClick(photoNumber);
+            }}
+            className="w-12 text-center font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors cursor-pointer"
+            title="Click to view image"
+          >
+            {photoNumber}
+          </button>
+        ) : (
+          <div className="w-12 text-center font-medium text-slate-700 dark:text-gray-300">
+            {photoNumber}
+          </div>
+        )}
 
         <div className="flex-1">
           {isEditing ? (
@@ -113,7 +277,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
           )}
         </div>
 
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg ${
@@ -129,20 +293,62 @@ export const DefectTile: React.FC<DefectTileProps> = ({
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-1 w-64 max-h-48 overflow-y-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 py-1 z-10">
-              {availableFiles.map((file) => (
+            <div className="absolute right-0 mt-1 w-64 max-h-64 overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 z-10 flex flex-col">
+              {/* Search Input */}
+              <div className="p-2 border-b border-slate-200 dark:border-gray-700">
+                <div className="relative">
+                  <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by title or last 4 digits..."
+                    className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
+                    autoFocus
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setIsDropdownOpen(false);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* File List */}
+              <div className="overflow-y-auto max-h-48">
+                {/* None option at the top */}
                 <button
-                  key={file}
-                  onClick={() => handleFileSelect(file)}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 ${
-                    file === selectedFile
-                      ? 'text-indigo-600 dark:text-indigo-400 font-medium'
+                  onClick={handleSelectNone}
+                  className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-700 ${
+                    !selectedFile
+                      ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
                       : 'text-slate-600 dark:text-gray-300'
                   }`}
                 >
-                  <div className="truncate">{file}</div>
+                  <div className="truncate">None</div>
                 </button>
-              ))}
+
+                {filteredFiles.length > 0 ? (
+                  filteredFiles.map((file) => (
+                    <button
+                      key={file}
+                      onClick={() => handleFileSelect(file)}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 ${
+                        file === selectedFile
+                          ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
+                          : 'text-slate-600 dark:text-gray-300'
+                      }`}
+                    >
+                      <div className="truncate">{file}</div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-sm text-slate-500 dark:text-gray-400 text-center">
+                    No photos found matching "{searchQuery}"
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {error && (

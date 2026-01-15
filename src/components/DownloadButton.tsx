@@ -1,60 +1,63 @@
 import React, { useState } from 'react';
 import { Download, AlertCircle, Loader2 } from 'lucide-react';
 import { useMetadataStore } from '../store/metadataStore';
-import { createDownloadPackage } from '../utils/fileUtils';
 import { useValidation } from '../hooks/useValidation';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { validateDescription } from '../utils/fileValidation';
-import { useProjectStore } from '../store/projectStore';
+import { handleSingleSelectDownload, handleBatchDragDownload } from '../utils/downloadUtils';
 
 export const DownloadButton: React.FC = () => {
-  const { images, selectedImages, formData } = useMetadataStore();
+  const { images, selectedImages, formData, bulkDefects, viewMode } = useMetadataStore();
   const { isValid, getValidationErrors } = useValidation();
   const { trackEvent } = useAnalytics();
-  const { clearProject, isLoading } = useProjectStore();
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasSpecialCharacters = React.useMemo(() => {
+  // ============================================
+  // SINGLE SELECT MODE - Special Characters Check
+  // ============================================
+  const hasSpecialCharactersSingleSelect = React.useMemo(() => {
+    if (viewMode !== 'images') return false;
     const selectedImagesList = images.filter(img => selectedImages.has(img.id));
-    return selectedImagesList.some(img => !img.isSketch && !validateDescription(img.description || '').isValid);
-  }, [images, selectedImages]);
+    return selectedImagesList.some(img => !validateDescription(img.description || '').isValid);
+  }, [viewMode, images, selectedImages]);
 
+  // ============================================
+  // BATCH DRAG MODE - Special Characters Check
+  // ============================================
+  const hasSpecialCharactersBatchDrag = React.useMemo(() => {
+    if (viewMode !== 'text') return false;
+    const defectsWithImages = bulkDefects.filter(defect => defect.selectedFile);
+    return defectsWithImages.some(defect => 
+      !validateDescription(defect.description || '').isValid
+    );
+  }, [viewMode, bulkDefects]);
+
+  // ============================================
+  // DOWNLOAD HANDLER - Routes to appropriate mode
+  // ============================================
   const handleDownload = async () => {
     try {
       setIsDownloading(true);
       setError(null);
       
-      const selectedImagesList = images.filter(img => selectedImages.has(img.id));
-      
-      if (selectedImagesList.length === 0) {
-        throw new Error('No images selected');
+      if (viewMode === 'text') {
+        // BATCH DRAG MODE DOWNLOAD
+        await handleBatchDragDownload(
+          images,
+          bulkDefects,
+          formData,
+          trackEvent
+        );
+      } else {
+        // SINGLE SELECT MODE DOWNLOAD
+        await handleSingleSelectDownload(
+          images,
+          selectedImages,
+          formData,
+          trackEvent
+        );
       }
-
-      if (hasSpecialCharacters) {
-        throw new Error('Remove special characters from defect descriptions before downloading');
-      }
-      
-      const zipBlob = await createDownloadPackage(selectedImagesList, formData);
-      
-      const url = URL.createObjectURL(zipBlob);
-      
-      // Track download event
-      trackEvent({
-        action: 'download_package',
-        category: 'user_action',
-        label: `${formData.elr.trim()}_${formData.structureNo.trim()}`,
-        value: selectedImagesList.length
-      });
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${formData.elr.trim().toUpperCase()}_${formData.structureNo.trim()}_${formData.date.split('-').reverse().join('-')}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
     } catch (error) {
       console.error('Error creating download package:', error);
       setError(error instanceof Error ? error.message : 'Failed to create download package');
@@ -63,8 +66,19 @@ export const DownloadButton: React.FC = () => {
     }
   };
 
+  // ============================================
+  // UI STATE
+  // ============================================
   const errors = getValidationErrors();
+  const hasSpecialCharacters = viewMode === 'text' 
+    ? hasSpecialCharactersBatchDrag 
+    : hasSpecialCharactersSingleSelect;
   const isDownloadDisabled = !isValid() || isDownloading || hasSpecialCharacters;
+
+  // Button text based on mode
+  const buttonText = viewMode === 'text' 
+    ? (isDownloading ? 'Creating Batch Package...' : 'Download Batch Package')
+    : (isDownloading ? 'Creating Package...' : 'Download Package');
 
   return (
     <div className="space-y-2">
@@ -82,7 +96,7 @@ export const DownloadButton: React.FC = () => {
         ) : (
           <Download size={20} />
         )}
-        {isDownloading ? 'Creating Package...' : 'Download Package'}
+        {buttonText}
       </button>
 
       {(error || (!isValid() && errors.length > 0) || hasSpecialCharacters) && (

@@ -31,10 +31,6 @@ export const generateImageFileName = (
 
   const formattedDate = formatDate(date);
   
-  if (image.isSketch) {
-    return `Sketch ${image.photoNumber.trim()}.JPG`;
-  }
-  
   if (!image.description?.trim()) {
     throw new Error(`Missing description for defect image: ${image.file.name}`);
   }
