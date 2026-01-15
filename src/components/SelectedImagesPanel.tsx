@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
-import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown } from 'lucide-react';
+import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown, Search } from 'lucide-react';
 import { ImageZoom } from './ImageZoom';
 import { validateDescription } from '../utils/fileValidation';
 import { BulkTextInput } from './BulkTextInput';
@@ -65,6 +65,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [imageSelectorOpen, setImageSelectorOpen] = useState<string | null>(null);
   const [photoNumberSelectorOpen, setPhotoNumberSelectorOpen] = useState<string | null>(null);
+  const [imageSearchQuery, setImageSearchQuery] = useState<string>('');
 
   // Close selectors when clicking outside
   useEffect(() => {
@@ -74,6 +75,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
       if (!target.closest('.image-selector-dropdown') && !target.closest('.photo-number-selector-dropdown')) {
         setImageSelectorOpen(null);
         setPhotoNumberSelectorOpen(null);
+        setImageSearchQuery('');
       }
     };
 
@@ -84,6 +86,57 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
       };
     }
   }, [imageSelectorOpen, photoNumberSelectorOpen]);
+
+  // Reset search when selector closes
+  useEffect(() => {
+    if (!imageSelectorOpen) {
+      setImageSearchQuery('');
+    }
+  }, [imageSelectorOpen]);
+
+  // Filter images based on search query
+  const getLastFourDigits = (filename: string): string => {
+    const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
+    const digitSequences = nameWithoutExt.match(/\d+/g);
+    if (!digitSequences || digitSequences.length === 0) {
+      return '';
+    }
+    const lastSequence = digitSequences[digitSequences.length - 1];
+    if (lastSequence.length >= 4) {
+      return lastSequence.slice(-4);
+    }
+    return lastSequence.padStart(4, '0');
+  };
+
+  const getFilteredImages = React.useMemo(() => {
+    if (!imageSearchQuery.trim()) {
+      return images;
+    }
+
+    const query = imageSearchQuery.trim();
+    const isNumericQuery = /^\d+$/.test(query);
+    
+    if (isNumericQuery) {
+      return images.filter(img => {
+        const lastFour = getLastFourDigits(img.file.name);
+        if (!lastFour || lastFour.length !== 4) {
+          return false;
+        }
+        if (query.length === 1) {
+          const lastDigit = lastFour.slice(-1);
+          const precedingDigits = lastFour.slice(0, -1);
+          return lastDigit === query && /^0+$/.test(precedingDigits);
+        } else {
+          return lastFour.endsWith(query);
+        }
+      });
+    }
+    
+    const queryLower = query.toLowerCase();
+    return images.filter(img => 
+      img.file.name.toLowerCase().includes(queryLower)
+    );
+  }, [images, imageSearchQuery]);
   
   const selectedImagesList = React.useMemo(() => {
     return images.filter(img => selectedImages.has(img.id));
@@ -158,12 +211,12 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     };
 
     return (
-      <div>
+      <div className="flex flex-col min-h-0">
         <textarea
           value={defect.description}
           onChange={(e) => updateDescription(e.target.value)}
           maxLength={100}
-          className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-y min-h-[60px] ${
+          className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-none h-[60px] ${
             !isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
           }`}
           placeholder="Description"
@@ -175,7 +228,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           {!isValid && invalidChars.length > 0 && (
             <div className="flex items-center gap-1 text-amber-600">
               <AlertTriangle size={12} />
-              <span>
+              <span className="text-[10px]">
                 Slashes not allowed: {invalidChars.join(' ')}
               </span>
             </div>
@@ -436,9 +489,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
                         const style = {
                           transform: CSS.Transform.toString(transform),
-                          transition: isDragging ? 'none' : transition,
-                          opacity: isDragging ? 0.6 : 1,
+                          transition: transition || 'transform 200ms ease',
+                          opacity: isDragging ? 0.7 : 1,
                           zIndex: isDragging ? 50 : 1,
+                          scale: isDragging ? 1.05 : 1,
                         };
 
                         const image = getImageForDefect(defect.selectedFile || '');
@@ -450,7 +504,9 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           <div 
                             ref={setNodeRef}
                             style={style}
-                            className="flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing"
+                            className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200 ${
+                              isDragging ? 'shadow-xl scale-105 rotate-1' : 'shadow-sm hover:shadow-md'
+                            }`}
                             {...attributes}
                             {...listeners}
                           >
@@ -493,45 +549,77 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   </button>
                                   {isSelectorOpen && (
                                     <div 
-                                      className="image-selector-dropdown absolute inset-0 bg-white dark:bg-gray-800 border-2 border-indigo-500 rounded-lg z-20 overflow-y-auto max-h-full"
+                                      className="image-selector-dropdown absolute inset-0 bg-white dark:bg-gray-800 border-2 border-indigo-500 rounded-lg z-20 overflow-hidden flex flex-col"
                                       onClick={(e) => e.stopPropagation()}
                                     >
-                                      <div className="p-2 space-y-1">
+                                      <div className="p-2 border-b border-slate-200 dark:border-gray-700">
                                         <div className="flex items-center justify-between mb-2">
                                           <span className="text-xs font-medium text-slate-700 dark:text-gray-300">Select image</span>
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
                                               setImageSelectorOpen(null);
+                                              setImageSearchQuery('');
                                             }}
                                             className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded"
                                           >
                                             <X size={14} />
                                           </button>
                                         </div>
+                                        <div className="relative">
+                                          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
+                                          <input
+                                            type="text"
+                                            value={imageSearchQuery}
+                                            onChange={(e) => {
+                                              e.stopPropagation();
+                                              setImageSearchQuery(e.target.value);
+                                            }}
+                                            placeholder="Search by name or last 4 digits..."
+                                            className="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
+                                            autoFocus
+                                            onClick={(e) => e.stopPropagation()}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Escape') {
+                                                setImageSelectorOpen(null);
+                                                setImageSearchQuery('');
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="flex-1 overflow-y-auto">
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             updateBulkDefectFile(defect.photoNumber, '');
                                             setImageSelectorOpen(null);
+                                            setImageSearchQuery('');
                                           }}
-                                          className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 rounded border-b border-slate-200 dark:border-gray-600"
+                                          className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-600"
                                         >
                                           None
                                         </button>
-                                        {images.map((img) => (
-                                          <button
-                                            key={img.id}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              updateBulkDefectFile(defect.photoNumber, img.file.name);
-                                              setImageSelectorOpen(null);
-                                            }}
-                                            className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 rounded truncate"
-                                          >
-                                            {img.file.name}
-                                          </button>
-                                        ))}
+                                        {getFilteredImages.length > 0 ? (
+                                          getFilteredImages.map((img) => (
+                                            <button
+                                              key={img.id}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                updateBulkDefectFile(defect.photoNumber, img.file.name);
+                                                setImageSelectorOpen(null);
+                                                setImageSearchQuery('');
+                                              }}
+                                              className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 truncate"
+                                            >
+                                              {img.file.name}
+                                            </button>
+                                          ))
+                                        ) : (
+                                          <div className="px-2 py-3 text-xs text-slate-500 dark:text-gray-400 text-center">
+                                            No images found matching "{imageSearchQuery}"
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   )}
@@ -540,11 +628,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             </div>
                             
                             <div 
-                              className="p-2 space-y-1" 
+                              className="p-2 space-y-1 flex-1 flex flex-col" 
                               onClick={(e) => e.stopPropagation()}
                               onMouseDown={(e) => e.stopPropagation()}
                             >
-                              <div className="text-xs text-slate-500 dark:text-gray-400 truncate">
+                              <div className="text-xs text-slate-500 dark:text-gray-400 truncate mb-1">
                                 {image?.file.name || 'No file selected'}
                               </div>
                               <div className="relative">
@@ -597,7 +685,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   </div>
                                 )}
                               </div>
-                              <div onMouseDown={(e) => e.stopPropagation()}>
+                              <div className="flex-1 flex flex-col min-h-0" onMouseDown={(e) => e.stopPropagation()}>
                                 {renderBulkDefectDescriptionField(defect)}
                               </div>
                             </div>
