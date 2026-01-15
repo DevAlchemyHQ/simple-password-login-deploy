@@ -20,6 +20,7 @@ import { useMetadataStore } from '../../store/metadataStore';
 export const MainContent: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
   const { bulkDefects, setBulkDefects, updateBulkDefectFile, images, viewMode } = useMetadataStore();
 
   const sensors = useSensors(
@@ -39,14 +40,17 @@ export const MainContent: React.FC = () => {
   };
 
   const handleDragOver = (event: any) => {
-    // Log when dragging over elements for debugging
+    // Track which tile is being dragged over for visual feedback
     if (event.over) {
+      setOverId(event.over.id);
       console.log('📍 Drag Over:', {
         activeId: event.active.id,
         overId: event.over.id,
         activeData: event.active.data.current,
         overData: event.over.data.current
       });
+    } else {
+      setOverId(null);
     }
   };
 
@@ -173,10 +177,12 @@ export const MainContent: React.FC = () => {
     }
 
     setActiveId(null);
+    setOverId(null);
   };
 
   const handleDragCancel = () => {
     setActiveId(null);
+    setOverId(null);
   };
 
   return (
@@ -210,7 +216,9 @@ export const MainContent: React.FC = () => {
         }`}>
           <SelectedImagesPanel 
             onExpand={() => setIsExpanded(!isExpanded)} 
-            isExpanded={isExpanded} 
+            isExpanded={isExpanded}
+            activeDragId={activeId}
+            overDragId={overId}
           />
         </div>
       </div>
@@ -229,7 +237,7 @@ export const MainContent: React.FC = () => {
             const draggedDefect = bulkDefects.find(d => d.photoNumber === activeId);
             const draggedImage = draggedDefect ? images.find(img => img.file.name === draggedDefect.selectedFile) : null;
             return (
-              <div className="w-48 bg-slate-50 dark:bg-gray-700 rounded-lg shadow-2xl ring-2 ring-indigo-500 ring-opacity-50 overflow-hidden">
+              <div className="w-48 bg-slate-50 dark:bg-gray-700 rounded-lg shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 overflow-hidden border-2 border-indigo-400">
                 <div className="relative aspect-square">
                   {draggedImage ? (
                     <img

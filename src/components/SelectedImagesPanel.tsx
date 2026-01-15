@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
-import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown, Search, GripVertical } from 'lucide-react';
+import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown, Search, GripVertical, Grid3x3, PlusCircle, Trash } from 'lucide-react';
 import { ImageZoom } from './ImageZoom';
 import { validateDescription } from '../utils/fileValidation';
 import { BulkTextInput } from './BulkTextInput';
 import type { ImageMetadata } from '../types';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
 type ViewMode = 'images' | 'text';
@@ -44,9 +45,11 @@ const SortButton: React.FC<{
 interface SelectedImagesPanelProps {
   onExpand: () => void;
   isExpanded: boolean;
+  activeDragId?: string | null;
+  overDragId?: string | null;
 }
 
-export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpand, isExpanded }) => {
+export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpand, isExpanded, activeDragId, overDragId }) => {
   const {
     images,
     selectedImages,
@@ -492,6 +495,14 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           disabled: false,
                         });
 
+                        // Add droppable to show drop zone feedback
+                        const {
+                          setNodeRef: setDroppableRef,
+                          isOver,
+                        } = useDroppable({
+                          id: defect.photoNumber,
+                        });
+
 
                         const image = getImageForDefect(defect.selectedFile || '');
                         const isSelectorOpen = imageSelectorOpen === defect.photoNumber;
@@ -583,24 +594,32 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           },
                         };
 
+                        // Combine refs for both sortable and droppable
+                        const combinedRef = (node: HTMLDivElement | null) => {
+                          setNodeRef(node);
+                          setDroppableRef(node);
+                        };
+
                         return (
                           <div 
-                            ref={setNodeRef}
+                            ref={combinedRef}
                             style={{
                               transform: CSS.Transform.toString(transform),
                               transition: isDragging ? 'none' : (transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'),
-                              opacity: isDragging ? 0.5 : 1,
+                              opacity: isDragging ? 0.4 : 1,
                             }}
                             className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-all duration-200 relative ${
                               isDragging 
                                 ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing' 
+                                : (overDragId === defect.photoNumber && activeDragId && activeDragId !== defect.photoNumber)
+                                ? 'ring-4 ring-indigo-400 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 shadow-xl scale-[1.02] border-2 border-indigo-400'
                                 : 'cursor-grab hover:shadow-lg hover:ring-1 hover:ring-indigo-300 dark:hover:ring-indigo-600'
                             }`}
                             {...attributes}
                             {...customListeners}
                           >
-                            {/* Action buttons - positioned at top right */}
-                            <div className="absolute top-2 right-2 flex gap-1 z-40" style={{ pointerEvents: 'auto' }}>
+                            {/* Action buttons - positioned at top right with better styling */}
+                            <div className="absolute top-2 right-2 flex gap-1.5 z-40" style={{ pointerEvents: 'auto' }}>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -611,10 +630,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   e.stopPropagation();
                                   e.preventDefault();
                                 }}
-                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors bg-white dark:bg-gray-800 shadow-sm"
+                                className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-110"
                                 title="Delete tile"
                               >
-                                <X size={16} />
+                                <Trash size={16} />
                               </button>
                               <button
                                 onClick={(e) => {
@@ -626,22 +645,25 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   e.stopPropagation();
                                   e.preventDefault();
                                 }}
-                                className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors bg-white dark:bg-gray-800 shadow-sm"
+                                className="p-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-110"
                                 title="Add tile below"
                               >
-                                <Plus size={16} />
+                                <PlusCircle size={16} />
                               </button>
                             </div>
                             
-                            {/* Drag handle indicator - always visible and prominent */}
+                            {/* Drag handle indicator - Grid3x3 icon like screenshot, always visible and prominent */}
                             <div 
-                              className={`absolute top-2 left-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-30 transition-all border-2 pointer-events-none ${
+                              className={`absolute top-2 left-2 p-2.5 bg-slate-700 dark:bg-gray-800 rounded-lg shadow-lg z-30 transition-all border-2 ${
                                 isDragging 
-                                  ? 'opacity-100 scale-125 border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30' 
-                                  : 'opacity-90 hover:opacity-100 hover:scale-110 border-slate-300 dark:border-gray-600'
+                                  ? 'opacity-100 scale-125 border-indigo-500 bg-indigo-600 dark:bg-indigo-700' 
+                                  : 'opacity-100 hover:opacity-100 hover:scale-110 border-slate-500 dark:border-gray-600 hover:bg-slate-600 dark:hover:bg-gray-700'
                               }`}
+                              style={{ pointerEvents: 'auto' }}
+                              {...attributes}
+                              {...listeners}
                             >
-                              <GripVertical size={18} className={`${isDragging ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-gray-400'}`} />
+                              <Grid3x3 size={18} className="text-white" />
                             </div>
                             <div className="relative aspect-square">
                               {image ? (
