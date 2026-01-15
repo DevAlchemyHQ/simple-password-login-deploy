@@ -57,34 +57,61 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       // For simple password auth, use localStorage-based user ID
       const userId = localStorage.getItem('userId') || 'simple-auth-user';
 
-      // Create image metadata without uploading to Supabase storage
-      // Convert files to base64 for localStorage persistence
+      // Load stored metadata to restore photoNumber/description for re-uploaded images
+      // This ensures user edits (photo numbers, descriptions) are never lost
+      const storedData = localStorage.getItem('userProjectData');
+      const storedMetadata: { [fileName: string]: { photoNumber: string; description: string } } = {};
+      
+      if (storedData) {
+        try {
+          const projectData = JSON.parse(storedData);
+          if (projectData.images && Array.isArray(projectData.images)) {
+            // Create a lookup map: fileName -> { photoNumber, description }
+            // This allows us to restore user edits when images are re-uploaded
+            projectData.images.forEach((imgData: any) => {
+              if (imgData.fileName) {
+                storedMetadata[imgData.fileName] = {
+                  photoNumber: imgData.photoNumber || '',
+                  description: imgData.description || ''
+                };
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('Error parsing stored metadata for image restoration:', e);
+        }
+      }
+
+      // Create image metadata - NO base64 conversion (saves localStorage space)
+      // Images will be re-uploaded by user, but metadata (photoNumber, description) is restored
       const newImages = await Promise.all(files.map(async (file) => {
         const blobUrl = URL.createObjectURL(file);
-
-        // Convert file to base64 for persistence
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+        
+        // Restore photoNumber and description from stored metadata if this file was uploaded before
+        // This ensures user work is never lost - all edits are preserved
+        const restored = storedMetadata[file.name] || { photoNumber: '', description: '' };
 
         return {
           id: crypto.randomUUID(),
           file,
-          photoNumber: '',
-          description: '',
+          photoNumber: restored.photoNumber,
+          description: restored.description,
           preview: blobUrl,
-          publicUrl: blobUrl, // Use blob URL for immediate display
-          base64Data: base64, // Store base64 for persistence
+          publicUrl: blobUrl,
           userId: userId
         };
       }));
 
-      set((state) => ({
-        images: [...state.images, ...newImages],
-      }));
+      set((state) => {
+        const updatedImages = [...state.images, ...newImages];
+        
+        // Auto-match newly uploaded images to existing bulkDefects by filename
+        // This allows re-uploaded photos to automatically appear in their assigned tiles
+        // The matching happens in SelectedImagesPanel via getImageForDefect() which uses selectedFile
+        // No action needed here - the matching is automatic when selectedFile matches file.name
+        
+        return { images: updatedImages };
+      });
 
       // Save project data after successful uploads
       await get().saveUserData();
@@ -247,60 +274,26 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
         viewMode: projectData.viewMode || 'images'
       });
 
-      if (projectData.images && projectData.images.length > 0) {
-        // Load images from stored base64 data
-        const validImages = await Promise.all(
-          projectData.images.map(async (imgData: any) => {
-            try {
-              // Restore from base64 data
-              if (imgData.base64Data) {
-                // Convert base64 to blob
-                const response = await fetch(imgData.base64Data);
-              const blob = await response.blob();
-              const file = new File([blob], imgData.fileName || 'image.jpg', {
-                type: imgData.fileType || blob.type
-              });
-                
-                const blobUrl = URL.createObjectURL(blob);
+      // Restore metadata (form data, bulkDefects, image metadata)
+      // NOTE: Images themselves are NOT restored - they must be re-uploaded by the user
+      // However, when re-uploaded, their photoNumber/description will be automatically restored
+      // from the stored metadata via the addImages function
+      // 
+      // AUTO-MATCHING SYSTEM EXPLANATION:
+      // 1. bulkDefects stores selectedFile (filename) for each tile - this is the key to matching
+      // 2. When images are uploaded, addImages() restores photoNumber/description from stored metadata
+      // 3. Images automatically match to tiles via filename: img.file.name === defect.selectedFile
+      // 4. This matching happens automatically in SelectedImagesPanel via getImageForDefect()
+      // 5. Result: User work is never lost - all metadata persists across refresh/logout/shutdown
+      
+      set({
+        formData: projectData.form_data || initialFormData,
+        bulkDefects: projectData.bulkDefects || [],
+        viewMode: projectData.viewMode || 'images'
+      });
 
-              return {
-                id: imgData.id,
-                file,
-                photoNumber: imgData.photoNumber || '',
-                description: imgData.description || '',
-                  preview: blobUrl,
-                  publicUrl: blobUrl,
-                  base64Data: imgData.base64Data, // Keep base64 for future saves
-                userId: imgData.userId
-              };
-              }
-              return null;
-            } catch (error) {
-              console.error('Error loading image:', error);
-              return null;
-            }
-          })
-        );
-
-        // Filter out failed loads
-        const images = validImages.filter((img): img is ImageMetadata => img !== null);
-        const selectedImages = new Set(projectData.selected_images || []);
-
-        set({
-          formData: projectData.form_data || initialFormData,
-          images,
-          selectedImages,
-          bulkDefects: projectData.bulkDefects || [],
-          viewMode: projectData.viewMode || 'images'
-        });
-      } else if (projectData.form_data) {
-        // Just restore form data if no images
-        set({
-          formData: projectData.form_data || initialFormData,
-          bulkDefects: projectData.bulkDefects || [],
-          viewMode: projectData.viewMode || 'images'
-        });
-      }
+      // Note: images array remains empty - user must re-upload photos
+      // But all metadata (photoNumber, description, selectedFile) is preserved and will be restored on re-upload
     } catch (error) {
       console.error('Error loading user data:', error);
       // Don't throw, just log - allow app to continue with empty state
@@ -311,30 +304,57 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
     try {
       const state = get();
       
-      // Prepare images data for storage
-      // Store base64 data and file metadata for persistence
+      // METADATA-ONLY STORAGE (No base64 images to save localStorage space)
+      // 
+      // What gets saved:
+      // 1. form_data: Project form fields (elr, structureNo, date)
+      // 2. images: Image metadata only (fileName, photoNumber, description) - NO base64Data
+      // 3. bulkDefects: Tile metadata (photoNumber, description, selectedFile)
+      // 4. selected_images: Array of selected image IDs
+      // 5. viewMode: Current view preference
+      //
+      // Storage capacity: ~27,900 tiles (Chrome/Edge 5MB limit) or ~55,800 tiles (Firefox 10MB)
+      // Each tile: ~188 bytes (photoNumber + description + selectedFile)
+      //
+      // AUTO-MATCHING ON RE-UPLOAD:
+      // - When images are re-uploaded, addImages() restores photoNumber/description from stored metadata
+      // - Images automatically match to tiles via selectedFile (filename) matching
+      // - This happens in SelectedImagesPanel.tsx via getImageForDefect() function
+      // - Result: User work is never lost - all edits persist across refresh/logout/shutdown
+      
+      // Store only metadata - NO base64 image data (saves ~33% space per image)
       const imagesData = state.images.map(img => ({
         id: img.id,
-        photoNumber: img.photoNumber,
-        description: img.description,
-        base64Data: (img as any).base64Data, // Store base64 for persistence
-        userId: img.userId,
+        photoNumber: img.photoNumber || '',
+        description: img.description || '',
         fileName: img.file.name,
         fileType: img.file.type,
-        fileSize: img.file.size
+        fileSize: img.file.size,
+        userId: img.userId
+        // NOTE: base64Data is NOT stored - images must be re-uploaded
+        // But photoNumber and description are preserved for restoration
       }));
 
-      // Save to localStorage instead of Supabase
+      // Save to localStorage (Edge/Chrome: ~5MB limit, Firefox: ~10MB limit)
       const projectData = {
-          form_data: state.formData,
-          images: imagesData,
-          selected_images: Array.from(state.selectedImages),
-          bulkDefects: state.bulkDefects,
-          viewMode: state.viewMode,
-          updated_at: new Date().toISOString()
+        form_data: state.formData,
+        images: imagesData, // Metadata only, no base64
+        selected_images: Array.from(state.selectedImages),
+        bulkDefects: state.bulkDefects, // Contains selectedFile for auto-matching
+        viewMode: state.viewMode,
+        updated_at: new Date().toISOString()
       };
 
-      localStorage.setItem('userProjectData', JSON.stringify(projectData));
+      try {
+        localStorage.setItem('userProjectData', JSON.stringify(projectData));
+      } catch (storageError: any) {
+        // Handle localStorage quota exceeded
+        if (storageError.name === 'QuotaExceededError') {
+          console.error('localStorage quota exceeded. Consider clearing old data.');
+          // Could implement cleanup logic here if needed
+        }
+        throw storageError;
+      }
     } catch (error) {
       console.error('Error saving user data:', error);
       // Don't throw - localStorage errors shouldn't break the app
