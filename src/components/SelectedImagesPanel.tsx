@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
-import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown, Search, GripVertical, Grid3x3, PlusCircle, Trash } from 'lucide-react';
+import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown, Search, GripVertical, PlusCircle, Trash } from 'lucide-react';
 import { ImageZoom } from './ImageZoom';
 import { validateDescription } from '../utils/fileValidation';
 import { BulkTextInput } from './BulkTextInput';
@@ -67,7 +67,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   } = useMetadataStore();
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [imageSelectorOpen, setImageSelectorOpen] = useState<string | null>(null);
-  const [photoNumberSelectorOpen, setPhotoNumberSelectorOpen] = useState<string | null>(null);
   const [imageSearchQuery, setImageSearchQuery] = useState<Record<string, string>>({});
 
   // Close selectors when clicking outside
@@ -75,19 +74,18 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       // Check if click is outside any selector
-      if (!target.closest('.image-selector-dropdown') && !target.closest('.photo-number-selector-dropdown')) {
+      if (!target.closest('.image-selector-dropdown')) {
         setImageSelectorOpen(null);
-        setPhotoNumberSelectorOpen(null);
       }
     };
 
-    if (imageSelectorOpen || photoNumberSelectorOpen) {
+    if (imageSelectorOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [imageSelectorOpen, photoNumberSelectorOpen]);
+  }, [imageSelectorOpen]);
   
   const selectedImagesList = React.useMemo(() => {
     return images.filter(img => selectedImages.has(img.id));
@@ -195,7 +193,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     }, [localValue]);
 
     return (
-      <div className="space-y-0 pb-0">
+      <div className="space-y-0">
         <textarea
           ref={textareaRef}
           value={localValue}
@@ -226,7 +224,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           rows={1}
           style={{ minHeight: '2.5rem', maxHeight: '120px', height: 'auto' }}
         />
-        <div className="flex items-center justify-between mt-0.5 text-xs leading-none h-3.5 min-h-[14px] mb-0">
+        <div className="flex items-center justify-between mt-0.5 text-xs leading-none h-3.5 min-h-[14px] mb-0 pb-0">
           <div className="text-slate-400 dark:text-gray-500">
             {localValue.length}/100
           </div>
@@ -544,8 +542,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
                         const image = getImageForDefect(defect.selectedFile || '');
                         const isSelectorOpen = imageSelectorOpen === defect.photoNumber;
-                        const isPhotoNumberSelectorOpen = photoNumberSelectorOpen === defect.photoNumber;
-                        const availablePhotoNumbers = getAvailablePhotoNumbers(defect.photoNumber);
                         const searchQuery = imageSearchQuery[defect.photoNumber] || '';
                         
                         // Filter images based on search query
@@ -621,8 +617,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             if (target.closest('button') || 
                                 target.closest('input') || 
                                 target.closest('textarea') || 
-                                target.closest('.image-selector-dropdown') || 
-                                target.closest('.photo-number-selector-dropdown')) {
+                                target.closest('.image-selector-dropdown')) {
                               return;
                             }
                             // Call original listener
@@ -656,8 +651,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             {...attributes}
                             {...customListeners}
                           >
-                            {/* Action buttons - positioned at top left, visible only on hover */}
-                            <div className="absolute top-2 left-2 flex gap-1.5 z-40 opacity-0 group-hover:opacity-100 transition-opacity" style={{ pointerEvents: 'auto' }}>
+                            {/* Delete button - X icon, positioned at top left, visible on hover */}
+                            <div className="absolute top-2 left-2 z-40 opacity-0 group-hover:opacity-100 transition-opacity" style={{ pointerEvents: 'auto' }}>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -668,11 +663,15 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   e.stopPropagation();
                                   e.preventDefault();
                                 }}
-                                className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded transition-all shadow-md hover:shadow-lg"
+                                className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all shadow-lg"
                                 title="Delete tile"
                               >
-                                <X size={14} />
+                                <X size={16} />
                               </button>
+                            </div>
+                            
+                            {/* Add button - Plus icon, positioned at bottom right, always visible */}
+                            <div className="absolute bottom-2 right-2 z-40" style={{ pointerEvents: 'auto' }}>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -683,29 +682,33 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   e.stopPropagation();
                                   e.preventDefault();
                                 }}
-                                className="p-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded transition-all shadow-md hover:shadow-lg"
+                                className="p-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-110"
                                 title="Add tile below"
                               >
-                                <Plus size={14} />
+                                <PlusCircle size={16} />
                               </button>
                             </div>
-                            
-                            {/* Drag handle indicator - Grid3x3 icon, always visible and prominent */}
-                            <div 
-                              className={`absolute top-2 right-2 p-2 bg-slate-700 dark:bg-gray-800 rounded-lg shadow-lg z-30 transition-all border-2 ${
-                                isDragging 
-                                  ? 'opacity-100 scale-125 border-indigo-500 bg-indigo-600 dark:bg-indigo-700' 
-                                  : 'opacity-100 hover:opacity-100 hover:scale-110 border-slate-500 dark:border-gray-600 hover:bg-slate-600 dark:hover:bg-gray-700'
-                              }`}
-                              style={{ pointerEvents: 'auto' }}
-                              {...attributes}
-                              {...listeners}
-                            >
-                              <Grid3x3 size={18} className="text-white" />
+                            <div className="relative aspect-square">
+                              {image ? (
+                                <img
+                                  src={image.preview}
+                                  alt={image.file.name}
+                                  className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEnlargedImage(image.preview);
+                                  }}
+                                  draggable="false"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-gray-600 text-slate-400 dark:text-gray-500 text-xs">
+                                  No image
+                                </div>
+                              )}
                             </div>
                             
                             <div 
-                              className="p-2 space-y-1 flex-shrink-0 relative z-30" 
+                              className="p-2 space-y-1 flex-shrink-0 relative z-30 pb-2" 
                               onClick={(e) => e.stopPropagation()}
                               onMouseDown={(e) => {
                                 e.stopPropagation();
@@ -823,59 +826,13 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   </div>
                                 )}
                               </div>
-                              <div className="relative">
-                                <div className="flex items-center gap-1">
-                                  <input
-                                    type="number"
-                                    value={defect.photoNumber}
-                                    onChange={(e) => updateBulkDefectPhotoNumber(defect.photoNumber, e.target.value)}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onFocus={(e) => e.stopPropagation()}
-                                    className="flex-1 p-1 text-sm border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
-                                    placeholder="#"
-                                  />
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setPhotoNumberSelectorOpen(isPhotoNumberSelectorOpen ? null : defect.photoNumber);
-                                    }}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    className="p-1.5 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
-                                    title="Select photo number"
-                                  >
-                                    <ChevronDown size={14} className={isPhotoNumberSelectorOpen ? 'rotate-180' : ''} />
-                                  </button>
-                                </div>
-                                {isPhotoNumberSelectorOpen && (
-                                  <div 
-                                    className="photo-number-selector-dropdown absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto"
-                                    onClick={(e) => e.stopPropagation()}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                  >
-                                    {availablePhotoNumbers.slice(0, 20).map((num) => (
-                                      <button
-                                        key={num}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          updateBulkDefectPhotoNumber(defect.photoNumber, num);
-                                          setPhotoNumberSelectorOpen(null);
-                                        }}
-                                        onMouseDown={(e) => e.stopPropagation()}
-                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 ${
-                                          defect.photoNumber === num
-                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium'
-                                            : 'text-slate-700 dark:text-gray-300'
-                                        }`}
-                                      >
-                                        {num}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
+                              {/* Photo number - non-editable, changes on drag */}
+                              <div className="text-sm font-medium text-slate-700 dark:text-gray-300">
+                                #{defect.photoNumber}
                               </div>
                               <div 
                                 onMouseDown={(e) => e.stopPropagation()}
-                                className="pb-0 -mb-1"
+                                className="pb-0 mb-0"
                               >
                                 {renderBulkDefectDescriptionField(defect)}
                               </div>
