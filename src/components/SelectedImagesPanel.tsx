@@ -71,8 +71,14 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:75',message:'Click outside handler',data:{targetClass:target.className,isInDropdown:!!target.closest('.image-selector-dropdown'),isInPhotoSelector:!!target.closest('.photo-number-selector-dropdown'),imageSelectorOpen,photoNumberSelectorOpen},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'M'})}).catch(()=>{});
+      // #endregion
       // Check if click is outside any selector
       if (!target.closest('.image-selector-dropdown') && !target.closest('.photo-number-selector-dropdown')) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:82',message:'Closing selectors',data:{imageSelectorOpen,photoNumberSelectorOpen},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'M'})}).catch(()=>{});
+        // #endregion
         setImageSelectorOpen(null);
         setPhotoNumberSelectorOpen(null);
       }
@@ -470,6 +476,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                         const searchQuery = imageSearchQuery[defect.photoNumber] || '';
                         
                         // #region agent log
+                        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:476',message:'Tile render state',data:{photoNumber:defect.photoNumber,imageSelectorOpen,isSelectorOpen,photoNumberSelectorOpen,isPhotoNumberSelectorOpen},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'M'})}).catch(()=>{});
+                        // #endregion
+                        
+                        // #region agent log
                         fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:448',message:'Tile render check',data:{photoNumber:defect.photoNumber,hasImage:!!image,descriptionLength:defect.description?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
                         // #endregion
                         
@@ -554,15 +564,21 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing scale-105' 
                                 : 'cursor-grab hover:shadow-lg hover:ring-1 hover:ring-indigo-300 dark:hover:ring-indigo-600'
                             }`}
-                            {...attributes}
-                            {...listeners}
                           >
+                            {/* Drag handle - only this area is draggable */}
+                            <div
+                              className="absolute top-0 left-0 right-0 h-12 cursor-grab active:cursor-grabbing z-0"
+                              {...attributes}
+                              {...listeners}
+                            />
                             {/* Drag handle indicator - always visible and prominent */}
-                            <div className={`absolute top-2 left-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-10 transition-all border-2 ${
-                              isDragging 
-                                ? 'opacity-100 scale-125 border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30' 
-                                : 'opacity-90 hover:opacity-100 hover:scale-110 border-slate-300 dark:border-gray-600'
-                            }`}>
+                            <div 
+                              className={`absolute top-2 left-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-20 transition-all border-2 pointer-events-none ${
+                                isDragging 
+                                  ? 'opacity-100 scale-125 border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30' 
+                                  : 'opacity-90 hover:opacity-100 hover:scale-110 border-slate-300 dark:border-gray-600'
+                              }`}
+                            >
                               <GripVertical size={18} className={`${isDragging ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-gray-400'}`} />
                             </div>
                             <div className="relative aspect-square">
@@ -603,9 +619,13 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               <div className="relative">
                                 <button
                                   onClick={(e) => {
+                                    // #region agent log
+                                    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:576',message:'Select image button clicked',data:{photoNumber:defect.photoNumber,currentState:isSelectorOpen,willOpen:!isSelectorOpen},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'M'})}).catch(()=>{});
+                                    // #endregion
                                     e.stopPropagation();
                                     setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
                                   }}
+                                  onMouseDown={(e) => e.stopPropagation()}
                                   className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors ${
                                     defect.selectedFile
                                       ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
@@ -621,7 +641,12 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 {isSelectorOpen && (
                                   <div 
                                     className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 z-30 flex flex-col"
-                                    onClick={(e) => e.stopPropagation()}
+                                    onClick={(e) => {
+                                      // #region agent log
+                                      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:592',message:'Dropdown rendered',data:{photoNumber:defect.photoNumber,isOpen:isSelectorOpen},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'M'})}).catch(()=>{});
+                                      // #endregion
+                                      e.stopPropagation();
+                                    }}
                                   >
                                     {/* Search Input */}
                                     <div className="p-2 border-b border-slate-200 dark:border-gray-700">
