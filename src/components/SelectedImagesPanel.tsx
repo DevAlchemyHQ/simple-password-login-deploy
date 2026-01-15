@@ -128,52 +128,63 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     );
   }
 
+  const { bulkDefects } = useMetadataStore();
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
-      <div className="p-4 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between">
-        <div className="flex-1">
-        </div>
-        
-        <div className="flex items-center gap-4 mx-4">
-          <div className="flex p-1 bg-slate-100 dark:bg-gray-700 rounded-lg">
+      <div className="p-4 border-b border-slate-200 dark:border-gray-700 min-h-[102px] flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+          </div>
+          
+          <div className="flex items-center gap-4 mx-4">
+            <div className="flex p-1 bg-slate-100 dark:bg-gray-700 rounded-lg">
+              <button
+                onClick={() => setViewMode('images')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all ${
+                  viewMode === 'images'
+                    ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Images size={18} />
+                <span className="text-sm font-medium">Single Select</span>
+              </button>
+              <button
+                onClick={() => setViewMode('text')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all ${
+                  viewMode === 'text'
+                    ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                    : 'text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <FileText size={18} />
+                <span className="text-sm font-medium">Batch drag</span>
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setViewMode('images')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all ${
-                viewMode === 'images'
-                  ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                  : 'text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
+              onClick={onExpand}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              title={isExpanded ? "Collapse view" : "Expand view"}
             >
-              <Images size={18} />
-              <span className="text-sm font-medium">Single Select</span>
-            </button>
-            <button
-              onClick={() => setViewMode('text')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all ${
-                viewMode === 'text'
-                  ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                  : 'text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <FileText size={18} />
-              <span className="text-sm font-medium">Batch drag</span>
+              {isExpanded ? (
+                <Minimize2 size={20} className="text-slate-600 dark:text-gray-300" />
+              ) : (
+                <Maximize2 size={20} className="text-slate-600 dark:text-gray-300" />
+              )}
             </button>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onExpand}
-            className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            title={isExpanded ? "Collapse view" : "Expand view"}
-          >
-            {isExpanded ? (
-              <Minimize2 size={20} className="text-slate-600 dark:text-gray-300" />
-            ) : (
-              <Maximize2 size={20} className="text-slate-600 dark:text-gray-300" />
-            )}
-          </button>
-        </div>
+        {viewMode === 'text' && (
+          <div className="mt-2">
+            <h3 className="text-sm font-medium text-slate-500 dark:text-gray-400">
+              TILES ({bulkDefects.length})
+            </h3>
+          </div>
+        )}
       </div>
       
       <div className="flex-1 overflow-hidden">
