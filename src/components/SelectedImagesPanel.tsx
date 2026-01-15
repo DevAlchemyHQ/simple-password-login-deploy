@@ -150,51 +150,73 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     );
   };
 
-  const renderBulkDefectDescriptionField = (defect: typeof bulkDefects[0]) => {
+  // Convert to a proper React component to preserve focus during re-renders
+  const BulkDefectDescriptionField: React.FC<{ defect: typeof bulkDefects[0] }> = React.memo(({ defect }) => {
     const { isValid, invalidChars } = validateDescription(defect.description || '');
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+    // Use local state to avoid re-renders that cause focus loss
+    const [localValue, setLocalValue] = React.useState(defect.description || '');
+    const pendingUpdateRef = React.useRef<string | null>(null);
 
-    const updateDescription = (description: string) => {
-      setBulkDefects((items) =>
-        items.map((item) =>
-          item.photoNumber === defect.photoNumber ? { ...item, description } : item
-        )
-      );
-    };
-
-    // Auto-resize textarea on mount and when description changes
+    // Sync local state with prop when it changes externally (but not from our own updates)
     React.useEffect(() => {
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+      if (defect.description !== localValue && pendingUpdateRef.current === null) {
+        setLocalValue(defect.description || '');
       }
     }, [defect.description]);
 
+    const updateDescription = (description: string) => {
+      // Update local state immediately (no re-render of parent)
+      setLocalValue(description);
+      // Store pending update - will be applied on blur
+      pendingUpdateRef.current = description;
+    };
+    
+    // Apply pending update on blur (when user leaves the field)
+    const applyPendingUpdate = () => {
+      if (pendingUpdateRef.current !== null) {
+        const valueToUpdate = pendingUpdateRef.current;
+        pendingUpdateRef.current = null;
+        setBulkDefects((items) =>
+          items.map((item) =>
+            item.photoNumber === defect.photoNumber ? { ...item, description: valueToUpdate } : item
+          )
+        );
+      }
+    };
+
+    // Auto-resize textarea on mount and when local value changes
+    React.useEffect(() => {
+      if (textareaRef.current) {
+        const height = Math.min(textareaRef.current.scrollHeight, 120);
+        textareaRef.current.style.height = 'auto';
+        textareaRef.current.style.height = `${height}px`;
+      }
+    }, [localValue]);
+
     return (
-      <div className="flex flex-col">
+      <div className="space-y-0 pb-0">
         <textarea
           ref={textareaRef}
-          value={defect.description || ''}
+          value={localValue}
           onChange={(e) => {
-            updateDescription(e.target.value);
-            // Auto-resize textarea
             const textarea = e.target as HTMLTextAreaElement;
+            updateDescription(e.target.value);
+            // Auto-resize textarea immediately (don't wait for useEffect)
             textarea.style.height = 'auto';
             textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+          }}
+          onBlur={(e) => {
+            // Apply pending update on blur
+            applyPendingUpdate();
+          }}
+          onFocus={(e) => {
+            // Focus handler - no action needed
           }}
           onInput={(e) => {
             const textarea = e.target as HTMLTextAreaElement;
             textarea.style.height = 'auto';
             textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
-          }}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-          }}
-          onFocus={(e) => {
-            e.stopPropagation();
-          }}
-          onKeyDown={(e) => {
-            e.stopPropagation();
           }}
           maxLength={100}
           className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-none overflow-hidden ${
@@ -202,11 +224,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           }`}
           placeholder="Description"
           rows={1}
-          style={{ minHeight: '2.5rem', maxHeight: '120px' }}
+          style={{ minHeight: '2.5rem', maxHeight: '120px', height: 'auto' }}
         />
-        <div className="flex items-center justify-between text-xs mt-0.5">
+        <div className="flex items-center justify-between mt-0.5 text-xs leading-none h-3.5 min-h-[14px] mb-0">
           <div className="text-slate-400 dark:text-gray-500">
-            {defect.description?.length || 0}/100
+            {localValue.length}/100
           </div>
           {!isValid && invalidChars.length > 0 && (
             <div className="flex items-center gap-1 text-amber-600">
@@ -219,6 +241,13 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
         </div>
       </div>
     );
+  }, (prevProps, nextProps) => {
+    // Only re-render if photoNumber changed (description is managed locally)
+    return prevProps.defect.photoNumber === nextProps.defect.photoNumber;
+  });
+
+  const renderBulkDefectDescriptionField = (defect: typeof bulkDefects[0]) => {
+    return <BulkDefectDescriptionField defect={defect} />;
   };
 
   const updateBulkDefectPhotoNumber = (photoNumber: string, newPhotoNumber: string) => {
@@ -617,7 +646,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               transition: isDragging ? 'none' : (transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'),
                               opacity: isDragging ? 0.4 : 1,
                             }}
-                            className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-all duration-200 relative ${
+                            className={`group flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-all duration-200 relative ${
                               isDragging 
                                 ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing' 
                                 : (overDragId === defect.photoNumber && activeDragId && activeDragId !== defect.photoNumber)
@@ -627,8 +656,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             {...attributes}
                             {...customListeners}
                           >
-                            {/* Action buttons - positioned at top right with better styling */}
-                            <div className="absolute top-2 right-2 flex gap-1.5 z-40" style={{ pointerEvents: 'auto' }}>
+                            {/* Action buttons - positioned at top left, visible only on hover */}
+                            <div className="absolute top-2 left-2 flex gap-1.5 z-40 opacity-0 group-hover:opacity-100 transition-opacity" style={{ pointerEvents: 'auto' }}>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -639,10 +668,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   e.stopPropagation();
                                   e.preventDefault();
                                 }}
-                                className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-110"
+                                className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded transition-all shadow-md hover:shadow-lg"
                                 title="Delete tile"
                               >
-                                <Trash size={16} />
+                                <X size={14} />
                               </button>
                               <button
                                 onClick={(e) => {
@@ -654,16 +683,16 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   e.stopPropagation();
                                   e.preventDefault();
                                 }}
-                                className="p-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-110"
+                                className="p-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded transition-all shadow-md hover:shadow-lg"
                                 title="Add tile below"
                               >
-                                <PlusCircle size={16} />
+                                <Plus size={14} />
                               </button>
                             </div>
                             
-                            {/* Drag handle indicator - Grid3x3 icon like screenshot, always visible and prominent */}
+                            {/* Drag handle indicator - Grid3x3 icon, always visible and prominent */}
                             <div 
-                              className={`absolute top-2 left-2 p-2.5 bg-slate-700 dark:bg-gray-800 rounded-lg shadow-lg z-30 transition-all border-2 ${
+                              className={`absolute top-2 right-2 p-2 bg-slate-700 dark:bg-gray-800 rounded-lg shadow-lg z-30 transition-all border-2 ${
                                 isDragging 
                                   ? 'opacity-100 scale-125 border-indigo-500 bg-indigo-600 dark:bg-indigo-700' 
                                   : 'opacity-100 hover:opacity-100 hover:scale-110 border-slate-500 dark:border-gray-600 hover:bg-slate-600 dark:hover:bg-gray-700'
@@ -673,24 +702,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               {...listeners}
                             >
                               <Grid3x3 size={18} className="text-white" />
-                            </div>
-                            <div className="relative aspect-square">
-                              {image ? (
-                                <img
-                                  src={image.preview}
-                                  alt={image.file.name}
-                                  className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEnlargedImage(image.preview);
-                                  }}
-                                  draggable="false"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-gray-600 text-slate-400 dark:text-gray-500 text-xs">
-                                  No image
-                                </div>
-                              )}
                             </div>
                             
                             <div 
@@ -864,8 +875,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               </div>
                               <div 
                                 onMouseDown={(e) => e.stopPropagation()}
-                                onClick={(e) => e.stopPropagation()}
-                                onPointerDown={(e) => e.stopPropagation()}
+                                className="pb-0 -mb-1"
                               >
                                 {renderBulkDefectDescriptionField(defect)}
                               </div>
