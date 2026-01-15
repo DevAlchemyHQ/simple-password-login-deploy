@@ -71,14 +71,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:75',message:'Click outside handler',data:{targetClass:target.className,isInDropdown:!!target.closest('.image-selector-dropdown'),isInPhotoSelector:!!target.closest('.photo-number-selector-dropdown'),imageSelectorOpen,photoNumberSelectorOpen},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'M'})}).catch(()=>{});
-      // #endregion
       // Check if click is outside any selector
       if (!target.closest('.image-selector-dropdown') && !target.closest('.photo-number-selector-dropdown')) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:82',message:'Closing selectors',data:{imageSelectorOpen,photoNumberSelectorOpen},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'M'})}).catch(()=>{});
-        // #endregion
         setImageSelectorOpen(null);
         setPhotoNumberSelectorOpen(null);
       }
@@ -172,10 +166,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
         textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
       }
     }, [defect.description]);
-
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:147',message:'Description field render',data:{photoNumber:defect.photoNumber,descriptionLength:defect.description?.length||0,hasDescription:!!defect.description},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
 
     return (
       <div>
@@ -475,14 +465,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                         const availablePhotoNumbers = getAvailablePhotoNumbers(defect.photoNumber);
                         const searchQuery = imageSearchQuery[defect.photoNumber] || '';
                         
-                        // #region agent log
-                        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:476',message:'Tile render state',data:{photoNumber:defect.photoNumber,imageSelectorOpen,isSelectorOpen,photoNumberSelectorOpen,isPhotoNumberSelectorOpen},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'M'})}).catch(()=>{});
-                        // #endregion
-                        
-                        // #region agent log
-                        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:448',message:'Tile render check',data:{photoNumber:defect.photoNumber,hasImage:!!image,descriptionLength:defect.description?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-                        // #endregion
-                        
                         // Filter images based on search query
                         const getLastFourDigits = (filename: string): string => {
                           const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
@@ -547,9 +529,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           });
                         }, [images, searchQuery]);
                         
-                        // #region agent log
-                        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:522',message:'Tile drag state',data:{isDragging,photoNumber:defect.photoNumber,hasTransform:!!transform},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'K'})}).catch(()=>{});
-                        // #endregion
                         return (
                           <div 
                             ref={setNodeRef}
@@ -605,12 +584,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               onClick={(e) => e.stopPropagation()}
                               onMouseDown={(e) => e.stopPropagation()}
                             >
-                              {/* #region agent log */}
-                              {(() => {
-                                fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:542',message:'Content area render',data:{photoNumber:defect.photoNumber,hasImage:!!image},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-                                return null;
-                              })()}
-                              {/* #endregion */}
                               <div className="text-xs text-slate-500 dark:text-gray-400 truncate mb-1">
                                 {image?.file.name || 'No file selected'}
                               </div>
@@ -619,9 +592,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               <div className="relative">
                                 <button
                                   onClick={(e) => {
-                                    // #region agent log
-                                    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:576',message:'Select image button clicked',data:{photoNumber:defect.photoNumber,currentState:isSelectorOpen,willOpen:!isSelectorOpen},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'M'})}).catch(()=>{});
-                                    // #endregion
                                     e.stopPropagation();
                                     setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
                                   }}
@@ -641,12 +611,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 {isSelectorOpen && (
                                   <div 
                                     className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 z-30 flex flex-col"
-                                    onClick={(e) => {
-                                      // #region agent log
-                                      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:592',message:'Dropdown rendered',data:{photoNumber:defect.photoNumber,isOpen:isSelectorOpen},timestamp:Date.now(),sessionId:'debug-session',runId:'run3',hypothesisId:'M'})}).catch(()=>{});
-                                      // #endregion
-                                      e.stopPropagation();
-                                    }}
+                                    onClick={(e) => e.stopPropagation()}
                                   >
                                     {/* Search Input */}
                                     <div className="p-2 border-b border-slate-200 dark:border-gray-700">
