@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
-import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown, Search, GripVertical, PlusCircle, Trash } from 'lucide-react';
+import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown, Search, GripVertical, PlusCircle, Trash, Info, CheckCircle2 } from 'lucide-react';
 import { ImageZoom } from './ImageZoom';
 import { validateDescription } from '../utils/fileValidation';
 import { BulkTextInput } from './BulkTextInput';
@@ -371,7 +371,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     return images.find(img => img.file.name === selectedFile);
   };
 
-  if (images.length === 0) {
+  // Check if there's saved metadata (bulkDefects or form data) even without images
+  const hasSavedMetadata = bulkDefects.length > 0;
+  
+  // If no images but there's saved batch drag data, show it with a notification
+  if (images.length === 0 && !hasSavedMetadata) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex items-center justify-center p-8 text-slate-400 dark:text-gray-500">
         No images uploaded
@@ -381,6 +385,23 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
+      {/* Data Persistence Notification Banner */}
+      {images.length === 0 && hasSavedMetadata && (
+        <div className="mx-3 mt-3 mb-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg flex items-start gap-3">
+          <CheckCircle2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200 mb-1">
+              Your data is safe and has been restored
+            </p>
+            <p className="text-xs text-indigo-700 dark:text-indigo-300">
+              You have <strong>{bulkDefects.length} tile{bulkDefects.length !== 1 ? 's' : ''}</strong> with saved descriptions. 
+              Re-upload your photos and they will automatically match to their tiles. 
+              All your photo numbers and descriptions are preserved.
+            </p>
+          </div>
+        </div>
+      )}
+      
       <div className="p-3 border-b border-slate-200 dark:border-gray-700 flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <div className="flex-1">
