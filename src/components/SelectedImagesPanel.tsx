@@ -701,25 +701,25 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             </div>
                             <div className="relative aspect-square">
                               {image ? (
-                                <>
-                                  <img
-                                    src={image.preview}
-                                    alt={image.file.name}
-                                    className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEnlargedImage(image.preview);
-                                    }}
-                                    draggable="false"
-                                  />
-                                  {/* Photo number badge - top right corner like images assigned tile */}
-                                  <div className="absolute top-2 right-2 bg-indigo-500 w-6 h-6 rounded-full flex items-center justify-center z-30">
-                                    <span className="text-white text-sm font-medium">{defect.photoNumber}</span>
-                                  </div>
-                                </>
+                                <img
+                                  src={image.preview}
+                                  alt={image.file.name}
+                                  className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEnlargedImage(image.preview);
+                                  }}
+                                  draggable="false"
+                                />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-gray-600 text-slate-400 dark:text-gray-500 text-xs">
                                   No image
+                                </div>
+                              )}
+                              {/* Photo number badge - top right corner like images assigned tile, always visible */}
+                              {defect.photoNumber && (
+                                <div className="absolute top-2 right-2 bg-indigo-500 w-6 h-6 rounded-full flex items-center justify-center z-30">
+                                  <span className="text-white text-sm font-medium">{defect.photoNumber}</span>
                                 </div>
                               )}
                             </div>
@@ -733,10 +733,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               }}
                               style={{ pointerEvents: 'auto' }}
                             >
-                              <div className="text-xs text-slate-500 dark:text-gray-400 truncate mb-1">
-                                {image?.file.name || 'No file selected'}
-                              </div>
-                              
                               {/* Image selector dropdown - like DefectTile */}
                               <div className="relative">
                                 <button
