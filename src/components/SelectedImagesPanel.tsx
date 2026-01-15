@@ -276,6 +276,40 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     });
   };
 
+  const addDefectBelow = (afterPhotoNumber: string) => {
+    setBulkDefects((items) => {
+      const sortedItems = [...items].sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
+      const insertIndex = sortedItems.findIndex(item => item.photoNumber === afterPhotoNumber);
+      
+      if (insertIndex === -1) {
+        // If not found, add at the end
+        const newPhotoNumber = String(items.length + 1);
+        return [
+          ...items,
+          {
+            photoNumber: newPhotoNumber,
+            description: '',
+            selectedFile: ''
+          },
+        ];
+      }
+      
+      // Insert after the found item and renumber all subsequent items
+      const newItems = [...sortedItems];
+      newItems.splice(insertIndex + 1, 0, {
+        photoNumber: '',
+        description: '',
+        selectedFile: ''
+      });
+      
+      // Renumber all items to ensure sequential numbering
+      return newItems.map((item, index) => ({
+        ...item,
+        photoNumber: String(index + 1),
+      }));
+    });
+  };
+
   const getImageForDefect = (selectedFile: string) => {
     return images.find(img => img.file.name === selectedFile);
   };
@@ -430,6 +464,12 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
               items={bulkDefects.map((d) => d.photoNumber)}
               strategy={verticalListSortingStrategy}
             >
+              {/* #region agent log */}
+              {(() => {
+                fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:463',message:'SortableContext items',data:{items:bulkDefects.map((d) => d.photoNumber),count:bulkDefects.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run4',hypothesisId:'N'})}).catch(()=>{});
+                return null;
+              })()}
+              {/* #endregion */}
               <div className={`grid gap-2 p-2 ${
                 isExpanded 
                   ? 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7' 
@@ -529,30 +569,82 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           });
                         }, [images, searchQuery]);
                         
+                        // #region agent log
+                        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:530',message:'Tile render',data:{photoNumber:defect.photoNumber,isDragging,hasTransform:!!transform},timestamp:Date.now(),sessionId:'debug-session',runId:'run4',hypothesisId:'N'})}).catch(()=>{});
+                        // #endregion
+                        // Create custom listeners that exclude interactive elements
+                        const customListeners = {
+                          ...listeners,
+                          onPointerDown: (e: React.PointerEvent) => {
+                            const target = e.target as HTMLElement;
+                            // Don't start drag if clicking on interactive elements
+                            if (target.closest('button') || 
+                                target.closest('input') || 
+                                target.closest('textarea') || 
+                                target.closest('.image-selector-dropdown') || 
+                                target.closest('.photo-number-selector-dropdown')) {
+                              return;
+                            }
+                            // Call original listener
+                            if (listeners?.onPointerDown) {
+                              listeners.onPointerDown(e);
+                            }
+                          },
+                        };
+
                         return (
                           <div 
                             ref={setNodeRef}
                             style={{
                               transform: CSS.Transform.toString(transform),
                               transition: isDragging ? 'none' : (transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'),
-                              opacity: isDragging ? 0.4 : 1,
-                              rotate: isDragging ? '2deg' : '0deg',
+                              opacity: isDragging ? 0.5 : 1,
                             }}
-                            className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-all duration-200 ${
+                            className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-all duration-200 relative ${
                               isDragging 
-                                ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing scale-105' 
+                                ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing' 
                                 : 'cursor-grab hover:shadow-lg hover:ring-1 hover:ring-indigo-300 dark:hover:ring-indigo-600'
                             }`}
+                            {...attributes}
+                            {...customListeners}
                           >
-                            {/* Drag handle - only this area is draggable */}
-                            <div
-                              className="absolute top-0 left-0 right-0 h-12 cursor-grab active:cursor-grabbing z-0"
-                              {...attributes}
-                              {...listeners}
-                            />
+                            {/* Action buttons - positioned at top right */}
+                            <div className="absolute top-2 right-2 flex gap-1 z-40" style={{ pointerEvents: 'auto' }}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  deleteBulkDefect(defect.photoNumber);
+                                }}
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors bg-white dark:bg-gray-800 shadow-sm"
+                                title="Delete tile"
+                              >
+                                <X size={16} />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  addDefectBelow(defect.photoNumber);
+                                }}
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors bg-white dark:bg-gray-800 shadow-sm"
+                                title="Add tile below"
+                              >
+                                <Plus size={16} />
+                              </button>
+                            </div>
+                            
                             {/* Drag handle indicator - always visible and prominent */}
                             <div 
-                              className={`absolute top-2 left-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-20 transition-all border-2 pointer-events-none ${
+                              className={`absolute top-2 left-2 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-30 transition-all border-2 pointer-events-none ${
                                 isDragging 
                                   ? 'opacity-100 scale-125 border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30' 
                                   : 'opacity-90 hover:opacity-100 hover:scale-110 border-slate-300 dark:border-gray-600'
@@ -580,9 +672,13 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             </div>
                             
                             <div 
-                              className="p-2 space-y-1 flex-shrink-0" 
+                              className="p-2 space-y-1 flex-shrink-0 relative z-30" 
                               onClick={(e) => e.stopPropagation()}
-                              onMouseDown={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                              }}
+                              style={{ pointerEvents: 'auto' }}
                             >
                               <div className="text-xs text-slate-500 dark:text-gray-400 truncate mb-1">
                                 {image?.file.name || 'No file selected'}
