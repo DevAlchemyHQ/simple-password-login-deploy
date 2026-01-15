@@ -223,6 +223,42 @@ export const MainContent: React.FC = () => {
               className="w-full h-full object-cover rounded"
             />
           </div>
+        ) : activeId && viewMode === 'text' && isExpanded && !activeId.toString().startsWith('image-') && !activeId.toString().startsWith('drop-') ? (
+          // Show drag overlay for bulk defect tiles
+          (() => {
+            const draggedDefect = bulkDefects.find(d => d.photoNumber === activeId);
+            const draggedImage = draggedDefect ? images.find(img => img.file.name === draggedDefect.selectedFile) : null;
+            return (
+              <div className="w-48 bg-slate-50 dark:bg-gray-700 rounded-lg shadow-2xl ring-2 ring-indigo-500 ring-opacity-50 overflow-hidden">
+                <div className="relative aspect-square">
+                  {draggedImage ? (
+                    <img
+                      src={draggedImage.preview}
+                      alt={draggedImage.file.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-gray-600 text-slate-400 dark:text-gray-500 text-xs">
+                      No image
+                    </div>
+                  )}
+                </div>
+                <div className="p-2">
+                  <div className="text-xs text-slate-500 dark:text-gray-400 truncate mb-1">
+                    {draggedImage?.file.name || 'No file selected'}
+                  </div>
+                  <div className="text-sm font-medium text-slate-700 dark:text-gray-300">
+                    #{draggedDefect?.photoNumber || ''}
+                  </div>
+                  {draggedDefect?.description && (
+                    <div className="text-xs text-slate-600 dark:text-gray-400 truncate mt-1">
+                      {draggedDefect.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()
         ) : null}
       </DragOverlay>
     </DndContext>

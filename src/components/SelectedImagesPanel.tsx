@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
-import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown, Search } from 'lucide-react';
+import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown, Search, GripVertical } from 'lucide-react';
 import { ImageZoom } from './ImageZoom';
 import { validateDescription } from '../utils/fileValidation';
 import { BulkTextInput } from './BulkTextInput';
@@ -462,17 +462,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           disabled: false,
                         });
 
-                        // #region agent log
-                        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:437',message:'Drag state check',data:{isDragging,hasTransform:!!transform,transitionValue:transition},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-                        // #endregion
-                        const style = {
-                          transform: CSS.Transform.toString(transform),
-                          transition: transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1), opacity 200ms ease',
-                          opacity: isDragging ? 0.8 : 1,
-                          zIndex: isDragging ? 50 : 1,
-                          scale: isDragging ? 1.02 : 1,
-                          boxShadow: isDragging ? '0 10px 25px -5px rgba(0, 0, 0, 0.2)' : 'none',
-                        };
 
                         const image = getImageForDefect(defect.selectedFile || '');
                         const isSelectorOpen = imageSelectorOpen === defect.photoNumber;
@@ -519,20 +508,34 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           );
                         }, [images, searchQuery]);
                         
+                        // #region agent log
+                        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:522',message:'Tile drag state',data:{isDragging,photoNumber:defect.photoNumber,hasTransform:!!transform},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'K'})}).catch(()=>{});
+                        // #endregion
                         return (
                           <div 
                             ref={setNodeRef}
                             style={{
-                              ...style,
-                              transform: style.transform || undefined,
+                              transform: CSS.Transform.toString(transform),
+                              transition: isDragging ? 'none' : (transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'),
+                              opacity: isDragging ? 0.5 : 1,
                             }}
-                            className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all duration-200 ${
-                              isDragging ? 'shadow-lg' : ''
+                            className={`flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-shadow duration-200 ${
+                              isDragging 
+                                ? 'shadow-2xl ring-2 ring-indigo-500 ring-opacity-50 z-50 cursor-grabbing' 
+                                : 'cursor-grab hover:shadow-lg hover:ring-1 hover:ring-indigo-300 dark:hover:ring-indigo-600'
                             }`}
                             {...attributes}
                             {...listeners}
                           >
-                            <div className="relative aspect-square">
+                            {/* Drag handle indicator - always visible */}
+                            <div className={`absolute top-2 left-2 p-1.5 bg-white dark:bg-gray-800 rounded-md shadow-sm z-10 transition-all ${
+                              isDragging 
+                                ? 'opacity-100 scale-110' 
+                                : 'opacity-70 hover:opacity-100 hover:scale-105'
+                            }`}>
+                              <GripVertical size={16} className="text-slate-500 dark:text-gray-400" />
+                            </div>
+                            <div className="relative aspect-square group">
                               {image ? (
                                 <>
                                   <img
@@ -545,16 +548,119 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                     }}
                                     draggable="false"
                                   />
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      updateBulkDefectFile(defect.photoNumber, '');
-                                    }}
-                                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm z-10"
-                                    title="Remove image"
-                                  >
-                                    <X size={12} />
-                                  </button>
+                                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
+                                      }}
+                                      className="p-1 bg-indigo-500 text-white rounded-full hover:bg-indigo-600 transition-colors shadow-sm"
+                                      title="Change image"
+                                    >
+                                      <Search size={12} />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateBulkDefectFile(defect.photoNumber, '');
+                                      }}
+                                      className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                                      title="Remove image"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  </div>
+                                  {isSelectorOpen && (
+                                    <div 
+                                      className="image-selector-dropdown absolute inset-0 bg-white dark:bg-gray-800 border-2 border-indigo-500 rounded-lg z-20 overflow-hidden flex flex-col shadow-2xl"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <div className="p-2 border-b border-slate-200 dark:border-gray-700">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <span className="text-xs font-medium text-slate-700 dark:text-gray-300">Change image</span>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setImageSelectorOpen(null);
+                                              setImageSearchQuery(prev => {
+                                                const next = { ...prev };
+                                                delete next[defect.photoNumber];
+                                                return next;
+                                              });
+                                            }}
+                                            className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded"
+                                          >
+                                            <X size={14} />
+                                          </button>
+                                        </div>
+                                        <div className="relative">
+                                          <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
+                                          <input
+                                            type="text"
+                                            value={searchQuery}
+                                            onChange={(e) => {
+                                              setImageSearchQuery(prev => ({
+                                                ...prev,
+                                                [defect.photoNumber]: e.target.value
+                                              }));
+                                            }}
+                                            placeholder="Search by title or last 4 digits..."
+                                            className="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
+                                            autoFocus
+                                            onClick={(e) => e.stopPropagation()}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Escape') {
+                                                setImageSelectorOpen(null);
+                                              }
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="overflow-y-auto flex-1">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateBulkDefectFile(defect.photoNumber, '');
+                                            setImageSelectorOpen(null);
+                                            setImageSearchQuery(prev => {
+                                              const next = { ...prev };
+                                              delete next[defect.photoNumber];
+                                              return next;
+                                            });
+                                          }}
+                                          className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-600"
+                                        >
+                                          None
+                                        </button>
+                                        {filteredImages.length > 0 ? (
+                                          filteredImages.map((img) => (
+                                            <button
+                                              key={img.id}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                updateBulkDefectFile(defect.photoNumber, img.file.name);
+                                                setImageSelectorOpen(null);
+                                                setImageSearchQuery(prev => {
+                                                  const next = { ...prev };
+                                                  delete next[defect.photoNumber];
+                                                  return next;
+                                                });
+                                              }}
+                                              className={`w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 truncate ${
+                                                img.file.name === defect.selectedFile ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium' : ''
+                                              }`}
+                                            >
+                                              {img.file.name}
+                                            </button>
+                                          ))
+                                        ) : (
+                                          <div className="px-2 py-3 text-xs text-slate-500 dark:text-gray-400 text-center">
+                                            No photos found matching "{searchQuery}"
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </>
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-gray-600 text-slate-400 dark:text-gray-500 text-xs relative group">
