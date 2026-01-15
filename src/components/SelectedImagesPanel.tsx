@@ -387,16 +387,16 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
       {/* Data Persistence Notification Banner */}
       {images.length === 0 && hasSavedMetadata && (
-        <div className="mx-3 mt-3 mb-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+        <div className="mx-3 mt-3 mb-2 p-4 bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-300 dark:border-indigo-700 rounded-lg flex items-start gap-3 shadow-sm">
+          <CheckCircle2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-indigo-900 dark:text-indigo-200 mb-1">
-              Your data is safe and has been restored
+            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mb-1.5">
+              ✓ Your data is safe and has been restored
             </p>
-            <p className="text-xs text-indigo-700 dark:text-indigo-300">
-              You have <strong>{bulkDefects.length} tile{bulkDefects.length !== 1 ? 's' : ''}</strong> with saved descriptions. 
-              Re-upload your photos and they will automatically match to their tiles. 
-              All your photo numbers and descriptions are preserved.
+            <p className="text-xs text-indigo-800 dark:text-indigo-200 leading-relaxed">
+              You have <strong className="font-semibold">{bulkDefects.length} tile{bulkDefects.length !== 1 ? 's' : ''}</strong> with saved descriptions and photo numbers. 
+              <br />
+              <span className="mt-1 block">Re-upload your photos and they will <strong>automatically match</strong> to their tiles. All your work is preserved.</span>
             </p>
           </div>
         </div>
