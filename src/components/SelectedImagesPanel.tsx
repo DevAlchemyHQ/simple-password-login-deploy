@@ -464,12 +464,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
               items={bulkDefects.map((d) => d.photoNumber)}
               strategy={verticalListSortingStrategy}
             >
-              {/* #region agent log */}
-              {(() => {
-                fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:463',message:'SortableContext items',data:{items:bulkDefects.map((d) => d.photoNumber),count:bulkDefects.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run4',hypothesisId:'N'})}).catch(()=>{});
-                return null;
-              })()}
-              {/* #endregion */}
               <div className={`grid gap-2 p-2 ${
                 isExpanded 
                   ? 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7' 
@@ -569,9 +563,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           });
                         }, [images, searchQuery]);
                         
-                        // #region agent log
-                        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:530',message:'Tile render',data:{photoNumber:defect.photoNumber,isDragging,hasTransform:!!transform},timestamp:Date.now(),sessionId:'debug-session',runId:'run4',hypothesisId:'N'})}).catch(()=>{});
-                        // #endregion
                         // Create custom listeners that exclude interactive elements
                         const customListeners = {
                           ...listeners,
