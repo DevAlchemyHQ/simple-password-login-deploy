@@ -211,6 +211,24 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           onFocus={(e) => {
             // Focus handler - no action needed
           }}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+          }}
+          onKeyUp={(e) => {
+            e.stopPropagation();
+          }}
           onInput={(e) => {
             const textarea = e.target as HTMLTextAreaElement;
             textarea.style.height = 'auto';
@@ -824,8 +842,20 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 #{defect.photoNumber}
                               </div>
                               <div 
-                                onMouseDown={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                }}
+                                onPointerDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                }}
                                 className="pb-0 mb-0"
+                                style={{ pointerEvents: 'auto' }}
                               >
                                 {renderBulkDefectDescriptionField(defect)}
                               </div>
