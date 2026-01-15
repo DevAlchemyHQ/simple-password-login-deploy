@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
-import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText } from 'lucide-react';
+import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown } from 'lucide-react';
 import { ImageZoom } from './ImageZoom';
 import { validateDescription } from '../utils/fileValidation';
 import { BulkTextInput } from './BulkTextInput';
 import type { ImageMetadata } from '../types';
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type ViewMode = 'images' | 'text';
 
@@ -55,9 +57,31 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     setDefectSortDirection,
     getSelectedCounts,
     viewMode,
-    setViewMode
+    setViewMode,
+    bulkDefects,
+    setBulkDefects,
+    updateBulkDefectFile
   } = useMetadataStore();
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [imageSelectorOpen, setImageSelectorOpen] = useState<string | null>(null);
+
+  // Close image selector when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Check if click is outside any image selector
+      if (!target.closest('.image-selector-dropdown')) {
+        setImageSelectorOpen(null);
+      }
+    };
+
+    if (imageSelectorOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [imageSelectorOpen]);
   
   const selectedImagesList = React.useMemo(() => {
     return images.filter(img => selectedImages.has(img.id));
@@ -120,6 +144,68 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     );
   };
 
+  const renderBulkDefectDescriptionField = (defect: typeof bulkDefects[0]) => {
+    const { isValid, invalidChars } = validateDescription(defect.description || '');
+
+    const updateDescription = (description: string) => {
+      setBulkDefects((items) =>
+        items.map((item) =>
+          item.photoNumber === defect.photoNumber ? { ...item, description } : item
+        )
+      );
+    };
+
+    return (
+      <div>
+        <textarea
+          value={defect.description}
+          onChange={(e) => updateDescription(e.target.value)}
+          maxLength={100}
+          className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-y min-h-[60px] ${
+            !isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
+          }`}
+          placeholder="Description"
+        />
+        <div className="flex items-center justify-between mt-1 text-xs">
+          <div className="text-slate-400 dark:text-gray-500">
+            {defect.description?.length || 0}/100
+          </div>
+          {!isValid && invalidChars.length > 0 && (
+            <div className="flex items-center gap-1 text-amber-600">
+              <AlertTriangle size={12} />
+              <span>
+                Slashes not allowed: {invalidChars.join(' ')}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const updateBulkDefectPhotoNumber = (photoNumber: string, newPhotoNumber: string) => {
+    setBulkDefects((items) =>
+      items.map((item) =>
+        item.photoNumber === photoNumber ? { ...item, photoNumber: newPhotoNumber } : item
+      )
+    );
+  };
+
+  const deleteBulkDefect = (photoNumber: string) => {
+    setBulkDefects((items) => {
+      const newItems = items.filter((item) => item.photoNumber !== photoNumber);
+      // Renumber remaining items
+      return newItems.map((item, index) => ({
+        ...item,
+        photoNumber: String(index + 1),
+      }));
+    });
+  };
+
+  const getImageForDefect = (selectedFile: string) => {
+    return images.find(img => img.file.name === selectedFile);
+  };
+
   if (images.length === 0) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex items-center justify-center p-8 text-slate-400 dark:text-gray-500">
@@ -127,8 +213,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
       </div>
     );
   }
-
-  const { bulkDefects } = useMetadataStore();
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
@@ -258,6 +342,171 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                 </>
               )}
             </div>
+          </div>
+        ) : isExpanded ? (
+          // Expanded Batch drag view - show tiles like Single Select
+          <div 
+            className="h-full overflow-y-auto scrollbar-thin"
+            style={{ 
+              overscrollBehavior: 'contain',
+              WebkitOverflowScrolling: 'touch'
+            }}
+          >
+            <SortableContext
+              items={bulkDefects.map((d) => d.photoNumber)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className={`grid gap-2 p-2 ${
+                isExpanded 
+                  ? 'grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8' 
+                  : 'grid-cols-2 lg:grid-cols-4'
+              }`}>
+                {bulkDefects.length > 0 && (
+                  <>
+                    <div className="col-span-full flex items-center justify-between py-2">
+                      <h4 className="text-sm font-medium text-slate-500 dark:text-gray-400">
+                        TILES ({bulkDefects.length})
+                      </h4>
+                    </div>
+                    {bulkDefects
+                      .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
+                      .map((defect) => {
+                      const BulkDefectTile = () => {
+                        const {
+                          attributes,
+                          listeners,
+                          setNodeRef,
+                          transform,
+                          transition,
+                          isDragging,
+                        } = useSortable({ 
+                          id: defect.photoNumber,
+                          disabled: false,
+                        });
+
+                        const style = {
+                          transform: CSS.Transform.toString(transform),
+                          transition,
+                          opacity: isDragging ? 0.5 : 1,
+                        };
+
+                        const image = getImageForDefect(defect.selectedFile || '');
+                        const isSelectorOpen = imageSelectorOpen === defect.photoNumber;
+                        return (
+                          <div 
+                            ref={setNodeRef}
+                            style={style}
+                            className="flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing"
+                            {...attributes}
+                            {...listeners}
+                          >
+                            <div className="relative aspect-square">
+                              {image ? (
+                                <>
+                                  <img
+                                    src={image.preview}
+                                    alt={image.file.name}
+                                    className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEnlargedImage(image.preview);
+                                    }}
+                                    draggable="false"
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      updateBulkDefectFile(defect.photoNumber, '');
+                                    }}
+                                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm z-10"
+                                    title="Remove image"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-gray-600 text-slate-400 dark:text-gray-500 text-xs relative group">
+                                  <span>No image</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
+                                    }}
+                                    className="absolute top-1 right-1 p-1.5 bg-indigo-500 text-white rounded-full hover:bg-indigo-600 transition-colors shadow-sm z-10"
+                                    title="Select image"
+                                  >
+                                    <Plus size={14} />
+                                  </button>
+                                  {isSelectorOpen && (
+                                    <div 
+                                      className="image-selector-dropdown absolute inset-0 bg-white dark:bg-gray-800 border-2 border-indigo-500 rounded-lg z-20 overflow-y-auto max-h-full"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <div className="p-2 space-y-1">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <span className="text-xs font-medium text-slate-700 dark:text-gray-300">Select image</span>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setImageSelectorOpen(null);
+                                            }}
+                                            className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded"
+                                          >
+                                            <X size={14} />
+                                          </button>
+                                        </div>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            updateBulkDefectFile(defect.photoNumber, '');
+                                            setImageSelectorOpen(null);
+                                          }}
+                                          className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 rounded border-b border-slate-200 dark:border-gray-600"
+                                        >
+                                          None
+                                        </button>
+                                        {images.map((img) => (
+                                          <button
+                                            key={img.id}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              updateBulkDefectFile(defect.photoNumber, img.file.name);
+                                              setImageSelectorOpen(null);
+                                            }}
+                                            className="w-full px-2 py-1.5 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 rounded truncate"
+                                          >
+                                            {img.file.name}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="p-2 space-y-1" onClick={(e) => e.stopPropagation()}>
+                              <div className="text-xs text-slate-500 dark:text-gray-400 truncate">
+                                {image?.file.name || 'No file selected'}
+                              </div>
+                              <input
+                                type="number"
+                                value={defect.photoNumber}
+                                onChange={(e) => updateBulkDefectPhotoNumber(defect.photoNumber, e.target.value)}
+                                className="w-full p-1 text-sm border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+                                placeholder="#"
+                              />
+                              {renderBulkDefectDescriptionField(defect)}
+                            </div>
+                          </div>
+                        );
+                      };
+                      return <BulkDefectTile key={defect.photoNumber} />;
+                    })}
+                  </>
+                )}
+              </div>
+            </SortableContext>
           </div>
         ) : (
           <BulkTextInput />
