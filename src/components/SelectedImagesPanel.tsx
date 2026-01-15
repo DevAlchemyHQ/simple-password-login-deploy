@@ -64,24 +64,26 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   } = useMetadataStore();
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [imageSelectorOpen, setImageSelectorOpen] = useState<string | null>(null);
+  const [photoNumberSelectorOpen, setPhotoNumberSelectorOpen] = useState<string | null>(null);
 
-  // Close image selector when clicking outside
+  // Close selectors when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      // Check if click is outside any image selector
-      if (!target.closest('.image-selector-dropdown')) {
+      // Check if click is outside any selector
+      if (!target.closest('.image-selector-dropdown') && !target.closest('.photo-number-selector-dropdown')) {
         setImageSelectorOpen(null);
+        setPhotoNumberSelectorOpen(null);
       }
     };
 
-    if (imageSelectorOpen) {
+    if (imageSelectorOpen || photoNumberSelectorOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [imageSelectorOpen]);
+  }, [imageSelectorOpen, photoNumberSelectorOpen]);
   
   const selectedImagesList = React.useMemo(() => {
     return images.filter(img => selectedImages.has(img.id));
@@ -184,11 +186,59 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   };
 
   const updateBulkDefectPhotoNumber = (photoNumber: string, newPhotoNumber: string) => {
-    setBulkDefects((items) =>
-      items.map((item) =>
-        item.photoNumber === photoNumber ? { ...item, photoNumber: newPhotoNumber } : item
-      )
+    // Validate that the new photo number doesn't duplicate existing ones
+    const trimmedNewNumber = newPhotoNumber.trim();
+    
+    if (trimmedNewNumber === '') {
+      // Allow empty, will be handled by renumbering
+      setBulkDefects((items) =>
+        items.map((item) =>
+          item.photoNumber === photoNumber ? { ...item, photoNumber: trimmedNewNumber } : item
+        )
+      );
+      return;
+    }
+
+    // Check for duplicates (excluding the current item)
+    const hasDuplicate = bulkDefects.some(
+      (item) => item.photoNumber === trimmedNewNumber && item.photoNumber !== photoNumber
     );
+
+    if (hasDuplicate) {
+      // Find the next available number
+      const maxNumber = Math.max(
+        ...bulkDefects.map((item) => parseInt(item.photoNumber || '0')),
+        bulkDefects.length
+      );
+      const nextAvailable = String(maxNumber + 1);
+      
+      setBulkDefects((items) =>
+        items.map((item) =>
+          item.photoNumber === photoNumber ? { ...item, photoNumber: nextAvailable } : item
+        )
+      );
+    } else {
+      setBulkDefects((items) =>
+        items.map((item) =>
+          item.photoNumber === photoNumber ? { ...item, photoNumber: trimmedNewNumber } : item
+        )
+      );
+    }
+  };
+
+  const getAvailablePhotoNumbers = (currentPhotoNumber: string) => {
+    const usedNumbers = new Set(bulkDefects.map(d => d.photoNumber).filter(n => n && n !== currentPhotoNumber));
+    const maxDefects = Math.max(bulkDefects.length, 20); // Generate up to 20 options
+    const available: string[] = [];
+    
+    for (let i = 1; i <= maxDefects; i++) {
+      const numStr = String(i);
+      if (!usedNumbers.has(numStr)) {
+        available.push(numStr);
+      }
+    }
+    
+    return available;
   };
 
   const deleteBulkDefect = (photoNumber: string) => {
@@ -358,7 +408,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             >
               <div className={`grid gap-2 p-2 ${
                 isExpanded 
-                  ? 'grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8' 
+                  ? 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7' 
                   : 'grid-cols-2 lg:grid-cols-4'
               }`}>
                 {bulkDefects.length > 0 && (
@@ -386,12 +436,16 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
                         const style = {
                           transform: CSS.Transform.toString(transform),
-                          transition,
-                          opacity: isDragging ? 0.5 : 1,
+                          transition: isDragging ? 'none' : transition,
+                          opacity: isDragging ? 0.6 : 1,
+                          zIndex: isDragging ? 50 : 1,
                         };
 
                         const image = getImageForDefect(defect.selectedFile || '');
                         const isSelectorOpen = imageSelectorOpen === defect.photoNumber;
+                        const isPhotoNumberSelectorOpen = photoNumberSelectorOpen === defect.photoNumber;
+                        const availablePhotoNumbers = getAvailablePhotoNumbers(defect.photoNumber);
+                        
                         return (
                           <div 
                             ref={setNodeRef}
@@ -485,18 +539,67 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               )}
                             </div>
                             
-                            <div className="p-2 space-y-1" onClick={(e) => e.stopPropagation()}>
+                            <div 
+                              className="p-2 space-y-1" 
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                            >
                               <div className="text-xs text-slate-500 dark:text-gray-400 truncate">
                                 {image?.file.name || 'No file selected'}
                               </div>
-                              <input
-                                type="number"
-                                value={defect.photoNumber}
-                                onChange={(e) => updateBulkDefectPhotoNumber(defect.photoNumber, e.target.value)}
-                                className="w-full p-1 text-sm border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
-                                placeholder="#"
-                              />
-                              {renderBulkDefectDescriptionField(defect)}
+                              <div className="relative">
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    value={defect.photoNumber}
+                                    onChange={(e) => updateBulkDefectPhotoNumber(defect.photoNumber, e.target.value)}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onFocus={(e) => e.stopPropagation()}
+                                    className="flex-1 p-1 text-sm border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+                                    placeholder="#"
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPhotoNumberSelectorOpen(isPhotoNumberSelectorOpen ? null : defect.photoNumber);
+                                    }}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    className="p-1.5 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                    title="Select photo number"
+                                  >
+                                    <ChevronDown size={14} className={isPhotoNumberSelectorOpen ? 'rotate-180' : ''} />
+                                  </button>
+                                </div>
+                                {isPhotoNumberSelectorOpen && (
+                                  <div 
+                                    className="photo-number-selector-dropdown absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto"
+                                    onClick={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                  >
+                                    {availablePhotoNumbers.slice(0, 20).map((num) => (
+                                      <button
+                                        key={num}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateBulkDefectPhotoNumber(defect.photoNumber, num);
+                                          setPhotoNumberSelectorOpen(null);
+                                        }}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 ${
+                                          defect.photoNumber === num
+                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-medium'
+                                            : 'text-slate-700 dark:text-gray-300'
+                                        }`}
+                                      >
+                                        {num}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <div onMouseDown={(e) => e.stopPropagation()}>
+                                {renderBulkDefectDescriptionField(defect)}
+                              </div>
                             </div>
                           </div>
                         );
