@@ -156,12 +156,13 @@ export const DefectTile: React.FC<DefectTileProps> = ({
   };
 
   const filteredFiles = React.useMemo(() => {
-    if (!searchQuery || !searchQuery.trim()) {
+    // Early return if no search query
+    if (!searchQuery) {
       return availableFiles;
     }
 
-    const query = searchQuery.trim();
-    if (!query) {
+    const query = String(searchQuery).trim();
+    if (!query || query.length === 0) {
       return availableFiles;
     }
 
@@ -174,45 +175,40 @@ export const DefectTile: React.FC<DefectTileProps> = ({
       const filtered = availableFiles.filter(file => {
         const lastFour = getLastFourDigits(file);
         
-        // Always log for debugging
-        console.log(`[Search] File: "${file}", Last 4: "${lastFour}", Query: "${query}"`);
-        
+        // Must have exactly 4 digits
         if (!lastFour || lastFour.length !== 4) {
-          console.log(`  → REJECTED: No valid last 4 digits`);
           return false;
         }
         
-        let matches = false;
         if (query.length === 1) {
           // Single digit: must be the last digit, and all preceding digits must be zeros
+          // Example: Query "1" matches "0001" (ends with "1" and preceding are "000")
+          //          Query "1" does NOT match "0011" (ends with "1" but preceding are "001", not all zeros)
+          //          Query "4" matches "0004" but NOT "0001"
           const lastDigit = lastFour.slice(-1);
           const precedingDigits = lastFour.slice(0, -1);
-          matches = lastDigit === query && /^0+$/.test(precedingDigits);
-          console.log(`  → Single digit: last="${lastDigit}", preceding="${precedingDigits}", match=${matches}`);
+          
+          // Strict check: last digit must match AND all preceding must be zeros
+          const digitMatches = lastDigit === query;
+          const precedingAreZeros = /^0+$/.test(precedingDigits);
+          
+          return digitMatches && precedingAreZeros;
         } else {
           // Multi-digit: must end with query
-          matches = lastFour.endsWith(query);
-          console.log(`  → Multi-digit: endsWith=${matches}`);
+          // Example: Query "01" matches "0001", "001" matches "0001"
+          return lastFour.endsWith(query);
         }
-        
-        return matches;
       });
       
-      console.log(`[Search] Numeric query "${query}": ${filtered.length} matches from ${availableFiles.length} files`);
       return filtered;
     }
     
     // Non-numeric query: search by title/filename
     const queryLower = query.toLowerCase();
-    
-    // Non-numeric query: search by title/filename
-    const filtered = availableFiles.filter(file => {
+    return availableFiles.filter(file => {
       const fileName = file.toLowerCase();
       return fileName.includes(queryLower);
     });
-    
-    console.log(`[Search] Title query "${query}": ${filtered.length} matches from ${availableFiles.length} files`);
-    return filtered;
   }, [availableFiles, searchQuery]);
 
   return (
@@ -300,8 +296,11 @@ export const DefectTile: React.FC<DefectTileProps> = ({
                   <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
                   <input
                     type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={searchQuery || ''}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      setSearchQuery(newValue);
+                    }}
                     placeholder="Search by title or last 4 digits..."
                     className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
                     autoFocus
