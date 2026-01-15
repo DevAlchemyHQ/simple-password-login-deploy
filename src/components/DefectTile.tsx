@@ -139,20 +139,26 @@ export const DefectTile: React.FC<DefectTileProps> = ({
     // Remove file extension first
     const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
     
-    // Strategy: Always get the LAST 4 digits from the filename
-    // This is the most reliable method - extract all digits and take the last 4
-    // For "PB080001" -> "0001", "PB080001 copy" -> "0001", "PB080002" -> "0002"
+    // Strategy: Find the last sequence of 4+ consecutive digits in the filename
+    // This correctly handles cases like "PB080001" -> "0001", "PB080001 copy" -> "0001"
+    // We look for the last occurrence of 4+ consecutive digits and take the last 4
     
-    // Extract ALL digits from the filename
-    const allDigits = nameWithoutExt.match(/\d/g);
-    if (!allDigits || allDigits.length < 4) {
-      return ''; // Not enough digits
+    // Find all sequences of consecutive digits
+    const digitSequences = nameWithoutExt.match(/\d+/g);
+    if (!digitSequences || digitSequences.length === 0) {
+      return ''; // No digits found
     }
     
-    // Get the last 4 digits (this is the most reliable method)
-    const lastFour = allDigits.slice(-4).join('');
+    // Get the last sequence of digits (this is the photo number)
+    const lastSequence = digitSequences[digitSequences.length - 1];
     
-    return lastFour;
+    // If the sequence has 4 or more digits, take the last 4
+    if (lastSequence.length >= 4) {
+      return lastSequence.slice(-4);
+    }
+    
+    // If less than 4 digits, pad with leading zeros
+    return lastSequence.padStart(4, '0');
   };
 
   const filteredFiles = React.useMemo(() => {
