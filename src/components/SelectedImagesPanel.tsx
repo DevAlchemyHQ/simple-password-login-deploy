@@ -363,7 +363,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
-      <div className="p-4 border-b border-slate-200 dark:border-gray-700 h-[72px] flex flex-col justify-between">
+      <div className="p-3 border-b border-slate-200 dark:border-gray-700 flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <div className="flex-1">
           </div>
@@ -409,13 +409,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             </button>
           </div>
         </div>
-        <div className="h-5">
-          {viewMode === 'text' && !isExpanded && (
-            <h3 className="text-sm font-medium text-slate-500 dark:text-gray-400">
-              TILES ({bulkDefects.length})
-            </h3>
-          )}
-        </div>
+        {viewMode === 'text' && (
+          <h3 className="text-xs font-medium text-slate-500 dark:text-gray-400 mt-1">
+            TILES ({bulkDefects.length})
+          </h3>
+        )}
       </div>
       
       <div className="flex-1 overflow-hidden">
@@ -510,11 +508,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
               }`}>
                 {bulkDefects.length > 0 && (
                   <>
-                    <div className="col-span-full flex items-center justify-between py-2">
-                      <h4 className="text-sm font-medium text-slate-500 dark:text-gray-400">
-                        TILES ({bulkDefects.length})
-                      </h4>
-                    </div>
                     {bulkDefects
                       .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
                       .map((defect) => {
