@@ -10,7 +10,7 @@ export const ImageGrid: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full flex flex-col">
-      <div className="p-4 border-b border-slate-200 dark:border-gray-700 h-[102px] flex flex-col justify-between">
+      <div className="p-4 border-b border-slate-200 dark:border-gray-700 h-[72px] flex flex-col justify-between">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-white">
             Uploaded Images
