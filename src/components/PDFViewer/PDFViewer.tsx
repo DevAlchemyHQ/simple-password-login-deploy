@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, ZoomIn, ZoomOut, Upload, RotateCw, Loader2 } from 'lucide-react';
+import { FileText, ZoomIn, ZoomOut, Upload, RotateCw, Loader2, ArrowLeft } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { usePDFStore } from '../../store/pdfStore';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -13,6 +13,8 @@ interface PDFViewerSectionProps {
   scale: number;
   onFileChange: (file: File | null) => void;
   onZoom: (action: 'in' | 'out') => void;
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
 
 interface PageRotation {
@@ -25,6 +27,8 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
   scale,
   onFileChange,
   onZoom,
+  showBackButton = false,
+  onBack,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -221,7 +225,11 @@ const loadPDF = async (file: File) => {
   }
 };
 
-export const PDFViewer: React.FC = () => {
+interface PDFViewerProps {
+  onBack?: () => void;
+}
+
+export const PDFViewer: React.FC<PDFViewerProps> = ({ onBack }) => {
   const { file1, file2, setFile1, setFile2, loadPDFs } = usePDFStore();
   const [scale1, setScale1] = useState(1.0);
   const [scale2, setScale2] = useState(1.0);
@@ -263,13 +271,15 @@ export const PDFViewer: React.FC = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full overflow-hidden">
       <PDFViewerSection
         title="Upload Detailed Exam"
         file={file1}
         scale={scale1}
         onFileChange={setFile1}
         onZoom={(action) => handleZoom(1, action)}
+        showBackButton={!!onBack}
+        onBack={onBack}
       />
       <PDFViewerSection
         title="Upload Visual Exam"
