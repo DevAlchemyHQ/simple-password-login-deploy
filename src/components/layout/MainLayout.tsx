@@ -5,14 +5,15 @@ import { MainContent } from './MainContent';
 import { GridReferenceFinder } from '../GridReferenceFinder/GridReferenceFinder';
 import { PDFViewer } from '../PDFViewer/PDFViewer';
 import { CalculatorTabs } from '../calculators/CalculatorTabs';
-import { Images, Map, FileText, Calculator, Brain, Trash2, Loader2 } from 'lucide-react';
+import { BrowserTabs } from '../browser/BrowserTabs';
+import { Images, Map, FileText, Calculator, Brain, Trash2, Loader2, Globe } from 'lucide-react';
 import { useMetadataStore } from '../../store/metadataStore';
 import { usePDFStore } from '../../store/pdfStore';
 import { useProjectStore } from '../../store/projectStore';
 import { FeedbackTab } from '../FeedbackTab';
 import { useLocation } from 'react-router-dom';
 
-type TabType = 'images' | 'pdf' | 'calculator' | 'bcmi' | 'grid';
+type TabType = 'images' | 'pdf' | 'calculator' | 'bcmi' | 'grid' | 'browser';
 
 interface MainLayoutProps {
   children?: React.ReactNode;
@@ -110,6 +111,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 { id: 'pdf', icon: FileText, label: 'PDF' },
                 { id: 'calculator', icon: Calculator, label: 'Calc' },
                 { id: 'grid', icon: Map, label: 'Grid' },
+                { id: 'browser', icon: Globe, label: 'Browser' },
                 { id: 'bcmi', icon: Brain, label: 'BCMI & AI' }
               ].map(({ id, icon: Icon, label }) => (
                 <button
@@ -150,6 +152,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <div className={`h-full grid grid-cols-1 lg:grid-cols-12 gap-4 ${activeTab === 'images' ? '' : 'hidden'}`}>
               <div className="lg:col-span-2 overflow-hidden">
                 <Sidebar />
+              </div>
+              <MainContent />
+            </div>
+
+            {/* Browser Tab */}
+            <div className={`h-full grid grid-cols-1 lg:grid-cols-12 gap-4 ${activeTab === 'browser' ? '' : 'hidden'}`}>
+              <div className="lg:col-span-2 overflow-hidden">
+                <BrowserTabs />
               </div>
               <MainContent />
             </div>
