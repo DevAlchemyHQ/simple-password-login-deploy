@@ -198,9 +198,10 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
           </Document>
         ) : (
           <div className="h-full flex items-center justify-center text-slate-400 dark:text-gray-500">
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-2 text-center">
               <FileText size={40} />
-              <p>Upload a PDF to view its contents</p>
+              <p className="font-medium">Upload Detailed or Visual Exam</p>
+              <p className="text-sm">Click the upload button above to select a PDF file</p>
             </div>
           </div>
         )}
@@ -264,14 +265,14 @@ export const PDFViewer: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
       <PDFViewerSection
-        title="PDF Viewer 1"
+        title="Upload Detailed Exam"
         file={file1}
         scale={scale1}
         onFileChange={setFile1}
         onZoom={(action) => handleZoom(1, action)}
       />
       <PDFViewerSection
-        title="PDF Viewer 2"
+        title="Upload Visual Exam"
         file={file2}
         scale={scale2}
         onFileChange={setFile2}

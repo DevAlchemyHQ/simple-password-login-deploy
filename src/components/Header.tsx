@@ -72,9 +72,9 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
 
   const tabs = [
     { id: 'images', label: 'Images' },
+    { id: 'pdf', label: 'PDF' },
     { id: 'calculator', label: 'Calc' },
-    { id: 'browser', label: 'Browser' },
-    { id: 'pdf', label: 'FAQ' }
+    { id: 'browser', label: 'Browser' }
   ];
 
   return (
