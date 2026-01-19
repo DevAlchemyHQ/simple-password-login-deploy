@@ -14,7 +14,7 @@ export const FeedbackTab: React.FC = () => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed right-0 top-1/2 -translate-y-1/2 bg-[#6366f1] text-white p-3 rounded-l-lg shadow-lg hover:bg-[#4f46e5] transition-colors"
+        className="fixed bottom-6 left-6 bg-[#6366f1] text-white p-3 rounded-lg shadow-lg hover:bg-[#4f46e5] transition-colors z-40"
         title="Contact Support"
       >
         <Mail size={24} />

@@ -114,22 +114,19 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
               
               <span className="text-gray-400 text-xs">UK</span>
 
-              <button className="px-3 py-1 bg-purple-600 text-white text-xs font-semibold rounded hover:bg-purple-700 transition-colors">
-                👑 Premium
-              </button>
-
               <button
                 onClick={() => setShowBetaInfo(true)}
-                className="text-xs font-medium px-2 py-1 bg-indigo-900/50 text-indigo-400 rounded-full hover:bg-indigo-900/70 transition-colors flex items-center gap-1"
+                className="text-xs font-medium px-2 py-1 bg-slate-800 rounded hover:bg-slate-700 transition-colors flex items-center gap-2"
               >
-                <Info size={12} />
-                BETA
+                <div className="flex items-center gap-1 text-indigo-400">
+                  <Info size={12} />
+                  <span>BETA</span>
+                </div>
+                <div className="flex items-center gap-1 text-gray-300">
+                  <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                  <span>v1.1.1</span>
+                </div>
               </button>
-
-              <div className="flex items-center gap-1 px-2 py-1 bg-slate-800 rounded text-xs text-gray-300">
-                <span className="w-2 h-2 rounded-full bg-green-400"></span>
-                <span>v1.1.1</span>
-              </div>
 
               <div className="relative">
                 <button
