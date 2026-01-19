@@ -1,53 +1,67 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
 import { ImageGridItem } from './ImageGridItem';
 import { GridWidthControl } from './GridWidthControl';
 import { useGridWidth } from '../hooks/useGridWidth';
-import { DatePickerModal } from './DatePickerModal';
-import { Calendar, ChevronDown, ChevronUp, Info } from 'lucide-react';
-import { format, parse } from 'date-fns';
+import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+
+// Separate component for editable date input to maintain focus
+const EditableDateInput: React.FC<{
+  date: string;
+  onDateChange: (oldDate: string, newDate: string) => void;
+}> = ({ date, onDateChange }) => {
+  const [localValue, setLocalValue] = useState(date);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Reset local value when prop changes (e.g., when date group is renamed)
+  React.useEffect(() => {
+    if (!isEditing) {
+      setLocalValue(date);
+    }
+  }, [date, isEditing]);
+
+  const handleBlur = () => {
+    setIsEditing(false);
+    if (localValue && localValue !== date) {
+      onDateChange(date, localValue);
+    } else if (!localValue) {
+      // Reset if empty
+      setLocalValue(date);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur(); // Trigger blur to save
+    } else if (e.key === 'Escape') {
+      setLocalValue(date); // Reset to original
+      e.currentTarget.blur();
+    }
+  };
+
+  return (
+    <div className="relative flex-shrink-0">
+      <input
+        type="date"
+        value={localValue}
+        onChange={(e) => {
+          setIsEditing(true);
+          setLocalValue(e.target.value);
+        }}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        className="text-base font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-2 pr-10 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:outline-none transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow min-w-[200px] cursor-pointer shadow-sm"
+        title="Click to edit date (including year). Press Enter to save, Escape to cancel."
+      />
+      <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+    </div>
+  );
+};
 
 export const ImageGrid: React.FC = () => {
   const { images, updateImageMetadata } = useMetadataStore();
   const { gridWidth, setGridWidth } = useGridWidth();
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
-  const [savedDates, setSavedDates] = useState<string[]>([]);
-  const [datePickerOpen, setDatePickerOpen] = useState<string | null>(null);
-  const dateInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
-
-  // Load saved dates from localStorage on mount
-  useEffect(() => {
-    const loadSavedDates = () => {
-      try {
-        const storedData = localStorage.getItem('userProjectData');
-        if (storedData) {
-          const projectData = JSON.parse(storedData);
-          if (projectData.images && Array.isArray(projectData.images)) {
-            const uniqueDates = [...new Set(
-              projectData.images
-                .map((img: any) => img.date)
-                .filter((date: any) => date)
-            )] as string[];
-            setSavedDates(uniqueDates.sort().reverse());
-          }
-        }
-      } catch (error) {
-        console.error('Error loading saved dates:', error);
-      }
-    };
-    
-    loadSavedDates();
-  }, []);
-
-  // Update saved dates when images change
-  useEffect(() => {
-    if (images.length > 0) {
-      const uniqueDates = [...new Set(
-        images.map(img => img.date).filter(date => date)
-      )] as string[];
-      setSavedDates(uniqueDates.sort().reverse());
-    }
-  }, [images]);
 
   // Group images by date
   const imagesByDate = useMemo(() => {
@@ -130,49 +144,11 @@ export const ImageGrid: React.FC = () => {
       
       <div className="flex-1 min-h-0 overflow-y-auto scroll-smooth">
         {images.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center p-6 space-y-4">
-            <div className="text-slate-400 dark:text-gray-500 text-center">
-              Please upload your Exam photos to the canvas.
-            </div>
-            
-            {/* Data Safety Warning */}
-            {savedDates.length > 0 && (
-              <div className="w-full max-w-md bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <Info className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 space-y-2">
-                    <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">
-                      Your data is safe!
-                    </p>
-                    <p className="text-xs text-blue-600 dark:text-blue-400">
-                      All project details, photo numbers, descriptions, and dates are saved. 
-                      Only the images need to be re-uploaded.
-                    </p>
-                    {savedDates.length > 0 && (
-                      <div className="pt-2 border-t border-blue-200 dark:border-blue-700">
-                        <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
-                          Saved dates:
-                        </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {savedDates.map(date => (
-                            <span
-                              key={date}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md text-xs font-medium"
-                            >
-                              <Calendar className="w-3 h-3" />
-                              {format(new Date(date), 'dd/MM/yyyy')}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+          <div className="h-full flex items-center justify-center text-slate-400 dark:text-gray-500">
+            Please upload your Exam photos to the canvas.
           </div>
         ) : (
-          <div className="space-y-3 p-4 h-full flex flex-col">
+          <div className="space-y-3 p-4 min-h-full flex flex-col">
             {/* Images grouped by date - expanded first, collapsed at bottom */}
             {sortedDatesWithCollapsed.map((date, index) => {
               const isCollapsed = collapsedDates.has(date);
@@ -184,11 +160,11 @@ export const ImageGrid: React.FC = () => {
                 <div 
                   key={date} 
                   className={`rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col ${
-                    isLastExpandedGroup ? 'flex-1 min-h-0' : ''
+                    isLastExpandedGroup ? 'flex-1' : ''
                   }`}
                 >
                   {/* Date Group Header with Editable Date */}
-                  <div className="w-full py-3 px-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-gray-800 dark:to-gray-700 border-b border-slate-200 dark:border-gray-600 backdrop-blur-sm transition-all duration-200 flex items-center justify-between gap-3">
+                  <div className="w-full py-3 px-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-gray-800 dark:to-gray-700 border-b border-slate-200 dark:border-gray-600 backdrop-blur-sm transition-all duration-200 flex items-center justify-between gap-3 flex-shrink-0">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {/* Collapse/Expand Button */}
                       <button
@@ -201,73 +177,11 @@ export const ImageGrid: React.FC = () => {
                         </div>
                       </button>
                       
-                      {/* Custom Date Input (DD/MM/YYYY) with Calendar Picker */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800 focus-within:border-indigo-400 dark:focus-within:border-indigo-500 transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 shadow-sm hover:shadow">
-                          <input
-                            type="text"
-                            value={date.split('-')[2]}
-                            onFocus={(e) => e.target.select()}
-                            onChange={(e) => {
-                              const day = e.target.value.replace(/\D/g, '').slice(0, 2);
-                              const [year, month] = date.split('-');
-                              if (day === '') {
-                                updateDateForGroup(date, `${year}-${month}-01`);
-                              } else if (parseInt(day) >= 1 && parseInt(day) <= 31) {
-                                updateDateForGroup(date, `${year}-${month}-${day.padStart(2, '0')}`);
-                              }
-                            }}
-                            placeholder="DD"
-                            maxLength={2}
-                            className="w-8 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
-                          />
-                          <span className="text-slate-400">/</span>
-                          <input
-                            type="text"
-                            value={date.split('-')[1]}
-                            onFocus={(e) => e.target.select()}
-                            onChange={(e) => {
-                              const month = e.target.value.replace(/\D/g, '').slice(0, 2);
-                              const [year, , day] = date.split('-');
-                              if (month === '') {
-                                updateDateForGroup(date, `${year}-01-${day}`);
-                              } else if (parseInt(month) >= 1 && parseInt(month) <= 12) {
-                                updateDateForGroup(date, `${year}-${month.padStart(2, '0')}-${day}`);
-                              }
-                            }}
-                            placeholder="MM"
-                            maxLength={2}
-                            className="w-8 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
-                          />
-                          <span className="text-slate-400">/</span>
-                          <input
-                            type="text"
-                            value={date.split('-')[0]}
-                            onFocus={(e) => e.target.select()}
-                            onChange={(e) => {
-                              const year = e.target.value.replace(/\D/g, '').slice(0, 4);
-                              const [, month, day] = date.split('-');
-                              if (year === '') {
-                                updateDateForGroup(date, `2026-${month}-${day}`);
-                              } else if (year.length === 4 && parseInt(year) >= 1900 && parseInt(year) <= 2100) {
-                                updateDateForGroup(date, `${year}-${month}-${day}`);
-                              }
-                            }}
-                            placeholder="YYYY"
-                            maxLength={4}
-                            className="w-12 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
-                          />
-                        </div>
-                        
-                        {/* Calendar Picker Button */}
-                        <button
-                          onClick={() => setDatePickerOpen(date)}
-                          className="p-2 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg transition-all duration-200 hover:scale-110 flex-shrink-0 group"
-                          title="Open calendar picker"
-                        >
-                          <Calendar size={18} className="text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors" />
-                        </button>
-                      </div>
+                      {/* Editable Date Input */}
+                      <EditableDateInput 
+                        date={date} 
+                        onDateChange={updateDateForGroup} 
+                      />
                       
                       <span className="text-xs font-medium text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-gray-700 px-2 py-1 rounded-full">
                         {imageCount} {imageCount === 1 ? 'photo' : 'photos'}
@@ -305,21 +219,6 @@ export const ImageGrid: React.FC = () => {
           </div>
         )}
       </div>
-      
-      {/* Date Picker Modal */}
-      {datePickerOpen && (
-        <DatePickerModal
-          isOpen={true}
-          onClose={() => setDatePickerOpen(null)}
-          onConfirm={(newDate) => {
-            if (datePickerOpen) {
-              updateDateForGroup(datePickerOpen, newDate);
-            }
-            setDatePickerOpen(null);
-          }}
-          defaultDate={new Date(datePickerOpen)}
-        />
-      )}
     </div>
   );
 };
