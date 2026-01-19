@@ -3,6 +3,7 @@ import { useMetadataStore } from '../store/metadataStore';
 import { ImageGridItem } from './ImageGridItem';
 import { GridWidthControl } from './GridWidthControl';
 import { useGridWidth } from '../hooks/useGridWidth';
+import { DatePickerModal } from './DatePickerModal';
 import { Calendar, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { format, parse } from 'date-fns';
 
@@ -11,6 +12,7 @@ export const ImageGrid: React.FC = () => {
   const { gridWidth, setGridWidth } = useGridWidth();
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [savedDates, setSavedDates] = useState<string[]>([]);
+  const [datePickerOpen, setDatePickerOpen] = useState<string | null>(null);
   const dateInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   // Load saved dates from localStorage on mount
@@ -199,61 +201,72 @@ export const ImageGrid: React.FC = () => {
                         </div>
                       </button>
                       
-                      {/* Custom Date Input (DD/MM/YYYY) */}
-                      <div className="flex items-center gap-1 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800 focus-within:border-indigo-400 dark:focus-within:border-indigo-500 transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 shadow-sm hover:shadow">
-                        <input
-                          type="text"
-                          value={date.split('-')[2]}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const day = e.target.value.replace(/\D/g, '').slice(0, 2);
-                            const [year, month] = date.split('-');
-                            if (day === '') {
-                              updateDateForGroup(date, `${year}-${month}-01`);
-                            } else if (parseInt(day) >= 1 && parseInt(day) <= 31) {
-                              updateDateForGroup(date, `${year}-${month}-${day.padStart(2, '0')}`);
-                            }
-                          }}
-                          placeholder="DD"
-                          maxLength={2}
-                          className="w-8 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
-                        />
-                        <span className="text-slate-400">/</span>
-                        <input
-                          type="text"
-                          value={date.split('-')[1]}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const month = e.target.value.replace(/\D/g, '').slice(0, 2);
-                            const [year, , day] = date.split('-');
-                            if (month === '') {
-                              updateDateForGroup(date, `${year}-01-${day}`);
-                            } else if (parseInt(month) >= 1 && parseInt(month) <= 12) {
-                              updateDateForGroup(date, `${year}-${month.padStart(2, '0')}-${day}`);
-                            }
-                          }}
-                          placeholder="MM"
-                          maxLength={2}
-                          className="w-8 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
-                        />
-                        <span className="text-slate-400">/</span>
-                        <input
-                          type="text"
-                          value={date.split('-')[0]}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => {
-                            const year = e.target.value.replace(/\D/g, '').slice(0, 4);
-                            const [, month, day] = date.split('-');
-                            if (year === '') {
-                              updateDateForGroup(date, `2026-${month}-${day}`);
-                            } else if (year.length === 4 && parseInt(year) >= 1900 && parseInt(year) <= 2100) {
-                              updateDateForGroup(date, `${year}-${month}-${day}`);
-                            }
-                          }}
-                          placeholder="YYYY"
-                          maxLength={4}
-                          className="w-12 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
-                        />
+                      {/* Custom Date Input (DD/MM/YYYY) with Calendar Picker */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800 focus-within:border-indigo-400 dark:focus-within:border-indigo-500 transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 shadow-sm hover:shadow">
+                          <input
+                            type="text"
+                            value={date.split('-')[2]}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const day = e.target.value.replace(/\D/g, '').slice(0, 2);
+                              const [year, month] = date.split('-');
+                              if (day === '') {
+                                updateDateForGroup(date, `${year}-${month}-01`);
+                              } else if (parseInt(day) >= 1 && parseInt(day) <= 31) {
+                                updateDateForGroup(date, `${year}-${month}-${day.padStart(2, '0')}`);
+                              }
+                            }}
+                            placeholder="DD"
+                            maxLength={2}
+                            className="w-8 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
+                          />
+                          <span className="text-slate-400">/</span>
+                          <input
+                            type="text"
+                            value={date.split('-')[1]}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const month = e.target.value.replace(/\D/g, '').slice(0, 2);
+                              const [year, , day] = date.split('-');
+                              if (month === '') {
+                                updateDateForGroup(date, `${year}-01-${day}`);
+                              } else if (parseInt(month) >= 1 && parseInt(month) <= 12) {
+                                updateDateForGroup(date, `${year}-${month.padStart(2, '0')}-${day}`);
+                              }
+                            }}
+                            placeholder="MM"
+                            maxLength={2}
+                            className="w-8 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
+                          />
+                          <span className="text-slate-400">/</span>
+                          <input
+                            type="text"
+                            value={date.split('-')[0]}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const year = e.target.value.replace(/\D/g, '').slice(0, 4);
+                              const [, month, day] = date.split('-');
+                              if (year === '') {
+                                updateDateForGroup(date, `2026-${month}-${day}`);
+                              } else if (year.length === 4 && parseInt(year) >= 1900 && parseInt(year) <= 2100) {
+                                updateDateForGroup(date, `${year}-${month}-${day}`);
+                              }
+                            }}
+                            placeholder="YYYY"
+                            maxLength={4}
+                            className="w-12 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
+                          />
+                        </div>
+                        
+                        {/* Calendar Picker Button */}
+                        <button
+                          onClick={() => setDatePickerOpen(date)}
+                          className="p-2 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg transition-all duration-200 hover:scale-110 flex-shrink-0 group"
+                          title="Open calendar picker"
+                        >
+                          <Calendar size={18} className="text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors" />
+                        </button>
                       </div>
                       
                       <span className="text-xs font-medium text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-gray-700 px-2 py-1 rounded-full">
@@ -292,6 +305,21 @@ export const ImageGrid: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Date Picker Modal */}
+      {datePickerOpen && (
+        <DatePickerModal
+          isOpen={true}
+          onClose={() => setDatePickerOpen(null)}
+          onConfirm={(newDate) => {
+            if (datePickerOpen) {
+              updateDateForGroup(datePickerOpen, newDate);
+            }
+            setDatePickerOpen(null);
+          }}
+          defaultDate={new Date(datePickerOpen)}
+        />
+      )}
     </div>
   );
 };
