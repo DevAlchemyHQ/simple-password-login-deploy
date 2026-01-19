@@ -134,7 +134,9 @@ export const BrowserTabs: React.FC = () => {
               activeWebsite === website.id ? 'block' : 'hidden'
             }`}
             title={website.name}
-            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+            allow="fullscreen; geolocation; microphone; camera; payment; autoplay; encrypted-media"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
+            referrerPolicy="no-referrer-when-downgrade"
           />
         ))}
       </div>
