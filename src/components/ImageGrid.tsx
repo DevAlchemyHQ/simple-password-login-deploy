@@ -11,6 +11,7 @@ export const ImageGrid: React.FC = () => {
   const { gridWidth, setGridWidth } = useGridWidth();
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [savedDates, setSavedDates] = useState<string[]>([]);
+  const [editingDate, setEditingDate] = useState<{ [key: string]: string }>({});
   const dateInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   // Load saved dates from localStorage on mount
@@ -202,37 +203,63 @@ export const ImageGrid: React.FC = () => {
                       {/* Editable Date Display */}
                       <input
                         type="text"
-                        value={format(new Date(date), 'dd/MM/yyyy')}
+                        value={editingDate[date] !== undefined ? editingDate[date] : format(new Date(date), 'dd/MM/yyyy')}
+                        onFocus={(e) => {
+                          // Store current value when editing starts
+                          setEditingDate(prev => ({ ...prev, [date]: e.target.value }));
+                        }}
                         onChange={(e) => {
+                          // Update local editing state as user types
+                          setEditingDate(prev => ({ ...prev, [date]: e.target.value }));
+                        }}
+                        onBlur={(e) => {
                           const inputValue = e.target.value;
-                          // Try to parse dd/MM/yyyy format
+                          // Try to parse and apply on blur
                           try {
                             const parsedDate = parse(inputValue, 'dd/MM/yyyy', new Date());
                             if (!isNaN(parsedDate.getTime())) {
                               const isoDate = format(parsedDate, 'yyyy-MM-dd');
                               updateDateForGroup(date, isoDate);
-                            }
-                          } catch (err) {
-                            // Invalid date, ignore
-                          }
-                        }}
-                        onBlur={(e) => {
-                          // Re-format on blur to ensure consistency
-                          try {
-                            const parsedDate = parse(e.target.value, 'dd/MM/yyyy', new Date());
-                            if (!isNaN(parsedDate.getTime())) {
-                              e.target.value = format(parsedDate, 'dd/MM/yyyy');
+                              // Clear editing state
+                              setEditingDate(prev => {
+                                const newState = { ...prev };
+                                delete newState[date];
+                                return newState;
+                              });
                             } else {
-                              // Reset to original value if invalid
-                              e.target.value = format(new Date(date), 'dd/MM/yyyy');
+                              // Invalid date - reset to original
+                              setEditingDate(prev => {
+                                const newState = { ...prev };
+                                delete newState[date];
+                                return newState;
+                              });
                             }
                           } catch {
-                            e.target.value = format(new Date(date), 'dd/MM/yyyy');
+                            // Invalid date - reset to original
+                            setEditingDate(prev => {
+                              const newState = { ...prev };
+                              delete newState[date];
+                              return newState;
+                            });
                           }
                         }}
-                        className="text-base font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:outline-none transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 min-w-[130px] text-center"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.currentTarget.blur(); // Trigger onBlur to apply changes
+                          }
+                          if (e.key === 'Escape') {
+                            // Cancel editing
+                            setEditingDate(prev => {
+                              const newState = { ...prev };
+                              delete newState[date];
+                              return newState;
+                            });
+                            e.currentTarget.blur();
+                          }
+                        }}
+                        className="text-base font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:outline-none transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 min-w-[130px] text-center cursor-text"
                         placeholder="DD/MM/YYYY"
-                        title="Edit date (DD/MM/YYYY format)"
+                        title="Click to edit date (DD/MM/YYYY format) - Press Enter to apply, Esc to cancel"
                       />
                       
                       {/* Calendar Icon for Date Picker */}
