@@ -7,7 +7,7 @@ import { GridReferenceFinder } from '../GridReferenceFinder/GridReferenceFinder'
 import { PDFViewer } from '../PDFViewer/PDFViewer';
 import { CalculatorTabs } from '../calculators/CalculatorTabs';
 import { BrowserTabs } from '../browser/BrowserTabs';
-import { Images, Map, FileText, Calculator, Brain, Trash2, Loader2, Globe } from 'lucide-react';
+import { Trash2, Loader2 } from 'lucide-react';
 import { useMetadataStore } from '../../store/metadataStore';
 import { usePDFStore } from '../../store/pdfStore';
 import { useProjectStore } from '../../store/projectStore';
@@ -77,7 +77,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   if (children) {
     return (
       <>
-        <Header />
+        <Header activeTab={activeTab} onTabChange={setActiveTab} />
         {children}
         <FeedbackTab />
       </>
@@ -90,7 +90,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   if (isInitialLoad) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex flex-col">
-        <Header />
+        <Header activeTab={activeTab} onTabChange={setActiveTab} />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mx-auto mb-4" />
@@ -103,50 +103,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex flex-col">
-      <Header />
+      <Header activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="flex-1 max-w-[1920px] mx-auto w-full px-2 overflow-hidden">
-        <div className="flex-shrink-0">
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-gray-700">
-            <div className="flex items-center gap-0.5">
-              {[
-                { id: 'images', icon: Images, label: 'Images' },
-                { id: 'pdf', icon: FileText, label: 'PDF' },
-                { id: 'calculator', icon: Calculator, label: 'Calc' },
-                { id: 'browser', icon: Globe, label: 'Browser' }
-              ].map(({ id, icon: Icon, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id as TabType)}
-                  className={`flex items-center gap-1 px-2 py-1.5 min-w-[70px] ${
-                    activeTab === id
-                      ? 'border-b-2 border-indigo-500 text-indigo-500'
-                      : 'text-slate-600 dark:text-gray-300'
-                  }`}
-                >
-                  <Icon size={14} />
-                  <span className="text-xs whitespace-nowrap">{label}</span>
-                </button>
-              ))}
-            </div>
-
-            {images.length > 0 && (
-              <button
-                onClick={() => setShowClearConfirm(true)}
-                className="flex items-center gap-1 px-2 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Trash2 size={14} />
-                )}
-                {isLoading ? 'Processing...' : 'New Project'}
-              </button>
-            )}
+        {images.length > 0 && (
+          <div className="flex justify-end py-2">
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+              {isLoading ? 'Processing...' : 'New Project'}
+            </button>
           </div>
-        </div>
+        )}
 
-        <div className="flex-1 h-[calc(100vh-96px)] overflow-hidden">
+        <div className="flex-1 h-[calc(100vh-80px)] overflow-hidden">
           <div className={`transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
             {/* Images Tab */}
             <div className={`h-full grid grid-cols-1 lg:grid-cols-12 gap-4 ${activeTab === 'images' ? '' : 'hidden'}`}>
