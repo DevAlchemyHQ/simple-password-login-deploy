@@ -3,7 +3,6 @@ import { MeasurementReference } from './MeasurementReference';
 import { UnitConverter } from './UnitConverter';
 import { ChainsConverter } from './ChainsConverter';
 import { BasicCalculator } from './BasicCalculator';
-import { LocationReferenceConverter } from './LocationReferenceConverter';
 
 export const CalculatorTabs: React.FC = () => {
   return (
@@ -13,7 +12,6 @@ export const CalculatorTabs: React.FC = () => {
         <MeasurementReference />
         <UnitConverter />
         <ChainsConverter />
-        <LocationReferenceConverter />
       </div>
     </div>
   );

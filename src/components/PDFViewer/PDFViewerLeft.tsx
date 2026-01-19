@@ -49,14 +49,14 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
         }
       }
     };
-    
+
     setTimeout(updateWidth, 100);
     updateWidth();
-    
+
     window.addEventListener('resize', updateWidth);
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
-  
+
   // Re-measure when file changes
   useEffect(() => {
     if (file1 && containerRef.current) {
@@ -155,7 +155,10 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
         </div>
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-gray-800 p-4">
+      <div 
+        ref={scrollContainerRef} 
+        className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-800 p-4"
+      >
         {file1 ? (
           <Document
             file={file1}
@@ -168,7 +171,7 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
             }
           >
             {Array.from(new Array(numPages), (_, index) => (
-              <div 
+              <div
                 key={`page-${index + 1}`}
                 className="mb-4 relative"
                 data-page-number={index + 1}

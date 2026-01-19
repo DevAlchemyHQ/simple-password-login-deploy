@@ -87,8 +87,8 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
 
 
   return (
-    <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
-      <div className="p-2 border-b border-slate-200 dark:border-gray-700">
+    <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col overflow-hidden">
+      <div className="p-2 border-b border-slate-200 dark:border-gray-700 flex-shrink-0">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-slate-800 dark:text-white">{title}</h3>
           <div className="flex items-center gap-1">
@@ -143,7 +143,10 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
         </div>
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-gray-800 p-4">
+      <div 
+        ref={scrollContainerRef} 
+        className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-800 p-4"
+      >
         {file ? (
           <Document
             file={file}
@@ -280,8 +283,8 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
           </button>
         </div>
       )}
-      
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-hidden">
+
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0 overflow-hidden">
         {/* PDF Viewer 1 */}
         <PDFViewerSection
           title="Upload Detailed Exam"

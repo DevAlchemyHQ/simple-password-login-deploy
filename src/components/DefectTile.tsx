@@ -65,8 +65,6 @@ export const DefectTile: React.FC<DefectTileProps> = ({
     }
   }, [isDropdownOpen]);
 
-  const { viewMode } = useMetadataStore();
-  
   const {
     attributes,
     listeners,
@@ -84,6 +82,10 @@ export const DefectTile: React.FC<DefectTileProps> = ({
     isOver,
   } = useDroppable({
     id: `drop-${id}`,
+    data: {
+      type: 'drop-zone',
+      photoNumber: id,
+    }
   });
 
   // Debug logging

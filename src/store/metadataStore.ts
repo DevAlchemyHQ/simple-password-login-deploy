@@ -18,6 +18,9 @@ interface MetadataState {
   formData: FormData;
   defectSortDirection: 'asc' | 'desc' | null;
   bulkDefects: BulkDefect[];
+  selectedImages: Set<string>;
+  viewMode: 'images' | 'text';
+  dataRestoredFromStorage: boolean;
   setFormData: (data: Partial<FormData>) => void;
   addImages: (files: File[], date: string) => Promise<void>;
   updateImageMetadata: (id: string, data: Partial<Omit<ImageMetadata, 'id' | 'file' | 'preview'>>) => void;
@@ -25,6 +28,8 @@ interface MetadataState {
   setDefectSortDirection: (direction: 'asc' | 'desc' | null) => void;
   setBulkDefects: (defects: BulkDefect[] | ((prev: BulkDefect[]) => BulkDefect[])) => void;
   updateBulkDefectFile: (photoNumber: string, fileName: string) => void;
+  toggleImageSelection: (imageId: string) => void;
+  setViewMode: (mode: 'images' | 'text') => void;
   reset: () => void;
   loadUserData: () => Promise<void>;
   saveUserData: () => Promise<void>;
@@ -35,6 +40,9 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
   formData: initialFormData,
   defectSortDirection: null,
   bulkDefects: [],
+  selectedImages: new Set<string>(),
+  viewMode: 'images',
+  dataRestoredFromStorage: false,
 
   setFormData: (data) => {
     set((state) => ({
@@ -42,12 +50,24 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
     }));
     get().saveUserData().catch(console.error);
   },
+  
+  toggleImageSelection: (imageId: string) => {
+    set((state) => {
+      const newSelected = new Set(state.selectedImages);
+      if (newSelected.has(imageId)) {
+        newSelected.delete(imageId);
+      } else {
+        newSelected.add(imageId);
+      }
+      return { selectedImages: newSelected };
+    });
+  },
+  
+  setViewMode: (mode: 'images' | 'text') => {
+    set({ viewMode: mode });
+  },
 
   addImages: async (files, date) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'metadataStore:addImages:START',message:'addImages started',data:{filesCount:files.length,date},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-    // #endregion
-    console.log('[metadataStore] addImages called with', files.length, 'files and date:', date);
     try {
       // For simple password auth, use localStorage-based user ID
       const userId = localStorage.getItem('userId') || 'simple-auth-user';
@@ -90,7 +110,6 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
 
         // Always use the provided date if it exists, otherwise use restored date
         const imageDate = (date && date.trim()) ? date : restored.date;
-        console.log('[metadataStore] Creating image:', file.name, 'with date:', imageDate);
         return {
           id: crypto.randomUUID(),
           file,
@@ -103,9 +122,6 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
         };
       }));
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'metadataStore:addImages:BEFORE_SET',message:'Before set state',data:{newImagesCount:newImages.length},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-      // #endregion
       set((state) => {
         const updatedImages = [...state.images, ...newImages];
 
@@ -116,19 +132,10 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
 
         return { images: updatedImages };
       });
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'metadataStore:addImages:AFTER_SET',message:'After set state',data:{imagesCount:get().images.length},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-      // #endregion
 
       // Save project data after successful uploads
       await get().saveUserData();
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'metadataStore:addImages:COMPLETE',message:'addImages completed',data:{},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-      // #endregion
     } catch (error) {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'metadataStore:addImages:ERROR',message:'Error in addImages',data:{error:String(error)},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-      // #endregion
       console.error('Error adding images:', error);
       throw error;
     }
@@ -167,9 +174,14 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
         URL.revokeObjectURL(imageToRemove.publicUrl);
       }
 
-      set((state) => ({
-        images: state.images.filter((img) => img.id !== id),
-      }));
+      set((state) => {
+        const newSelected = new Set(state.selectedImages);
+        newSelected.delete(id);
+        return {
+          images: state.images.filter((img) => img.id !== id),
+          selectedImages: newSelected
+        };
+      });
 
       await get().saveUserData();
     } catch (error) {
@@ -198,7 +210,10 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
 
   setBulkDefects: (defects) => {
     const newDefects = typeof defects === 'function' ? defects(get().bulkDefects) : defects;
-    set({ bulkDefects: newDefects });
+    set({ 
+      bulkDefects: newDefects,
+      dataRestoredFromStorage: false // User is actively modifying data, not a restore
+    });
     // Auto-save after updating defects
     get().saveUserData().catch(console.error);
   },
@@ -219,7 +234,10 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       images: [],
       formData: initialFormData,
       defectSortDirection: null,
-      bulkDefects: []
+      bulkDefects: [],
+      selectedImages: new Set<string>(),
+      viewMode: 'images',
+      dataRestoredFromStorage: false
     });
   },
 
@@ -255,9 +273,12 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       // 4. This matching happens automatically in SelectedImagesPanel via getImageForDefect()
       // 5. Result: User work is never lost - all metadata persists across refresh/logout/shutdown
 
+      const loadedBulkDefects = projectData.bulkDefects || [];
+      
       set({
         formData: projectData.form_data || initialFormData,
-        bulkDefects: projectData.bulkDefects || []
+        bulkDefects: loadedBulkDefects,
+        dataRestoredFromStorage: loadedBulkDefects.length > 0
       });
 
       // Note: images array remains empty - user must re-upload photos

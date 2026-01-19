@@ -27,7 +27,6 @@ const MainContentComponent: React.FC = () => {
   const setBulkDefects = useMetadataStore((state) => state.setBulkDefects);
   const updateBulkDefectFile = useMetadataStore((state) => state.updateBulkDefectFile);
   const images = useMetadataStore((state) => state.images);
-  const viewMode = useMetadataStore((state) => state.viewMode);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -40,7 +39,7 @@ const MainContentComponent: React.FC = () => {
     console.log('🚀 Drag Start:', {
       id: event.active.id,
       data: event.active.data.current,
-      viewMode
+      hasBulkDefects: bulkDefects.length > 0
     });
     setActiveId(event.active.id);
   };
@@ -68,7 +67,7 @@ const MainContentComponent: React.FC = () => {
       activeData: active.data.current,
       overId: over?.id,
       overData: over?.data.current,
-      viewMode
+      hasBulkDefects: bulkDefects.length > 0
     });
 
     if (!over) {
@@ -77,9 +76,9 @@ const MainContentComponent: React.FC = () => {
       return;
     }
 
-    // Only process drops in batch drag mode
-    if (viewMode !== 'text') {
-      console.log('❌ Not in batch drag mode, viewMode:', viewMode);
+    // Only process drops when there are bulk defects (tiles) to drop on
+    if (bulkDefects.length === 0) {
+      console.log('❌ No bulk defects to drop on');
       setActiveId(null);
       return;
     }
@@ -158,6 +157,7 @@ const MainContentComponent: React.FC = () => {
             ...item,
             photoNumber: String(index + 1),
           }));
+          
           console.log('📝 Renumbered defects:', renumbered.map((d, idx) => ({ 
             position: idx + 1,
             photoNumber: d.photoNumber,
@@ -195,13 +195,37 @@ const MainContentComponent: React.FC = () => {
     <DndContext
       sensors={sensors}
       collisionDetection={(args) => {
-        // First try pointerWithin for better drop zone detection
-        const pointerCollisions = pointerWithin(args);
-        if (pointerCollisions.length > 0) {
-          return pointerCollisions;
+        const { active } = args;
+        const isImage = active.data.current?.type === 'image';
+        
+        // If dragging an image, use pointerWithin to detect drop zones
+        if (isImage) {
+          const pointerCollisions = pointerWithin(args);
+          if (pointerCollisions.length > 0) {
+            // Filter to only include drop zones (not tiles)
+            const dropZoneCollisions = pointerCollisions.filter(collision => 
+              collision.id.toString().startsWith('drop-')
+            );
+            if (dropZoneCollisions.length > 0) {
+              return dropZoneCollisions;
+            }
+          }
         }
-        // Fallback to closestCenter for defect reordering
-        return closestCenter(args);
+        
+        // If dragging a tile, use closestCenter but exclude drop zones
+        const centerCollisions = closestCenter(args);
+        if (!isImage && centerCollisions.length > 0) {
+          // Filter out drop zones when dragging tiles
+          const tileCollisions = centerCollisions.filter(collision => 
+            !collision.id.toString().startsWith('drop-')
+          );
+          if (tileCollisions.length > 0) {
+            return tileCollisions;
+          }
+        }
+        
+        // Fallback to closestCenter
+        return centerCollisions;
       }}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
@@ -238,7 +262,7 @@ const MainContentComponent: React.FC = () => {
               className="w-full h-full object-cover rounded"
             />
           </div>
-        ) : activeId && viewMode === 'text' && isExpanded && !activeId.toString().startsWith('image-') && !activeId.toString().startsWith('drop-') ? (
+        ) : activeId && bulkDefects.length > 0 && isExpanded && !activeId.toString().startsWith('image-') && !activeId.toString().startsWith('drop-') ? (
           // Show drag overlay for bulk defect tiles
           (() => {
             const draggedDefect = bulkDefects.find(d => d.photoNumber === activeId);

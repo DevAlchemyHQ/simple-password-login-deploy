@@ -18,11 +18,15 @@ const DraggableImage: React.FC<{
   gridWidth: number;
   onToggle: () => void;
   onEnlarge: () => void;
-}> = ({ img, isSelected, onToggle, onEnlarge }) => {
-  const { viewMode, bulkDefects } = useMetadataStore();
+  bulkDefectsCount: number;
+}> = ({ img, isSelected, onToggle, onEnlarge, bulkDefectsCount }) => {
+  const { bulkDefects } = useMetadataStore();
   
-  // Find which defect this image is assigned to (in batch drag mode)
-  const assignedDefect = viewMode === 'text' 
+  // Automatically enable drag mode when tiles exist
+  const isDragModeActive = bulkDefectsCount > 0;
+  
+  // Find which defect this image is assigned to
+  const assignedDefect = isDragModeActive
     ? bulkDefects.find(defect => defect.selectedFile === img.file.name)
     : null;
   
@@ -33,7 +37,7 @@ const DraggableImage: React.FC<{
       imageId: img.id,
       fileName: img.file.name,
     },
-    disabled: viewMode !== 'text', // Only draggable in batch drag mode
+    disabled: !isDragModeActive, // Only draggable when tiles exist
   });
 
   const style = transform
@@ -48,13 +52,13 @@ const DraggableImage: React.FC<{
       style={style}
       className={`relative aspect-square cursor-pointer group touch-manipulation ${
         isDragging ? 'opacity-50 z-50' : ''
-      } ${viewMode === 'text' ? 'cursor-grab active:cursor-grabbing' : ''}`}
-      onClick={viewMode === 'text' ? undefined : onToggle}
-      {...(viewMode === 'text' ? { ...listeners, ...attributes } : {})}
+      } ${isDragModeActive ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      onClick={isDragModeActive ? undefined : onToggle}
+      {...(isDragModeActive ? { ...listeners, ...attributes } : {})}
     >
       <div className={`relative rounded-lg overflow-hidden h-full ${
-        viewMode === 'images' && isSelected ? 'ring-2 ring-indigo-500' : ''
-      } ${viewMode === 'text' && assignedDefect ? 'ring-2 ring-indigo-500' : ''}`}>
+        !isDragModeActive && isSelected ? 'ring-2 ring-indigo-500' : ''
+      } ${isDragModeActive && assignedDefect ? 'ring-2 ring-indigo-500' : ''}`}>
         <img
           src={img.preview}
           alt={img.file.name}
@@ -62,8 +66,8 @@ const DraggableImage: React.FC<{
           loading="lazy"
           draggable="false"
         />
-        {/* Show selected state in single select mode */}
-        {viewMode === 'images' && isSelected && (
+        {/* Show selected state in single select mode (when no tiles exist) */}
+        {!isDragModeActive && isSelected && (
           <div className="absolute top-2 right-2 bg-indigo-500 w-6 h-6 rounded-full flex items-center justify-center">
             {img.photoNumber ? (
               <span className="text-white text-sm font-medium">{img.photoNumber}</span>
@@ -72,8 +76,8 @@ const DraggableImage: React.FC<{
             )}
           </div>
         )}
-        {/* Show defect number in batch drag mode */}
-        {viewMode === 'text' && assignedDefect && (
+        {/* Show defect number when assigned to a tile */}
+        {isDragModeActive && assignedDefect && (
           <div className="absolute top-2 right-2 bg-indigo-500 w-6 h-6 rounded-full flex items-center justify-center">
             <span className="text-white text-sm font-medium">{assignedDefect.photoNumber}</span>
           </div>
@@ -99,7 +103,7 @@ const DraggableImage: React.FC<{
 };
 
 export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth }) => {
-  const { selectedImages, toggleImageSelection, viewMode } = useMetadataStore();
+  const { selectedImages, toggleImageSelection, bulkDefects } = useMetadataStore();
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const parentRef = React.useRef<HTMLDivElement>(null);
 
@@ -151,6 +155,7 @@ export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth 
                       gridWidth={gridWidth}
                       onToggle={() => toggleImageSelection(img.id)}
                       onEnlarge={() => setEnlargedImage(img.preview)}
+                      bulkDefectsCount={bulkDefects.length}
                     />
                   );
                 })}

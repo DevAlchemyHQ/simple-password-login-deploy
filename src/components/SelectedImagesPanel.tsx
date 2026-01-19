@@ -17,22 +17,20 @@ const SortButton: React.FC<{
 }> = ({ direction, onChange }) => (
   <button
     onClick={() => onChange(
-      direction === null ? 'asc' : 
-      direction === 'asc' ? 'desc' : 
-      null
+      direction === null ? 'asc' :
+        direction === 'asc' ? 'desc' :
+          null
     )}
-    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${
-      direction 
-        ? 'bg-indigo-500 text-white' 
+    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${direction
+        ? 'bg-indigo-500 text-white'
         : 'text-slate-600 hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-700'
-    }`}
+      }`}
     title={direction === null ? 'Enable sorting' : 'Change sort order'}
   >
-    <ArrowUpDown 
-      size={16} 
-      className={`transition-transform ${
-        direction === 'desc' ? 'rotate-180' : ''
-      }`}
+    <ArrowUpDown
+      size={16}
+      className={`transition-transform ${direction === 'desc' ? 'rotate-180' : ''
+        }`}
     />
     {direction && (
       <span className="text-sm">
@@ -51,28 +49,16 @@ interface SelectedImagesPanelProps {
 }
 
 export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpand, isExpanded, activeDragId, overDragId, activeTab = 'images' }) => {
-  const renderCount = React.useRef(0);
-  renderCount.current++;
-  
-  // #region agent log
-  try {
-    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel:RENDER',message:'Panel rendering',data:{activeTab,isExpanded,renderCount:renderCount.current},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-  } catch(e) {}
-  // #endregion
   const {
     images,
     updateImageMetadata,
+    dataRestoredFromStorage,
     defectSortDirection,
     setDefectSortDirection,
     bulkDefects,
     setBulkDefects,
     updateBulkDefectFile
   } = useMetadataStore();
-  // #region agent log
-  try {
-    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel:AFTER_STORE',message:'After store hook',data:{imagesCount:images.length,bulkDefectsCount:bulkDefects.length,renderCount:renderCount.current},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-  } catch(e) {}
-  // #endregion
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [imageSelectorOpen, setImageSelectorOpen] = useState<string | null>(null);
   const [imageSearchQuery, setImageSearchQuery] = useState<Record<string, string>>({});
@@ -105,7 +91,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     bulkDefects.forEach(defect => {
       const img = images.find(i => i.file.name === defect.selectedFile);
       const date = img?.date;
-      
+
       if (date) {
         if (!grouped[date]) {
           grouped[date] = [];
@@ -148,9 +134,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           value={img.description}
           onChange={(e) => updateImageMetadata(img.id, { description: e.target.value })}
           maxLength={100}
-          className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-y min-h-[60px] ${
-            !isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
-          }`}
+          className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-y min-h-[60px] ${!isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
+            }`}
           placeholder="Description"
         />
         <div className="flex items-center justify-between mt-1 text-xs">
@@ -191,7 +176,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
       // Store pending update - will be applied on blur
       pendingUpdateRef.current = description;
     };
-    
+
     // Apply pending update on blur (when user leaves the field)
     const applyPendingUpdate = () => {
       if (pendingUpdateRef.current !== null) {
@@ -257,9 +242,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
           }}
           maxLength={100}
-          className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-none overflow-hidden ${
-            !isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
-          }`}
+          className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-none overflow-hidden ${!isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
+            }`}
           placeholder="Description"
           rows={1}
           style={{ minHeight: '2.5rem', maxHeight: '120px', height: 'auto' }}
@@ -291,7 +275,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   const updateBulkDefectPhotoNumber = (photoNumber: string, newPhotoNumber: string) => {
     // Validate that the new photo number doesn't duplicate existing ones
     const trimmedNewNumber = newPhotoNumber.trim();
-    
+
     if (trimmedNewNumber === '') {
       // Allow empty, will be handled by renumbering
       setBulkDefects((items) =>
@@ -314,7 +298,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
         bulkDefects.length
       );
       const nextAvailable = String(maxNumber + 1);
-      
+
       setBulkDefects((items) =>
         items.map((item) =>
           item.photoNumber === photoNumber ? { ...item, photoNumber: nextAvailable } : item
@@ -333,14 +317,14 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     const usedNumbers = new Set(bulkDefects.map(d => d.photoNumber).filter(n => n && n !== currentPhotoNumber));
     const maxDefects = Math.max(bulkDefects.length, 20); // Generate up to 20 options
     const available: string[] = [];
-    
+
     for (let i = 1; i <= maxDefects; i++) {
       const numStr = String(i);
       if (!usedNumbers.has(numStr)) {
         available.push(numStr);
       }
     }
-    
+
     return available;
   };
 
@@ -359,7 +343,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     setBulkDefects((items) => {
       const sortedItems = [...items].sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
       const insertIndex = sortedItems.findIndex(item => item.photoNumber === afterPhotoNumber);
-      
+
       if (insertIndex === -1) {
         // If not found, add at the end
         const newPhotoNumber = String(items.length + 1);
@@ -372,7 +356,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           },
         ];
       }
-      
+
       // Insert after the found item and renumber all subsequent items
       const newItems = [...sortedItems];
       newItems.splice(insertIndex + 1, 0, {
@@ -380,7 +364,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
         description: '',
         selectedFile: ''
       });
-      
+
       // Renumber all items to ensure sequential numbering
       return newItems.map((item, index) => ({
         ...item,
@@ -390,7 +374,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   };
 
   // Check if there's saved metadata (bulkDefects or form data) even without images
-  const hasSavedMetadata = bulkDefects.length > 0;
+  // Only show notification if data was actually restored from storage on page load
+  const hasSavedMetadata = bulkDefects.length > 0 && dataRestoredFromStorage;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
@@ -403,19 +388,19 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
               ✓ Your data is safe and has been restored
             </p>
             <p className="text-xs text-indigo-800 dark:text-indigo-200 leading-relaxed">
-              You have <strong className="font-semibold">{bulkDefects.length} tile{bulkDefects.length !== 1 ? 's' : ''}</strong> with saved descriptions and photo numbers. 
+              You have <strong className="font-semibold">{bulkDefects.length} tile{bulkDefects.length !== 1 ? 's' : ''}</strong> with saved descriptions and photo numbers.
               <br />
               <span className="mt-1 block">Re-upload your photos and they will <strong>automatically match</strong> to their tiles. All your work is preserved.</span>
             </p>
           </div>
         </div>
       )}
-      
+
       <div className="p-3 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between">
         <h3 className="text-xs font-medium text-slate-500 dark:text-gray-400">
           TILES ({bulkDefects.length})
         </h3>
-        
+
         <button
           onClick={onExpand}
           className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -424,13 +409,13 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           <Grid size={20} className="text-slate-600 dark:text-gray-300" />
         </button>
       </div>
-      
+
       <div className="flex-1 overflow-hidden">
         {isExpanded ? (
           // Expanded Batch drag view - show tiles sorted by tile number (no date grouping)
-          <div 
+          <div
             className="h-full overflow-y-auto scrollbar-thin"
-            style={{ 
+            style={{
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch'
             }}
@@ -440,11 +425,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                 items={bulkDefects.map((d) => d.photoNumber)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className={`grid gap-2 ${
-                  activeTab === 'browser' 
-                    ? 'grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5' 
+                <div className={`grid gap-2 ${activeTab === 'browser'
+                    ? 'grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5'
                     : 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7'
-                }`}>
+                  }`}>
                   {bulkDefects
                     .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
                     .map((defect) => {
@@ -456,7 +440,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           transform,
                           transition,
                           isDragging,
-                        } = useSortable({ 
+                        } = useSortable({
                           id: defect.photoNumber,
                           disabled: false,
                         });
@@ -473,7 +457,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                         const image = getImageForDefect(defect.selectedFile || '');
                         const isSelectorOpen = imageSelectorOpen === defect.photoNumber;
                         const searchQuery = imageSearchQuery[defect.photoNumber] || '';
-                        
+
                         // Filter images based on search query
                         const getLastFourDigits = (filename: string): string => {
                           const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
@@ -500,36 +484,36 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           // Check if query is purely numeric (only digits, no letters, spaces, or special chars)
                           // This must be checked BEFORE any other processing
                           const isNumericQuery = /^\d+$/.test(query);
-                          
+
                           // If numeric, we MUST only search by last 4 digits, never by title
                           if (isNumericQuery) {
                             const filtered = images.filter(img => {
                               const lastFour = getLastFourDigits(img.file.name);
-                              
+
                               // Must have exactly 4 digits
                               if (!lastFour || lastFour.length !== 4) {
                                 return false;
                               }
-                              
+
                               if (query.length === 1) {
                                 // Single digit: must be the last digit, and all preceding digits must be zeros
                                 const lastDigit = lastFour.slice(-1);
                                 const precedingDigits = lastFour.slice(0, -1);
-                                
+
                                 // Strict check: last digit must match AND all preceding must be zeros
                                 const digitMatches = lastDigit === query;
                                 const precedingAreZeros = /^0+$/.test(precedingDigits);
-                                
+
                                 return digitMatches && precedingAreZeros;
                               } else {
                                 // Multi-digit: must end with query
                                 return lastFour.endsWith(query);
                               }
                             });
-                            
+
                             return filtered;
                           }
-                          
+
                           // Non-numeric query: search by title/filename
                           const queryLower = query.toLowerCase();
                           return images.filter(img => {
@@ -537,17 +521,17 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             return fileName.includes(queryLower);
                           });
                         }, [images, searchQuery]);
-                        
+
                         // Create custom listeners that exclude interactive elements
                         const customListeners = {
                           ...listeners,
                           onPointerDown: (e: React.PointerEvent) => {
                             const target = e.target as HTMLElement;
                             // Don't start drag if clicking on interactive elements
-                            if (target.closest('button') || 
-                                target.closest('input') || 
-                                target.closest('textarea') || 
-                                target.closest('.image-selector-dropdown')) {
+                            if (target.closest('button') ||
+                              target.closest('input') ||
+                              target.closest('textarea') ||
+                              target.closest('.image-selector-dropdown')) {
                               return;
                             }
                             // Call original listener
@@ -564,20 +548,19 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                         };
 
                         return (
-                          <div 
+                          <div
                             ref={combinedRef}
                             style={{
                               transform: CSS.Transform.toString(transform),
                               transition: isDragging ? 'none' : (transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'),
                               opacity: isDragging ? 0.4 : 1,
                             }}
-                            className={`group flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-all duration-200 relative ${
-                              isDragging 
-                                ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing' 
+                            className={`group flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-all duration-200 relative ${isDragging
+                                ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing'
                                 : (overDragId === defect.photoNumber && activeDragId && activeDragId !== defect.photoNumber)
-                                ? 'ring-4 ring-indigo-400 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 shadow-xl scale-[1.02] border-2 border-indigo-400'
-                                : 'cursor-grab hover:shadow-lg hover:ring-1 hover:ring-indigo-300 dark:hover:ring-indigo-600'
-                            }`}
+                                  ? 'ring-4 ring-indigo-400 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 shadow-xl scale-[1.02] border-2 border-indigo-400'
+                                  : 'cursor-grab hover:shadow-lg hover:ring-1 hover:ring-indigo-300 dark:hover:ring-indigo-600'
+                              }`}
                             {...attributes}
                             {...customListeners}
                           >
@@ -599,7 +582,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 <X size={16} />
                               </button>
                             </div>
-                            
+
                             {/* Add button - Plus icon, positioned at bottom right, always visible */}
                             <div className="absolute bottom-2 right-2 z-40" style={{ pointerEvents: 'auto' }}>
                               <button
@@ -642,9 +625,9 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 </div>
                               )}
                             </div>
-                            
-                            <div 
-                              className="p-2 space-y-1 flex-shrink-0 relative z-30 pb-2" 
+
+                            <div
+                              className="p-2 space-y-1 flex-shrink-0 relative z-30 pb-2"
                               onClick={(e) => e.stopPropagation()}
                               onMouseDown={(e) => {
                                 e.stopPropagation();
@@ -660,11 +643,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                     setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
                                   }}
                                   onMouseDown={(e) => e.stopPropagation()}
-                                  className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors ${
-                                    defect.selectedFile
+                                  className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors ${defect.selectedFile
                                       ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
                                       : 'text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-600'
-                                  }`}
+                                    }`}
                                 >
                                   <div className="flex-1 text-left truncate">
                                     {defect.selectedFile || 'Select image'}
@@ -673,7 +655,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 </button>
 
                                 {isSelectorOpen && (
-                                  <div 
+                                  <div
                                     className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 z-30 flex flex-col"
                                     onClick={(e) => e.stopPropagation()}
                                   >
@@ -717,11 +699,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                             return next;
                                           });
                                         }}
-                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-700 ${
-                                          !defect.selectedFile
+                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-700 ${!defect.selectedFile
                                             ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
                                             : 'text-slate-600 dark:text-gray-300'
-                                        }`}
+                                          }`}
                                       >
                                         <div className="truncate">None</div>
                                       </button>
@@ -740,11 +721,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                                 return next;
                                               });
                                             }}
-                                            className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 ${
-                                              img.file.name === defect.selectedFile
+                                            className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 ${img.file.name === defect.selectedFile
                                                 ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
                                                 : 'text-slate-600 dark:text-gray-300'
-                                            }`}
+                                              }`}
                                           >
                                             <div className="truncate">{img.file.name}</div>
                                           </button>
@@ -758,7 +738,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   </div>
                                 )}
                               </div>
-                              <div 
+                              <div
                                 onMouseDown={(e) => {
                                   e.stopPropagation();
                                 }}
@@ -779,10 +759,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                       };
                       return <BulkDefectTile key={defect.photoNumber} />;
                     })}
-                  </div>
-                </SortableContext>
-              </div>
+                </div>
+              </SortableContext>
             </div>
+          </div>
         ) : (
           <BulkTextInput />
         )}

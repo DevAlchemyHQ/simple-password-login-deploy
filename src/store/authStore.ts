@@ -6,8 +6,18 @@ interface AuthState {
   logout: () => void;
 }
 
+// Check localStorage for existing auth state  
+const getStoredAuth = () => {
+  try {
+    return localStorage.getItem('isAuthenticated') === 'true';
+  } catch (error) {
+    console.error('Error reading auth from localStorage:', error);
+    return false;
+  }
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
-  isAuthenticated: false,
+  isAuthenticated: getStoredAuth(),
   setAuth: (isAuthenticated) => {
     set({ isAuthenticated });
     if (isAuthenticated) {

@@ -7,31 +7,34 @@ import { validateDescription } from '../utils/fileValidation';
 import { handleSingleSelectDownload, handleBatchDragDownload } from '../utils/downloadUtils';
 
 export const DownloadButton: React.FC = () => {
-  const { images, selectedImages, formData, bulkDefects, viewMode } = useMetadataStore();
+  const { images, selectedImages, formData, bulkDefects } = useMetadataStore();
   const { isValid, getValidationErrors } = useValidation();
   const { trackEvent } = useAnalytics();
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Automatically detect mode based on whether tiles exist
+  const isBatchMode = bulkDefects.length > 0;
+
   // ============================================
   // SINGLE SELECT MODE - Special Characters Check
   // ============================================
   const hasSpecialCharactersSingleSelect = React.useMemo(() => {
-    if (viewMode !== 'images') return false;
+    if (isBatchMode) return false;
     const selectedImagesList = images.filter(img => selectedImages.has(img.id));
     return selectedImagesList.some(img => !validateDescription(img.description || '').isValid);
-  }, [viewMode, images, selectedImages]);
+  }, [isBatchMode, images, selectedImages]);
 
   // ============================================
   // BATCH DRAG MODE - Special Characters Check
   // ============================================
   const hasSpecialCharactersBatchDrag = React.useMemo(() => {
-    if (viewMode !== 'text') return false;
+    if (!isBatchMode) return false;
     const defectsWithImages = bulkDefects.filter(defect => defect.selectedFile);
     return defectsWithImages.some(defect => 
       !validateDescription(defect.description || '').isValid
     );
-  }, [viewMode, bulkDefects]);
+  }, [isBatchMode, bulkDefects]);
 
   // ============================================
   // DOWNLOAD HANDLER - Routes to appropriate mode
@@ -41,8 +44,8 @@ export const DownloadButton: React.FC = () => {
       setIsDownloading(true);
       setError(null);
       
-      if (viewMode === 'text') {
-        // BATCH DRAG MODE DOWNLOAD
+      if (isBatchMode) {
+        // BATCH DRAG MODE DOWNLOAD - when tiles exist
         await handleBatchDragDownload(
           images,
           bulkDefects,
@@ -50,7 +53,7 @@ export const DownloadButton: React.FC = () => {
           trackEvent
         );
       } else {
-        // SINGLE SELECT MODE DOWNLOAD
+        // SINGLE SELECT MODE DOWNLOAD - when no tiles exist
         await handleSingleSelectDownload(
           images,
           selectedImages,
@@ -70,13 +73,13 @@ export const DownloadButton: React.FC = () => {
   // UI STATE
   // ============================================
   const errors = getValidationErrors();
-  const hasSpecialCharacters = viewMode === 'text' 
+  const hasSpecialCharacters = isBatchMode
     ? hasSpecialCharactersBatchDrag 
     : hasSpecialCharactersSingleSelect;
   const isDownloadDisabled = !isValid() || isDownloading || hasSpecialCharacters;
 
   // Button text based on mode
-  const buttonText = viewMode === 'text' 
+  const buttonText = isBatchMode
     ? (isDownloading ? 'Creating Batch Package...' : 'Download Batch Package')
     : (isDownloading ? 'Creating Package...' : 'Download Package');
 

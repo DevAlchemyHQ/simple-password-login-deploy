@@ -27,7 +27,7 @@ export const BulkTextInput: React.FC = () => {
     setBulkDefects((items) => {
       const sortedItems = [...items].sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
       const insertIndex = sortedItems.findIndex(item => item.photoNumber === afterPhotoNumber);
-      
+
       if (insertIndex === -1) {
         // If not found, add at the end
         const newPhotoNumber = String(items.length + 1);
@@ -40,7 +40,7 @@ export const BulkTextInput: React.FC = () => {
           },
         ];
       }
-      
+
       // Insert after the found item and renumber all subsequent items
       const newItems = [...sortedItems];
       newItems.splice(insertIndex + 1, 0, {
@@ -48,7 +48,7 @@ export const BulkTextInput: React.FC = () => {
         description: '',
         selectedFile: ''
       });
-      
+
       // Renumber all items to ensure sequential numbering
       return newItems.map((item, index) => ({
         ...item,
@@ -70,14 +70,14 @@ export const BulkTextInput: React.FC = () => {
 
   const handleBulkPaste = () => {
     const lines = bulkText.split('\n').filter(line => line.trim());
-    
+
     // Validate each line for special characters
     const invalidLines = lines.filter(line => !validateDescription(line.trim()).isValid);
     if (invalidLines.length > 0) {
       setError('Some descriptions contain invalid characters (/ or \\). Please remove them before proceeding.');
       return;
     }
-    
+
     setBulkDefects((prev) => {
       const sortedPrev = [...prev].sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
       const newDefects = lines.map((line) => ({
@@ -85,7 +85,7 @@ export const BulkTextInput: React.FC = () => {
         description: line.trim(),
         selectedFile: ''
       }));
-      
+
       const allDefects = [...sortedPrev, ...newDefects];
       // Renumber all items
       return allDefects.map((item, index) => ({
@@ -93,7 +93,7 @@ export const BulkTextInput: React.FC = () => {
         photoNumber: String(index + 1),
       }));
     });
-    
+
     setBulkText('');
     if (textareaRef.current) {
       textareaRef.current.value = '';
@@ -108,7 +108,7 @@ export const BulkTextInput: React.FC = () => {
       return;
     }
     setError(null);
-    
+
     setBulkDefects((items) =>
       items.map((item) =>
         item.photoNumber === photoNumber ? { ...item, description } : item
@@ -128,7 +128,7 @@ export const BulkTextInput: React.FC = () => {
 
     // Find the index of the clicked defect
     const index = defectsWithImages.findIndex(defect => defect.photoNumber === photoNumber);
-    
+
     if (index !== -1) {
       setViewerInitialIndex(index);
       setViewerOpen(true);
@@ -138,12 +138,12 @@ export const BulkTextInput: React.FC = () => {
   const handleDeleteImageFromDefect = (defectId: string) => {
     // Clear the selectedFile for this defect
     updateBulkDefectFile(defectId, '');
-    
+
     // If this was the last image, close viewer
-    const remainingDefects = bulkDefects.filter(defect => 
+    const remainingDefects = bulkDefects.filter(defect =>
       defect.selectedFile && defect.photoNumber !== defectId
     );
-    
+
     if (remainingDefects.length === 0) {
       setViewerOpen(false);
     }
@@ -152,7 +152,7 @@ export const BulkTextInput: React.FC = () => {
   // Prepare defects for viewer
   const defectsForViewer = React.useMemo(() => {
     if (!viewerOpen) return [];
-    
+
     return bulkDefects
       .filter(defect => defect.selectedFile)
       .sort((a, b) => parseInt(a.photoNumber) - parseInt(b.photoNumber))
@@ -185,11 +185,10 @@ export const BulkTextInput: React.FC = () => {
             <button
               onClick={handleBulkPaste}
               disabled={!bulkText.trim()}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                bulkText.trim()
-                  ? 'bg-indigo-500 text-white hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700'
-                  : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600 opacity-50 cursor-not-allowed'
-              }`}
+              className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${bulkText.trim()
+                ? 'bg-indigo-500 text-white hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700'
+                : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600 opacity-50 cursor-not-allowed'
+                }`}
             >
               <FileText size={16} />
               <span className="text-sm">Process Bulk Text</span>
@@ -208,21 +207,21 @@ export const BulkTextInput: React.FC = () => {
             {[...bulkDefects]
               .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
               .map((defect) => (
-              <DefectTile
-                key={defect.photoNumber}
-                id={defect.photoNumber}
-                photoNumber={defect.photoNumber}
-                description={defect.description}
-                selectedFile={defect.selectedFile}
-                availableFiles={images.map((img) => img.file.name)}
-                onDelete={() => deleteDefect(defect.photoNumber)}
-                onDescriptionChange={(value) =>
-                  updateDefectDescription(defect.photoNumber, value)
-                }
-                onFileChange={(fileName) => updateDefectFile(defect.photoNumber, fileName)}
-                onPhotoNumberClick={handlePhotoNumberClick}
-                onAddBelow={() => addDefectBelow(defect.photoNumber)}
-              />
+                <DefectTile
+                  key={defect.photoNumber}
+                  id={defect.photoNumber}
+                  photoNumber={defect.photoNumber}
+                  description={defect.description}
+                  selectedFile={defect.selectedFile}
+                  availableFiles={images.map((img) => img.file.name)}
+                  onDelete={() => deleteDefect(defect.photoNumber)}
+                  onDescriptionChange={(value) =>
+                    updateDefectDescription(defect.photoNumber, value)
+                  }
+                  onFileChange={(fileName) => updateDefectFile(defect.photoNumber, fileName)}
+                  onPhotoNumberClick={handlePhotoNumberClick}
+                  onAddBelow={() => addDefectBelow(defect.photoNumber)}
+                />
               ))}
           </div>
         </SortableContext>

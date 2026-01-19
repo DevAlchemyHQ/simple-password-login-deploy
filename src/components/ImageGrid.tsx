@@ -59,20 +59,7 @@ const EditableDateInput: React.FC<{
 };
 
 export const ImageGrid: React.FC = () => {
-  const renderCount = React.useRef(0);
-  renderCount.current++;
-  
-  // #region agent log
-  try {
-    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ImageGrid:RENDER',message:'ImageGrid rendering',data:{renderCount:renderCount.current},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-  } catch(e) {}
-  // #endregion
   const { images, updateImageMetadata } = useMetadataStore();
-  // #region agent log
-  try {
-    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ImageGrid:AFTER_STORE',message:'After store hook',data:{imagesCount:images.length,renderCount:renderCount.current},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-  } catch(e) {}
-  // #endregion
   const { gridWidth, setGridWidth } = useGridWidth();
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
 
@@ -121,11 +108,11 @@ export const ImageGrid: React.FC = () => {
 
   const updateDateForGroup = (oldDate: string, newDate: string) => {
     if (!newDate || oldDate === newDate) return;
-    
+
     // Update all images in this group with the new date
     const imagesToUpdate = imagesByDate.grouped[oldDate];
     if (!imagesToUpdate) return; // Safety check for undefined
-    
+
     imagesToUpdate.forEach(img => {
       updateImageMetadata(img.id, { date: newDate });
     });
@@ -156,7 +143,7 @@ export const ImageGrid: React.FC = () => {
           </h3>
         )}
       </div>
-      
+
       <div className="flex-1 min-h-0 overflow-y-auto scroll-smooth">
         {images.length === 0 ? (
           <div className="h-full flex items-center justify-center text-slate-400 dark:text-gray-500">
@@ -170,15 +157,14 @@ export const ImageGrid: React.FC = () => {
               const dateGroup = imagesByDate.grouped[date];
               if (!dateGroup) return null; // Safety check for undefined date groups
               const imageCount = dateGroup.length;
-              const isLastExpandedGroup = !isCollapsed && 
+              const isLastExpandedGroup = !isCollapsed &&
                 sortedDatesWithCollapsed.slice(index + 1).every(d => collapsedDates.has(d));
-              
+
               return (
-                <div 
-                  key={date} 
-                  className={`rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col ${
-                    isLastExpandedGroup ? 'flex-1' : ''
-                  }`}
+                <div
+                  key={date}
+                  className={`rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col ${isLastExpandedGroup ? 'flex-1' : ''
+                    }`}
                 >
                   {/* Date Group Header with Editable Date */}
                   <div className="w-full py-3 px-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-gray-800 dark:to-gray-700 border-b border-slate-200 dark:border-gray-600 backdrop-blur-sm transition-all duration-200 flex items-center justify-between gap-3 flex-shrink-0">
@@ -193,31 +179,30 @@ export const ImageGrid: React.FC = () => {
                           <ChevronDown size={20} className="text-slate-600 dark:text-gray-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
                         </div>
                       </button>
-                      
+
                       {/* Editable Date Input */}
-                      <EditableDateInput 
-                        date={date} 
-                        onDateChange={updateDateForGroup} 
+                      <EditableDateInput
+                        date={date}
+                        onDateChange={updateDateForGroup}
                       />
-                      
+
                       <span className="text-xs font-medium text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-gray-700 px-2 py-1 rounded-full">
                         {imageCount} {imageCount === 1 ? 'photo' : 'photos'}
                       </span>
                     </div>
                   </div>
-                  
+
                   {/* Images Grid (collapsible with smooth transition) */}
                   {!isCollapsed && (
-                    <div className={`relative p-3 animate-in fade-in-0 slide-in-from-top-2 duration-300 ${
-                      isLastExpandedGroup ? 'flex-1 min-h-0' : 'min-h-[400px] max-h-[600px]'
-                    }`}>
+                    <div className={`relative p-3 animate-in fade-in-0 slide-in-from-top-2 duration-300 ${isLastExpandedGroup ? 'flex-1 min-h-0' : 'min-h-[400px] max-h-[600px]'
+                      }`}>
                       <ImageGridItem images={imagesByDate.grouped[date]} gridWidth={gridWidth} />
                     </div>
                   )}
                 </div>
               );
             })}
-            
+
             {/* Images without date */}
             {imagesByDate.noDate.length > 0 && (
               <div className="rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-amber-200 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-900/10">

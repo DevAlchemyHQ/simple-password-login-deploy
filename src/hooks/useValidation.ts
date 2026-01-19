@@ -4,6 +4,7 @@ import { ImageMetadata } from '../types';
 /**
  * BATCH DEFECT VALIDATION
  * Validates batch defect tile requirements
+ * ALL tiles must have images assigned, descriptions, and dates
  */
 const validateBatchDrag = (
   bulkDefects: Array<{ photoNumber: string; description: string; selectedFile?: string }>,
@@ -16,19 +17,30 @@ const validateBatchDrag = (
   if (!formData.elr) errors.push('Enter ELR');
   if (!formData.structureNo) errors.push('Enter Structure No');
   
-  // Batch drag validation
-  const defectsWithImages = bulkDefects.filter(defect => defect.selectedFile);
+  // Check if there are images uploaded
+  if (images.length === 0) {
+    errors.push('Upload at least one image');
+  }
   
-  if (defectsWithImages.length === 0) {
-    errors.push('Assign at least one image to a defect');
+  // Check if there are tiles
+  if (bulkDefects.length === 0) {
+    errors.push('Create at least one tile');
   } else {
-    // Check for missing descriptions
-    if (defectsWithImages.some(defect => !defect.description?.trim())) {
-      errors.push('Add descriptions to all defects with images');
+    // ALL tiles must have images assigned
+    const tilesWithoutImages = bulkDefects.filter(defect => !defect.selectedFile);
+    if (tilesWithoutImages.length > 0) {
+      errors.push(`Assign images to all tiles (${tilesWithoutImages.length} tile${tilesWithoutImages.length > 1 ? 's' : ''} missing)`);
+    }
+    
+    // ALL tiles must have descriptions
+    const tilesWithoutDescriptions = bulkDefects.filter(defect => !defect.description?.trim());
+    if (tilesWithoutDescriptions.length > 0) {
+      errors.push(`Add descriptions to all tiles (${tilesWithoutDescriptions.length} tile${tilesWithoutDescriptions.length > 1 ? 's' : ''} missing)`);
     }
     
     // Check that all assigned images have dates
-    const assignedImages = defectsWithImages
+    const assignedImages = bulkDefects
+      .filter(defect => defect.selectedFile)
       .map(defect => images.find(img => img.file.name === defect.selectedFile))
       .filter(img => img !== undefined) as ImageMetadata[];
     
@@ -47,16 +59,21 @@ export const useValidation = () => {
     // Basic form validation
     if (!formData.elr || !formData.structureNo) return false;
     
-    // Batch defect mode validation
-    const defectsWithImages = bulkDefects.filter(defect => defect.selectedFile);
-    if (defectsWithImages.length === 0) return false;
+    // Must have images uploaded
+    if (images.length === 0) return false;
     
-    // All defects with images must have descriptions
-    const allHaveDescriptions = defectsWithImages.every(defect => defect.description?.trim() !== '');
-    if (!allHaveDescriptions) return false;
+    // Must have tiles created
+    if (bulkDefects.length === 0) return false;
+    
+    // ALL tiles must have images assigned
+    if (bulkDefects.some(defect => !defect.selectedFile)) return false;
+    
+    // ALL tiles must have descriptions
+    if (bulkDefects.some(defect => !defect.description?.trim())) return false;
     
     // All assigned images must have dates
-    const assignedImages = defectsWithImages
+    const assignedImages = bulkDefects
+      .filter(defect => defect.selectedFile)
       .map(defect => images.find(img => img.file.name === defect.selectedFile))
       .filter(img => img !== undefined) as ImageMetadata[];
     

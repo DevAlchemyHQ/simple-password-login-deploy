@@ -10,27 +10,15 @@ export const Sidebar: React.FC = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const handleClearCanvas = () => {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Sidebar:handleClearCanvas:START',message:'Clear canvas started',data:{hypothesisId:'F,G'},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-    // #endregion
     // Clear localStorage first
     localStorage.removeItem('userProjectData');
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Sidebar:handleClearCanvas:AFTER_LOCALSTORAGE',message:'After localStorage clear',data:{hypothesisId:'G'},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-    // #endregion
-    
+
     // Clear Zustand store
     reset();
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Sidebar:handleClearCanvas:AFTER_RESET',message:'After store reset',data:{hypothesisId:'G'},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-    // #endregion
-    
+
     // Close confirmation dialog
     setShowClearConfirm(false);
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Sidebar:handleClearCanvas:BEFORE_RELOAD',message:'About to reload page',data:{hypothesisId:'F'},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-    // #endregion
-    
+
     // Reload page to reset everything
     window.location.reload();
   };
@@ -42,7 +30,7 @@ export const Sidebar: React.FC = () => {
         <ImageUpload />
         <div className="mt-4 sticky bottom-0 bg-slate-50 dark:bg-gray-900 pt-2 space-y-2">
           <DownloadButton />
-          
+
           {/* Clear Canvas Link */}
           <div className="pt-3 border-t border-slate-200 dark:border-gray-700">
             <button
