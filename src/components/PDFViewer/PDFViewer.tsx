@@ -267,21 +267,39 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-      <PDFViewerSection
-        title="Upload Detailed Exam"
-        file={file1}
-        scale={scale1}
-        onFileChange={setFile1}
-        onZoom={(action) => handleZoom(1, action)}
-      />
-      <PDFViewerSection
-        title="Upload Visual Exam"
-        file={file2}
-        scale={scale2}
-        onFileChange={setFile2}
-        onZoom={(action) => handleZoom(2, action)}
-      />
+    <div className="h-full flex flex-col">
+      {/* Back button */}
+      {onToggleBack && (
+        <div className="mb-2">
+          <button
+            onClick={onToggleBack}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Single PDF + Tiles
+          </button>
+        </div>
+      )}
+      
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-hidden">
+        {/* PDF Viewer 1 */}
+        <PDFViewerSection
+          title="Upload Detailed Exam"
+          file={file1}
+          scale={scale1}
+          onFileChange={setFile1}
+          onZoom={(action) => handleZoom(1, action)}
+        />
+
+        {/* PDF Viewer 2 */}
+        <PDFViewerSection
+          title="Upload Visual Exam"
+          file={file2}
+          scale={scale2}
+          onFileChange={setFile2}
+          onZoom={(action) => handleZoom(2, action)}
+        />
+      </div>
     </div>
   );
 };
