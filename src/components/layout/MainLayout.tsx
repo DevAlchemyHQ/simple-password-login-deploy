@@ -6,6 +6,7 @@ import { GridReferenceFinder } from '../GridReferenceFinder/GridReferenceFinder'
 import { PDFViewer } from '../PDFViewer/PDFViewer';
 import { CalculatorTabs } from '../calculators/CalculatorTabs';
 import { BrowserTabs } from '../browser/BrowserTabs';
+import { SelectedImagesPanel } from '../SelectedImagesPanel';
 import { Images, Map, FileText, Calculator, Brain, Trash2, Loader2, Globe } from 'lucide-react';
 import { useMetadataStore } from '../../store/metadataStore';
 import { usePDFStore } from '../../store/pdfStore';
@@ -157,8 +158,18 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
 
             {/* Browser Tab */}
-            <div className={`h-full ${activeTab === 'browser' ? '' : 'hidden'}`}>
-              <BrowserTabs />
+            <div className={`h-full grid grid-cols-1 lg:grid-cols-12 gap-4 ${activeTab === 'browser' ? '' : 'hidden'}`}>
+              <div className="lg:col-span-8 overflow-hidden">
+                <BrowserTabs />
+              </div>
+              <div className="lg:col-span-4 overflow-hidden">
+                <SelectedImagesPanel 
+                  onExpand={() => {}} 
+                  isExpanded={true}
+                  activeDragId={null}
+                  overDragId={null}
+                />
+              </div>
             </div>
 
             {/* PDF Tab */}
