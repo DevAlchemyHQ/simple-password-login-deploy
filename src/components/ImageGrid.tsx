@@ -11,7 +11,6 @@ export const ImageGrid: React.FC = () => {
   const { gridWidth, setGridWidth } = useGridWidth();
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [savedDates, setSavedDates] = useState<string[]>([]);
-  const [editingDate, setEditingDate] = useState<{ [key: string]: string }>({});
   const dateInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   // Load saved dates from localStorage on mount
@@ -200,80 +199,8 @@ export const ImageGrid: React.FC = () => {
                         </div>
                       </button>
                       
-                      {/* Editable Date Display */}
+                      {/* Editable Date Picker */}
                       <input
-                        type="text"
-                        value={editingDate[date] !== undefined ? editingDate[date] : format(new Date(date), 'dd/MM/yyyy')}
-                        onFocus={(e) => {
-                          // Store current value when editing starts
-                          setEditingDate(prev => ({ ...prev, [date]: e.target.value }));
-                        }}
-                        onChange={(e) => {
-                          // Update local editing state as user types
-                          setEditingDate(prev => ({ ...prev, [date]: e.target.value }));
-                        }}
-                        onBlur={(e) => {
-                          const inputValue = e.target.value;
-                          // Try to parse and apply on blur
-                          try {
-                            const parsedDate = parse(inputValue, 'dd/MM/yyyy', new Date());
-                            if (!isNaN(parsedDate.getTime())) {
-                              const isoDate = format(parsedDate, 'yyyy-MM-dd');
-                              updateDateForGroup(date, isoDate);
-                              // Clear editing state
-                              setEditingDate(prev => {
-                                const newState = { ...prev };
-                                delete newState[date];
-                                return newState;
-                              });
-                            } else {
-                              // Invalid date - reset to original
-                              setEditingDate(prev => {
-                                const newState = { ...prev };
-                                delete newState[date];
-                                return newState;
-                              });
-                            }
-                          } catch {
-                            // Invalid date - reset to original
-                            setEditingDate(prev => {
-                              const newState = { ...prev };
-                              delete newState[date];
-                              return newState;
-                            });
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.currentTarget.blur(); // Trigger onBlur to apply changes
-                          }
-                          if (e.key === 'Escape') {
-                            // Cancel editing
-                            setEditingDate(prev => {
-                              const newState = { ...prev };
-                              delete newState[date];
-                              return newState;
-                            });
-                            e.currentTarget.blur();
-                          }
-                        }}
-                        className="text-base font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:outline-none transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 min-w-[130px] text-center cursor-text"
-                        placeholder="DD/MM/YYYY"
-                        title="Click to edit date (DD/MM/YYYY format) - Press Enter to apply, Esc to cancel"
-                      />
-                      
-                      {/* Calendar Icon for Date Picker */}
-                      <button
-                        onClick={() => dateInputRefs.current[date]?.showPicker()}
-                        className="p-2 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg transition-all duration-200 hover:scale-110 flex-shrink-0 group"
-                        title="Open date picker"
-                      >
-                        <Calendar size={20} className="text-indigo-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
-                      </button>
-                      
-                      {/* Hidden Date Input for Picker */}
-                      <input
-                        ref={(el) => dateInputRefs.current[date] = el}
                         type="date"
                         value={date}
                         onChange={(e) => {
@@ -282,7 +209,8 @@ export const ImageGrid: React.FC = () => {
                             updateDateForGroup(date, newDate);
                           }
                         }}
-                        className="sr-only"
+                        className="text-base font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:outline-none transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 cursor-pointer shadow-sm hover:shadow"
+                        title="Click to change date - click on day/month/year to edit individually"
                       />
                       
                       <span className="text-xs font-medium text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-gray-700 px-2 py-1 rounded-full">
