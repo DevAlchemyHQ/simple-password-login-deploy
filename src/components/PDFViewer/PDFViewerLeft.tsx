@@ -173,7 +173,7 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
                 className="mb-4 relative"
                 data-page-number={index + 1}
               >
-                <div className="relative" style={{ pointerEvents: 'none' }}>
+                <div className="relative">
                   <Page
                     pageNumber={index + 1}
                     width={containerWidth > 100 ? containerWidth * scale : 600}

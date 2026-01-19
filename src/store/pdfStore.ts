@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase';
 interface PDFState {
   file1: File | null;
   file2: File | null;
+  showBothPDFs: boolean;
+  setShowBothPDFs: (show: boolean) => void;
   setFile1: (file: File | null) => Promise<void>;
   setFile2: (file: File | null) => Promise<void>;
   clearFiles: () => void;
@@ -17,6 +19,8 @@ export const usePDFStore = create<PDFState>()(
     (set, get) => ({
       file1: null,
       file2: null,
+      showBothPDFs: false,
+      setShowBothPDFs: (show) => set({ showBothPDFs: show }),
       setFile1: async (file) => {
         try {
           if (file) {
@@ -136,6 +140,7 @@ export const usePDFStore = create<PDFState>()(
         // We don't persist the actual files since they can't be serialized
         file1: null,
         file2: null,
+        showBothPDFs: state.showBothPDFs,
       }),
     }
   )

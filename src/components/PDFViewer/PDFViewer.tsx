@@ -13,8 +13,6 @@ interface PDFViewerSectionProps {
   scale: number;
   onFileChange: (file: File | null) => void;
   onZoom: (action: 'in' | 'out') => void;
-  showBackButton?: boolean;
-  onBack?: () => void;
 }
 
 interface PageRotation {
@@ -27,8 +25,6 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
   scale,
   onFileChange,
   onZoom,
-  showBackButton = false,
-  onBack,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -50,15 +46,15 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
         }
       }
     };
-    
+
     // Initial measurement with delay to ensure DOM is ready
     setTimeout(updateWidth, 100);
     updateWidth();
-    
+
     window.addEventListener('resize', updateWidth);
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
-  
+
   // Re-measure when file changes
   useEffect(() => {
     if (file && containerRef.current) {
@@ -91,21 +87,10 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
 
 
   return (
-    <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full flex flex-col">
+    <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
       <div className="p-2 border-b border-slate-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            {showBackButton && onBack && (
-              <button
-                onClick={onBack}
-                className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
-                title="Back to single view"
-              >
-                <ArrowLeft size={16} className="text-slate-600 dark:text-white" />
-              </button>
-            )}
-            <h3 className="text-sm font-medium text-slate-800 dark:text-white">{title}</h3>
-          </div>
+          <h3 className="text-sm font-medium text-slate-800 dark:text-white">{title}</h3>
           <div className="flex items-center gap-1">
             <input
               type="file"
@@ -175,7 +160,7 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
           >
             {Array.from(new Array(numPages), (_, index) => {
               return (
-                <div 
+                <div
                   key={`page-${index + 1}`}
                   className="mb-4 relative"
                   data-page-number={index + 1}
@@ -237,10 +222,10 @@ const loadPDF = async (file: File) => {
 };
 
 interface PDFViewerProps {
-  onBack?: () => void;
+  onToggleBack?: () => void;
 }
 
-export const PDFViewer: React.FC<PDFViewerProps> = ({ onBack }) => {
+export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
   const { file1, file2, setFile1, setFile2, loadPDFs } = usePDFStore();
   const [scale1, setScale1] = useState(1.0);
   const [scale2, setScale2] = useState(1.0);
@@ -262,7 +247,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onBack }) => {
     const setScale = viewer === 1 ? setScale1 : setScale2;
     const currentScale = viewer === 1 ? scale1 : scale2;
     console.log(`[Zoom] Viewer ${viewer}, action: ${action}, current scale: ${currentScale}`);
-    
+
     setScale(prev => {
       const newScale = action === 'in' ? Math.min(prev + 0.1, 2.0) : Math.max(prev - 0.1, 0.5);
       console.log(`[Zoom] New scale: ${newScale}`);
@@ -282,15 +267,13 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
       <PDFViewerSection
         title="Upload Detailed Exam"
         file={file1}
         scale={scale1}
         onFileChange={setFile1}
         onZoom={(action) => handleZoom(1, action)}
-        showBackButton={!!onBack}
-        onBack={onBack}
       />
       <PDFViewerSection
         title="Upload Visual Exam"

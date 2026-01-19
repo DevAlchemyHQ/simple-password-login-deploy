@@ -25,14 +25,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabType>('images');
   const { images, selectedImages, loadUserData } = useMetadataStore();
-  const { file1, file2 } = usePDFStore();
+  const { file1, file2, showBothPDFs, setShowBothPDFs } = usePDFStore();
   const { clearProject, isLoading: isClearingProject } = useProjectStore();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isBrowserExpanded, setIsBrowserExpanded] = useState(false);
   const [isPDFExpanded, setIsPDFExpanded] = useState(false);
-  const [showRightPDF, setShowRightPDF] = useState(false);
 
   // Load user data only on initial mount
   useEffect(() => {
@@ -145,8 +144,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
                 {/* Selected Images Panel on right side */}
                 <div className="h-full overflow-hidden lg:col-span-5">
-                  <SelectedImagesPanel 
-                    onExpand={() => setIsBrowserExpanded(!isBrowserExpanded)} 
+                  <SelectedImagesPanel
+                    onExpand={() => setIsBrowserExpanded(!isBrowserExpanded)}
                     isExpanded={isBrowserExpanded}
                     activeDragId={null}
                     overDragId={null}
@@ -157,24 +156,22 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
 
             {/* PDF Tab */}
-            <div className={`h-full overflow-hidden ${activeTab === 'pdf' ? '' : 'hidden'}`}>
-              {showRightPDF ? (
+            <div className={`h-full ${activeTab === 'pdf' ? '' : 'hidden'}`}>
+              {showBothPDFs ? (
                 // Show both PDF viewers side by side
-                <div className="h-full overflow-hidden">
-                  <PDFViewer onBack={() => setShowRightPDF(false)} />
-                </div>
+                <PDFViewer onToggleBack={() => setShowBothPDFs(false)} />
               ) : (
                 // Show left PDF viewer + tiles (like Browser tab)
                 <div className="lg:col-span-10 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
                   {/* Left PDF Viewer */}
                   <div className="h-full overflow-hidden lg:col-span-7">
-                    <PDFViewerLeft onToggleBoth={() => setShowRightPDF(true)} />
+                    <PDFViewerLeft onToggleBoth={() => setShowBothPDFs(true)} />
                   </div>
 
                   {/* Selected Images Panel on right side */}
                   <div className="h-full overflow-hidden lg:col-span-5">
-                    <SelectedImagesPanel 
-                      onExpand={() => setIsPDFExpanded(!isPDFExpanded)} 
+                    <SelectedImagesPanel
+                      onExpand={() => setIsPDFExpanded(!isPDFExpanded)}
                       isExpanded={isPDFExpanded}
                       activeDragId={null}
                       overDragId={null}
