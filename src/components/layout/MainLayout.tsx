@@ -5,15 +5,14 @@ import { MainContent } from './MainContent';
 import { GridReferenceFinder } from '../GridReferenceFinder/GridReferenceFinder';
 import { PDFViewer } from '../PDFViewer/PDFViewer';
 import { CalculatorTabs } from '../calculators/CalculatorTabs';
-import { GameTabs } from '../games/GameTabs';
-import { Images, Map, FileText, Calculator, Brain, Trash2, TowerControl as GameController, Loader2 } from 'lucide-react';
+import { Images, Map, FileText, Calculator, Brain, Trash2, Loader2 } from 'lucide-react';
 import { useMetadataStore } from '../../store/metadataStore';
 import { usePDFStore } from '../../store/pdfStore';
 import { useProjectStore } from '../../store/projectStore';
 import { FeedbackTab } from '../FeedbackTab';
 import { useLocation } from 'react-router-dom';
 
-type TabType = 'images' | 'pdf' | 'calculator' | 'bcmi' | 'grid' | 'games';
+type TabType = 'images' | 'pdf' | 'calculator' | 'bcmi' | 'grid';
 
 interface MainLayoutProps {
   children?: React.ReactNode;
@@ -111,8 +110,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 { id: 'pdf', icon: FileText, label: 'PDF' },
                 { id: 'calculator', icon: Calculator, label: 'Calc' },
                 { id: 'grid', icon: Map, label: 'Grid' },
-                { id: 'bcmi', icon: Brain, label: 'BCMI & AI' },
-                { id: 'games', icon: GameController, label: 'Games' }
+                { id: 'bcmi', icon: Brain, label: 'BCMI & AI' }
               ].map(({ id, icon: Icon, label }) => (
                 <button
                   key={id}
@@ -169,11 +167,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             {/* Grid Tab */}
             <div className={activeTab === 'grid' ? '' : 'hidden'}>
               <GridReferenceFinder />
-            </div>
-
-            {/* Games Tab */}
-            <div className={activeTab === 'games' ? '' : 'hidden'}>
-              <GameTabs />
             </div>
 
             {/* BCMI Tab */}
