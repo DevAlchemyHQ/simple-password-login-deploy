@@ -47,9 +47,10 @@ interface SelectedImagesPanelProps {
   isExpanded: boolean;
   activeDragId?: string | null;
   overDragId?: string | null;
+  activeTab?: 'images' | 'browser';
 }
 
-export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpand, isExpanded, activeDragId, overDragId }) => {
+export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpand, isExpanded, activeDragId, overDragId, activeTab = 'images' }) => {
   const {
     images,
     updateImageMetadata,
@@ -435,7 +436,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                 items={bulkDefects.map((d) => d.photoNumber)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="grid gap-2 grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+                <div className={`grid gap-2 ${
+                  activeTab === 'browser' 
+                    ? 'grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5' 
+                    : 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7'
+                }`}>
                   {bulkDefects
                     .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
                     .map((defect) => {

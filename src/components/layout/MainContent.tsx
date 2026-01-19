@@ -219,6 +219,7 @@ export const MainContent: React.FC = () => {
             isExpanded={isExpanded}
             activeDragId={activeId}
             overDragId={overId}
+            activeTab="images"
           />
         </div>
       </div>

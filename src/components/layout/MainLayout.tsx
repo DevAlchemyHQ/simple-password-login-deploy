@@ -29,6 +29,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isBrowserExpanded, setIsBrowserExpanded] = useState(false);
 
   // Load user data only on initial mount
   useEffect(() => {
@@ -168,10 +169,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 {/* Selected Images Panel on right side */}
                 <div className="h-full overflow-hidden lg:col-span-5">
                   <SelectedImagesPanel 
-                    onExpand={() => {}} 
-                    isExpanded={false}
+                    onExpand={() => setIsBrowserExpanded(!isBrowserExpanded)} 
+                    isExpanded={isBrowserExpanded}
                     activeDragId={null}
                     overDragId={null}
+                    activeTab="browser"
                   />
                 </div>
               </div>
