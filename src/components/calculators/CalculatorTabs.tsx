@@ -2,16 +2,18 @@ import React from 'react';
 import { MeasurementReference } from './MeasurementReference';
 import { UnitConverter } from './UnitConverter';
 import { ChainsConverter } from './ChainsConverter';
-import { AreaCalculator } from './AreaCalculator';
+import { BasicCalculator } from './BasicCalculator';
+import { LocationReferenceConverter } from './LocationReferenceConverter';
 
 export const CalculatorTabs: React.FC = () => {
   return (
     <div className="h-[calc(100vh-120px)] overflow-auto p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+        <BasicCalculator />
         <MeasurementReference />
         <UnitConverter />
         <ChainsConverter />
-        <AreaCalculator />
+        <LocationReferenceConverter />
       </div>
     </div>
   );
