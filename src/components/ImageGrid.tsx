@@ -199,20 +199,62 @@ export const ImageGrid: React.FC = () => {
                         </div>
                       </button>
                       
-                      {/* Editable Date Picker */}
-                      <input
-                        type="date"
-                        value={date}
-                        onChange={(e) => {
-                          const newDate = e.target.value;
-                          if (newDate) {
-                            updateDateForGroup(date, newDate);
-                          }
-                        }}
-                        className="text-base font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:outline-none transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 cursor-pointer shadow-sm hover:shadow w-[165px]"
-                        style={{ colorScheme: 'light dark' }}
-                        title="Click to change date - click on day/month/year to edit individually"
-                      />
+                      {/* Custom Date Input (DD/MM/YYYY) */}
+                      <div className="flex items-center gap-1 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800 focus-within:border-indigo-400 dark:focus-within:border-indigo-500 transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 shadow-sm hover:shadow">
+                        <input
+                          type="text"
+                          value={date.split('-')[2]}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            const day = e.target.value.replace(/\D/g, '').slice(0, 2);
+                            const [year, month] = date.split('-');
+                            if (day === '') {
+                              updateDateForGroup(date, `${year}-${month}-01`);
+                            } else if (parseInt(day) >= 1 && parseInt(day) <= 31) {
+                              updateDateForGroup(date, `${year}-${month}-${day.padStart(2, '0')}`);
+                            }
+                          }}
+                          placeholder="DD"
+                          maxLength={2}
+                          className="w-8 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
+                        />
+                        <span className="text-slate-400">/</span>
+                        <input
+                          type="text"
+                          value={date.split('-')[1]}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            const month = e.target.value.replace(/\D/g, '').slice(0, 2);
+                            const [year, , day] = date.split('-');
+                            if (month === '') {
+                              updateDateForGroup(date, `${year}-01-${day}`);
+                            } else if (parseInt(month) >= 1 && parseInt(month) <= 12) {
+                              updateDateForGroup(date, `${year}-${month.padStart(2, '0')}-${day}`);
+                            }
+                          }}
+                          placeholder="MM"
+                          maxLength={2}
+                          className="w-8 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
+                        />
+                        <span className="text-slate-400">/</span>
+                        <input
+                          type="text"
+                          value={date.split('-')[0]}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            const year = e.target.value.replace(/\D/g, '').slice(0, 4);
+                            const [, month, day] = date.split('-');
+                            if (year === '') {
+                              updateDateForGroup(date, `2026-${month}-${day}`);
+                            } else if (year.length === 4 && parseInt(year) >= 1900 && parseInt(year) <= 2100) {
+                              updateDateForGroup(date, `${year}-${month}-${day}`);
+                            }
+                          }}
+                          placeholder="YYYY"
+                          maxLength={4}
+                          className="w-12 text-center text-base font-semibold text-slate-700 dark:text-gray-300 bg-transparent focus:outline-none"
+                        />
+                      </div>
                       
                       <span className="text-xs font-medium text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-gray-700 px-2 py-1 rounded-full">
                         {imageCount} {imageCount === 1 ? 'photo' : 'photos'}
