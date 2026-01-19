@@ -59,7 +59,20 @@ const EditableDateInput: React.FC<{
 };
 
 export const ImageGrid: React.FC = () => {
+  const renderCount = React.useRef(0);
+  renderCount.current++;
+  
+  // #region agent log
+  try {
+    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ImageGrid:RENDER',message:'ImageGrid rendering',data:{renderCount:renderCount.current},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+  } catch(e) {}
+  // #endregion
   const { images, updateImageMetadata } = useMetadataStore();
+  // #region agent log
+  try {
+    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'ImageGrid:AFTER_STORE',message:'After store hook',data:{imagesCount:images.length,renderCount:renderCount.current},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+  } catch(e) {}
+  // #endregion
   const { gridWidth, setGridWidth } = useGridWidth();
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
 
@@ -110,7 +123,9 @@ export const ImageGrid: React.FC = () => {
     if (!newDate || oldDate === newDate) return;
     
     // Update all images in this group with the new date
-    const imagesToUpdate = imagesByDate.grouped[oldDate] || [];
+    const imagesToUpdate = imagesByDate.grouped[oldDate];
+    if (!imagesToUpdate) return; // Safety check for undefined
+    
     imagesToUpdate.forEach(img => {
       updateImageMetadata(img.id, { date: newDate });
     });
@@ -152,7 +167,9 @@ export const ImageGrid: React.FC = () => {
             {/* Images grouped by date - expanded first, collapsed at bottom */}
             {sortedDatesWithCollapsed.map((date, index) => {
               const isCollapsed = collapsedDates.has(date);
-              const imageCount = imagesByDate.grouped[date].length;
+              const dateGroup = imagesByDate.grouped[date];
+              if (!dateGroup) return null; // Safety check for undefined date groups
+              const imageCount = dateGroup.length;
               const isLastExpandedGroup = !isCollapsed && 
                 sortedDatesWithCollapsed.slice(index + 1).every(d => collapsedDates.has(d));
               

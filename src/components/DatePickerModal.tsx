@@ -28,19 +28,30 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   if (!isOpen) return null;
 
   const handleConfirm = () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DatePickerModal:handleConfirm',message:'Confirm button clicked',data:{selectedDate,hypothesisId:'A,B'},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+    // #endregion
     if (selectedDate) {
       onConfirm(selectedDate);
     }
   };
 
   const handleCancel = () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DatePickerModal:handleCancel',message:'Cancel/backdrop clicked',data:{hypothesisId:'A'},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+    // #endregion
     onClose();
   };
 
   return (
     <div 
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      onClick={handleCancel}
+      onClick={(e) => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'DatePickerModal:backdrop',message:'Backdrop div clicked',data:{target:e.target.className,hypothesisId:'A'},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+        // #endregion
+        handleCancel();
+      }}
     >
       <div 
         className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"

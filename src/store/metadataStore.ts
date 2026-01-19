@@ -44,6 +44,9 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
   },
 
   addImages: async (files, date) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'metadataStore:addImages:START',message:'addImages started',data:{filesCount:files.length,date},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+    // #endregion
     console.log('[metadataStore] addImages called with', files.length, 'files and date:', date);
     try {
       // For simple password auth, use localStorage-based user ID
@@ -53,7 +56,7 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       // This ensures user edits (photo numbers, descriptions) are never lost
       const storedData = localStorage.getItem('userProjectData');
       const storedMetadata: { [fileName: string]: { photoNumber: string; description: string; date?: string } } = {};
-      
+
       if (storedData) {
         try {
           const projectData = JSON.parse(storedData);
@@ -79,7 +82,7 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       // Images will be re-uploaded by user, but metadata (photoNumber, description, date) is restored
       const newImages = await Promise.all(files.map(async (file) => {
         const blobUrl = URL.createObjectURL(file);
-        
+
         // Restore photoNumber, description, and date from stored metadata if this file was uploaded before
         // This ensures user work is never lost - all edits are preserved
         // If date is provided in upload, always use it; otherwise restore from stored metadata
@@ -100,20 +103,32 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
         };
       }));
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'metadataStore:addImages:BEFORE_SET',message:'Before set state',data:{newImagesCount:newImages.length},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+      // #endregion
       set((state) => {
         const updatedImages = [...state.images, ...newImages];
-        
+
         // Auto-match newly uploaded images to existing bulkDefects by filename
         // This allows re-uploaded photos to automatically appear in their assigned tiles
         // The matching happens in SelectedImagesPanel via getImageForDefect() which uses selectedFile
         // No action needed here - the matching is automatic when selectedFile matches file.name
-        
+
         return { images: updatedImages };
       });
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'metadataStore:addImages:AFTER_SET',message:'After set state',data:{imagesCount:get().images.length},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+      // #endregion
 
       // Save project data after successful uploads
       await get().saveUserData();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'metadataStore:addImages:COMPLETE',message:'addImages completed',data:{},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+      // #endregion
     } catch (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'metadataStore:addImages:ERROR',message:'Error in addImages',data:{error:String(error)},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+      // #endregion
       console.error('Error adding images:', error);
       throw error;
     }
@@ -124,14 +139,14 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       const updatedImages = state.images.map((img) =>
         img.id === id ? { ...img, ...data } : img
       );
-      
+
       const sortedImages = [...updatedImages].sort((a, b) => {
         if (state.defectSortDirection) {
           const numA = parseInt(a.photoNumber || '0');
           const numB = parseInt(b.photoNumber || '0');
           return state.defectSortDirection === 'asc' ? numA - numB : numB - numA;
         }
-        
+
         return 0;
       });
 
@@ -143,7 +158,7 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
   removeImage: async (id) => {
     try {
       const imageToRemove = get().images.find(img => img.id === id);
-      
+
       // Revoke blob URL to free memory
       if (imageToRemove?.preview && imageToRemove.preview.startsWith('blob:')) {
         URL.revokeObjectURL(imageToRemove.preview);
@@ -212,7 +227,7 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
     try {
       // Load from localStorage instead of Supabase
       const storedData = localStorage.getItem('userProjectData');
-      
+
       if (!storedData) {
         // No stored data, use initial state
         return;
@@ -239,7 +254,7 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       // 3. Images automatically match to tiles via filename: img.file.name === defect.selectedFile
       // 4. This matching happens automatically in SelectedImagesPanel via getImageForDefect()
       // 5. Result: User work is never lost - all metadata persists across refresh/logout/shutdown
-      
+
       set({
         formData: projectData.form_data || initialFormData,
         bulkDefects: projectData.bulkDefects || []
@@ -256,7 +271,7 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
   saveUserData: async () => {
     try {
       const state = get();
-      
+
       // METADATA-ONLY STORAGE (No base64 images to save localStorage space)
       // 
       // What gets saved:
@@ -272,7 +287,7 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       // - Images automatically match to tiles via selectedFile (filename) matching
       // - This happens in SelectedImagesPanel.tsx via getImageForDefect() function
       // - Result: User work is never lost - all edits persist across refresh/logout/shutdown
-      
+
       // Store only metadata - NO base64 image data (saves ~33% space per image)
       const imagesData = state.images.map(img => ({
         id: img.id,

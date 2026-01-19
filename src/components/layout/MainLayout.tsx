@@ -106,9 +106,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex flex-col">
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="flex-1 max-w-[1920px] mx-auto w-full px-2 overflow-hidden">
+      <main className="flex-1 max-w-[1920px] mx-auto w-full px-2 overflow-hidden flex flex-col">
         {images.length > 0 && (
-          <div className="flex justify-end py-2">
+          <div className="flex justify-end py-2 flex-shrink-0">
             <button
               onClick={() => setShowClearConfirm(true)}
               className="flex items-center gap-1 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
@@ -124,73 +124,89 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </div>
         )}
 
-        <div className="flex-1 h-[calc(100vh-80px)] overflow-hidden">
-          <div className={`transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className={`h-full transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
             {/* Images Tab */}
-            <div className={`h-full grid grid-cols-1 lg:grid-cols-12 gap-4 ${activeTab === 'images' ? '' : 'hidden'}`}>
-              <div className="lg:col-span-2 overflow-hidden">
-                <Sidebar />
-              </div>
-              <MainContent />
-            </div>
-
-            {/* Browser Tab */}
-            <div className={`h-full ${activeTab === 'browser' ? '' : 'hidden'}`}>
-              <div className="lg:col-span-10 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
-                {/* Browser taking left side */}
-                <div className="h-full overflow-hidden lg:col-span-7">
-                  <BrowserTabs />
+            {activeTab === 'images' && (
+              <React.Fragment key="images-tab">
+                <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  <div className="lg:col-span-2 overflow-hidden">
+                    <Sidebar />
+                  </div>
+                  <MainContent />
                 </div>
+              </React.Fragment>
+            )}
 
-                {/* Selected Images Panel on right side */}
-                <div className="h-full overflow-hidden lg:col-span-5">
-                  <SelectedImagesPanel
-                    onExpand={() => setIsBrowserExpanded(!isBrowserExpanded)}
-                    isExpanded={isBrowserExpanded}
-                    activeDragId={null}
-                    overDragId={null}
-                    activeTab="browser"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* PDF Tab */}
-            <div className={`h-full ${activeTab === 'pdf' ? '' : 'hidden'}`}>
-              {!showBothPDFs ? (
-                // Show left PDF viewer + tiles (like Browser tab)
-                <div className="lg:col-span-10 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
-                  {/* Left PDF Viewer */}
-                  <div className="h-full lg:col-span-7">
-                    <PDFViewerLeft onToggleBoth={() => setShowBothPDFs(true)} />
+            {/* Browser Tab - Only render when active */}
+            {activeTab === 'browser' && (
+              <div className="h-full">
+                <div className="lg:col-span-10 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
+                  {/* Browser taking left side */}
+                  <div className="h-full overflow-hidden lg:col-span-7">
+                    <BrowserTabs />
                   </div>
 
                   {/* Selected Images Panel on right side */}
                   <div className="h-full overflow-hidden lg:col-span-5">
                     <SelectedImagesPanel
-                      onExpand={() => setIsPDFExpanded(!isPDFExpanded)}
-                      isExpanded={isPDFExpanded}
+                      key="browser-panel"
+                      onExpand={() => setIsBrowserExpanded(!isBrowserExpanded)}
+                      isExpanded={isBrowserExpanded}
                       activeDragId={null}
                       overDragId={null}
                       activeTab="browser"
                     />
                   </div>
                 </div>
-              ) : (
-                // Show both PDF viewers side by side (DEFAULT)
-                <PDFViewer onToggleBack={() => setShowBothPDFs(false)} />
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* PDF Tab - Only render when active */}
+            {activeTab === 'pdf' && (
+              <div className="lg:col-span-10 h-full overflow-hidden">
+                {/* Single PDF + Image Tiles View */}
+                {!showBothPDFs ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
+                    {/* Left PDF Viewer */}
+                    <div className="h-full overflow-hidden lg:col-span-7">
+                      <PDFViewerLeft onToggleBoth={() => setShowBothPDFs(true)} />
+                    </div>
+
+                    {/* Selected Images Panel on right side */}
+                    <div className="h-full overflow-hidden lg:col-span-5">
+                      <SelectedImagesPanel
+                        key="pdf-panel"
+                        onExpand={() => setIsPDFExpanded(!isPDFExpanded)}
+                        isExpanded={isPDFExpanded}
+                        activeDragId={null}
+                        overDragId={null}
+                        activeTab="browser"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  /* Both PDFs View */
+                  <div className="h-full overflow-hidden">
+                    <PDFViewer onToggleBack={() => setShowBothPDFs(false)} />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Calculator Tab */}
-            <div className={activeTab === 'calculator' ? '' : 'hidden'}>
-              <CalculatorTabs />
-            </div>
+            {activeTab === 'calculator' && (
+              <div className="h-full">
+                <CalculatorTabs />
+              </div>
+            )}
 
             {/* Grid Tab */}
-            <div className={activeTab === 'grid' ? '' : 'hidden'}>
-              <GridReferenceFinder />
-            </div>
+            {activeTab === 'grid' && (
+              <div className="h-full">
+                <GridReferenceFinder />
+              </div>
+            )}
 
             {/* BCMI Tab */}
             {activeTab === 'bcmi' && (

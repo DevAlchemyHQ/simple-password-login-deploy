@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { ImageGrid } from '../ImageGrid';
 import { SelectedImagesPanel } from '../SelectedImagesPanel';
 import {
@@ -17,11 +17,17 @@ import {
 } from '@dnd-kit/sortable';
 import { useMetadataStore } from '../../store/metadataStore';
 
-export const MainContent: React.FC = () => {
+const MainContentComponent: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
-  const { bulkDefects, setBulkDefects, updateBulkDefectFile, images, viewMode } = useMetadataStore();
+  
+  // Optimize store subscriptions - only subscribe to what we need
+  const bulkDefects = useMetadataStore((state) => state.bulkDefects);
+  const setBulkDefects = useMetadataStore((state) => state.setBulkDefects);
+  const updateBulkDefectFile = useMetadataStore((state) => state.updateBulkDefectFile);
+  const images = useMetadataStore((state) => state.images);
+  const viewMode = useMetadataStore((state) => state.viewMode);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -273,3 +279,5 @@ export const MainContent: React.FC = () => {
     </DndContext>
   );
 };
+
+export const MainContent = memo(MainContentComponent);

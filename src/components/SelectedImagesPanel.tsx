@@ -51,6 +51,14 @@ interface SelectedImagesPanelProps {
 }
 
 export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpand, isExpanded, activeDragId, overDragId, activeTab = 'images' }) => {
+  const renderCount = React.useRef(0);
+  renderCount.current++;
+  
+  // #region agent log
+  try {
+    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel:RENDER',message:'Panel rendering',data:{activeTab,isExpanded,renderCount:renderCount.current},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+  } catch(e) {}
+  // #endregion
   const {
     images,
     updateImageMetadata,
@@ -60,6 +68,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     setBulkDefects,
     updateBulkDefectFile
   } = useMetadataStore();
+  // #region agent log
+  try {
+    fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel:AFTER_STORE',message:'After store hook',data:{imagesCount:images.length,bulkDefectsCount:bulkDefects.length,renderCount:renderCount.current},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+  } catch(e) {}
+  // #endregion
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [imageSelectorOpen, setImageSelectorOpen] = useState<string | null>(null);
   const [imageSearchQuery, setImageSearchQuery] = useState<Record<string, string>>({});
@@ -378,15 +391,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
   // Check if there's saved metadata (bulkDefects or form data) even without images
   const hasSavedMetadata = bulkDefects.length > 0;
-  
-  // If no images but there's saved batch drag data, show it with a notification
-  if (images.length === 0 && !hasSavedMetadata) {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex items-center justify-center p-8 text-slate-400 dark:text-gray-500">
-        No images uploaded
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">

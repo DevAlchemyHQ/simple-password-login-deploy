@@ -73,40 +73,36 @@ export const UnitConverter: React.FC = () => {
     <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6">
         <Ruler className="text-indigo-500" size={24} />
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white">
           Unit Converter
         </h2>
       </div>
 
-      <div className="prose dark:prose-invert max-w-none mb-8">
-        <div className="mt-4">
-          <h3 className="text-lg font-medium text-slate-700 dark:text-gray-200">
-            Supported Units:
-          </h3>
-          <ul className="list-disc list-inside text-slate-600 dark:text-gray-300">
-            {units.map(({ unit }) => (
-              <li key={unit}>{unit}</li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div className="space-y-4">
+      <div className="space-y-3">
         {conversions.map((conversion, index) => (
-          <div key={conversion.unit} className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <label className="w-40 text-sm font-medium text-slate-700 dark:text-gray-300">
-              {conversion.unit}
+          <div key={conversion.unit} className="flex items-center gap-3">
+            <label className="w-24 text-sm font-semibold text-slate-700 dark:text-gray-300">
+              {conversion.unit.split(' ')[0]}
             </label>
+            <span className="text-xs text-slate-500 dark:text-gray-400 w-8">
+              {conversion.unit.match(/\(([^)]+)\)/)?.[1]}
+            </span>
             <input
               type="text"
               inputMode="decimal"
               value={conversion.value}
               onChange={(e) => handleInputChange(index, e.target.value)}
-              placeholder="Enter value"
-              className="flex-1 p-3 text-lg bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white"
+              placeholder="0"
+              className="flex-1 p-2.5 text-base bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white"
             />
           </div>
         ))}
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-slate-200 dark:border-gray-700">
+        <p className="text-xs text-slate-500 dark:text-gray-400">
+          Enter a value in any unit to convert to all others automatically
+        </p>
       </div>
     </div>
   );

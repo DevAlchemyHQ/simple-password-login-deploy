@@ -49,14 +49,14 @@ export const ChainsConverter: React.FC = () => {
     <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6">
         <ArrowLeftRight className="text-indigo-500" size={24} />
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
+        <h2 className="text-xl font-bold text-slate-800 dark:text-white">
           Distance Converter
         </h2>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
-          <label className="block text-base font-semibold text-slate-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2">
             Chains:
           </label>
           <input
@@ -67,12 +67,12 @@ export const ChainsConverter: React.FC = () => {
               calculateFromChains(e.target.value);
             }}
             placeholder="Enter chains"
-            className="w-full p-3 text-lg bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white"
+            className="w-full p-3 text-base bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white"
           />
         </div>
 
         <div>
-          <label className="block text-base font-semibold text-slate-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2">
             Meters:
           </label>
           <input
@@ -83,36 +83,36 @@ export const ChainsConverter: React.FC = () => {
               calculateFromMeters(e.target.value);
             }}
             placeholder="Enter meters"
-            className="w-full p-3 text-lg bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white"
+            className="w-full p-3 text-base bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white"
           />
         </div>
 
-        <div className="p-4 bg-slate-50 dark:bg-gray-700/50 rounded-lg space-y-4">
+        <div className="p-4 bg-slate-50 dark:bg-gray-700/50 rounded-lg space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Ruler className="text-indigo-500" size={20} />
-              <span className="text-lg font-semibold text-slate-700 dark:text-gray-300">Distance</span>
+              <span className="text-sm font-semibold text-slate-700 dark:text-gray-300">Distance</span>
             </div>
-            <div className="space-y-2 text-right">
-              <div className="text-lg text-slate-700 dark:text-gray-300">
+            <div className="space-y-1 text-right">
+              <div className="text-base text-slate-700 dark:text-gray-300">
                 <span className="font-semibold">{chains || '0'}</span> chains
               </div>
-              <div className="text-lg text-slate-700 dark:text-gray-300">
+              <div className="text-base text-slate-700 dark:text-gray-300">
                 <span className="font-semibold">{meters || '0'}</span> meters
               </div>
-              <div className="text-lg text-slate-700 dark:text-gray-300">
+              <div className="text-base text-slate-700 dark:text-gray-300">
                 <span className="font-semibold">{yards || '0'}</span> yards
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-gray-600">
+          <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-gray-600">
             <div className="flex items-center gap-2">
               <User className="text-indigo-500" size={20} />
-              <span className="text-lg font-semibold text-slate-700 dark:text-gray-300">Walking Time</span>
+              <span className="text-sm font-semibold text-slate-700 dark:text-gray-300">Walking Time</span>
             </div>
-            <div className="text-lg text-slate-700 dark:text-gray-300">
-              <span className="font-semibold">{walkingTime || '0'}</span> minutes
+            <div className="text-base text-slate-700 dark:text-gray-300">
+              <span className="font-semibold">{walkingTime || '0'}</span> min
             </div>
           </div>
         </div>
