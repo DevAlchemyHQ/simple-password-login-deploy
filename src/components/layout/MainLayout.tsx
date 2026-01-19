@@ -5,6 +5,7 @@ import { MainContent } from './MainContent';
 import { SelectedImagesPanel } from '../SelectedImagesPanel';
 import { GridReferenceFinder } from '../GridReferenceFinder/GridReferenceFinder';
 import { PDFViewer } from '../PDFViewer/PDFViewer';
+import { PDFViewerLeft } from '../PDFViewer/PDFViewerLeft';
 import { CalculatorTabs } from '../calculators/CalculatorTabs';
 import { BrowserTabs } from '../browser/BrowserTabs';
 import { Trash2, Loader2 } from 'lucide-react';
@@ -30,6 +31,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isBrowserExpanded, setIsBrowserExpanded] = useState(false);
+  const [isPDFExpanded, setIsPDFExpanded] = useState(false);
+  const [showRightPDF, setShowRightPDF] = useState(false);
 
   // Load user data only on initial mount
   useEffect(() => {
@@ -155,7 +158,29 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
             {/* PDF Tab */}
             <div className={`h-full ${activeTab === 'pdf' ? '' : 'hidden'}`}>
-              <PDFViewer />
+              {showRightPDF ? (
+                // Show both PDF viewers side by side
+                <PDFViewer />
+              ) : (
+                // Show left PDF viewer + tiles (like Browser tab)
+                <div className="lg:col-span-10 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
+                  {/* Left PDF Viewer */}
+                  <div className="h-full overflow-hidden lg:col-span-7">
+                    <PDFViewerLeft onToggleBoth={() => setShowRightPDF(true)} />
+                  </div>
+
+                  {/* Selected Images Panel on right side */}
+                  <div className="h-full overflow-hidden lg:col-span-5">
+                    <SelectedImagesPanel 
+                      onExpand={() => setIsPDFExpanded(!isPDFExpanded)} 
+                      isExpanded={isPDFExpanded}
+                      activeDragId={null}
+                      overDragId={null}
+                      activeTab="browser"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Calculator Tab */}
