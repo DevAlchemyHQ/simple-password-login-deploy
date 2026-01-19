@@ -91,10 +91,21 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
 
 
   return (
-    <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
+    <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full flex flex-col">
       <div className="p-2 border-b border-slate-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-slate-800 dark:text-white">{title}</h3>
+          <div className="flex items-center gap-2">
+            {showBackButton && onBack && (
+              <button
+                onClick={onBack}
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
+                title="Back to single view"
+              >
+                <ArrowLeft size={16} className="text-slate-600 dark:text-white" />
+              </button>
+            )}
+            <h3 className="text-sm font-medium text-slate-800 dark:text-white">{title}</h3>
+          </div>
           <div className="flex items-center gap-1">
             <input
               type="file"
