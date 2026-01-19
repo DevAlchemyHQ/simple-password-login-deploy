@@ -106,8 +106,8 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
   }
 
   return (
-    <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full flex flex-col">
-      <div className="p-2 border-b border-slate-200 dark:border-gray-700">
+    <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full flex flex-col overflow-hidden">
+      <div className="p-2 border-b border-slate-200 dark:border-gray-700 flex-shrink-0">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-slate-800 dark:text-white">Upload Detailed Exam</h3>
           <div className="flex items-center gap-1">
