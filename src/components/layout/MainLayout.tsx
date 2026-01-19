@@ -157,11 +157,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
 
             {/* Browser Tab */}
-            <div className={`h-full grid grid-cols-1 lg:grid-cols-12 gap-4 ${activeTab === 'browser' ? '' : 'hidden'}`}>
-              <div className="lg:col-span-2 overflow-hidden">
-                <BrowserTabs />
-              </div>
-              <MainContent />
+            <div className={`h-full ${activeTab === 'browser' ? '' : 'hidden'}`}>
+              <BrowserTabs />
             </div>
 
             {/* PDF Tab */}
