@@ -209,7 +209,8 @@ export const ImageGrid: React.FC = () => {
                             updateDateForGroup(date, newDate);
                           }
                         }}
-                        className="text-base font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:outline-none transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 cursor-pointer shadow-sm hover:shadow"
+                        className="text-base font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:outline-none transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 cursor-pointer shadow-sm hover:shadow w-[165px]"
+                        style={{ colorScheme: 'light dark' }}
                         title="Click to change date - click on day/month/year to edit individually"
                       />
                       
