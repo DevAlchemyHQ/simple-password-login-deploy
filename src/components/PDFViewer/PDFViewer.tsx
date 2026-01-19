@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FileText, ZoomIn, ZoomOut, Upload, RotateCw, Loader2 } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { usePDFStore } from '../../store/pdfStore';
@@ -26,11 +26,44 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
   onFileChange,
   onZoom,
 }) => {
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageRotations, setPageRotations] = useState<PageRotation>({});
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+
+  // Measure container width on mount and resize
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        const width = containerRef.current.clientWidth - 32; // subtract padding
+        console.log('[PDFViewer] Container width:', width);
+        if (width > 0) {
+          setContainerWidth(width);
+        }
+      }
+    };
+    
+    // Initial measurement with delay to ensure DOM is ready
+    setTimeout(updateWidth, 100);
+    updateWidth();
+    
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+  
+  // Re-measure when file changes
+  useEffect(() => {
+    if (file && containerRef.current) {
+      const width = containerRef.current.clientWidth - 32;
+      if (width > 0) {
+        setContainerWidth(width);
+      }
+    }
+  }, [file]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -52,8 +85,9 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
     }));
   };
 
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
+    <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
       <div className="p-2 border-b border-slate-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-slate-800 dark:text-white">{title}</h3>
@@ -78,16 +112,30 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
               )}
             </button>
             <button
-              onClick={() => onZoom('out')}
-              className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Zoom] Zoom Out clicked');
+                onZoom('out');
+              }}
+              type="button"
+              className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors cursor-pointer"
               title="Zoom Out"
+              style={{ pointerEvents: 'auto' }}
             >
               <ZoomOut size={16} className="text-slate-600 dark:text-white" />
             </button>
             <button
-              onClick={() => onZoom('in')}
-              className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Zoom] Zoom In clicked, current scale:', scale);
+                onZoom('in');
+              }}
+              type="button"
+              className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors cursor-pointer"
               title="Zoom In"
+              style={{ pointerEvents: 'auto' }}
             >
               <ZoomIn size={16} className="text-slate-600 dark:text-white" />
             </button>
@@ -95,7 +143,7 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-gray-800 p-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-gray-800 p-4">
         {file ? (
           <Document
             file={file}
@@ -110,34 +158,43 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
               </div>
             }
           >
-            {Array.from(new Array(numPages), (_, index) => (
-              <div 
-                key={index + 1} 
-                className="mb-4 relative group bg-white dark:bg-gray-800"
-                data-page-number={index + 1}
-              >
-                <div className="relative">
-                  <Page
-                    pageNumber={index + 1}
-                    scale={scale}
-                    rotate={pageRotations[index + 1] || 0}
-                    className="shadow-lg bg-white"
-                    renderTextLayer={true}
-                    renderAnnotationLayer={true}
-                    loading={
-                      <div className="w-full aspect-[1/1.4] bg-slate-100 dark:bg-gray-700 animate-pulse rounded-lg" />
-                    }
-                  />
-                </div>
-                <button
-                  onClick={() => handleRotatePage(index + 1)}
-                  className="absolute top-2 right-2 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Rotate Page"
+            {Array.from(new Array(numPages), (_, index) => {
+              return (
+                <div 
+                  key={`page-${index + 1}`}
+                  className="mb-4 relative"
+                  data-page-number={index + 1}
                 >
-                  <RotateCw size={16} className="text-slate-600" />
-                </button>
-              </div>
-            ))}
+                  <div className="relative" style={{ pointerEvents: 'none' }}>
+                    <Page
+                      pageNumber={index + 1}
+                      width={containerWidth > 100 ? containerWidth * scale : 600}
+                      rotate={pageRotations[index + 1] || 0}
+                      className="shadow-lg bg-white"
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                    />
+                  </div>
+                  <div className="absolute top-2 right-2 flex gap-2 z-50" style={{ pointerEvents: 'auto' }}>
+                    <div className="text-xs bg-black/70 text-white px-2 py-1 rounded" style={{ pointerEvents: 'none' }}>
+                      Page {index + 1}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleRotatePage(index + 1);
+                      }}
+                      className="p-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full shadow-lg transition-all cursor-pointer"
+                      title="Rotate Page"
+                      type="button"
+                    >
+                      <RotateCw size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </Document>
         ) : (
           <div className="h-full flex items-center justify-center text-slate-400 dark:text-gray-500">
@@ -183,9 +240,13 @@ export const PDFViewer: React.FC = () => {
 
   const handleZoom = (viewer: 1 | 2, action: 'in' | 'out') => {
     const setScale = viewer === 1 ? setScale1 : setScale2;
+    const currentScale = viewer === 1 ? scale1 : scale2;
+    console.log(`[Zoom] Viewer ${viewer}, action: ${action}, current scale: ${currentScale}`);
+    
     setScale(prev => {
-      if (action === 'in') return Math.min(prev + 0.1, 2.0);
-      return Math.max(prev - 0.1, 0.5);
+      const newScale = action === 'in' ? Math.min(prev + 0.1, 2.0) : Math.max(prev - 0.1, 0.5);
+      console.log(`[Zoom] New scale: ${newScale}`);
+      return newScale;
     });
   };
 

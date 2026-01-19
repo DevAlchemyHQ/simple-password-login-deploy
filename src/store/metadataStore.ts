@@ -15,34 +15,26 @@ const initialFormData: FormData = {
 
 interface MetadataState {
   images: ImageMetadata[];
-  selectedImages: Set<string>;
   formData: FormData;
   defectSortDirection: 'asc' | 'desc' | null;
   bulkDefects: BulkDefect[];
-  viewMode: 'images' | 'text';
   setFormData: (data: Partial<FormData>) => void;
   addImages: (files: File[], date: string) => Promise<void>;
   updateImageMetadata: (id: string, data: Partial<Omit<ImageMetadata, 'id' | 'file' | 'preview'>>) => void;
   removeImage: (id: string) => Promise<void>;
-  toggleImageSelection: (id: string) => void;
-  clearSelectedImages: () => void;
   setDefectSortDirection: (direction: 'asc' | 'desc' | null) => void;
   setBulkDefects: (defects: BulkDefect[] | ((prev: BulkDefect[]) => BulkDefect[])) => void;
-  setViewMode: (mode: 'images' | 'text') => void;
   updateBulkDefectFile: (photoNumber: string, fileName: string) => void;
   reset: () => void;
-  getSelectedCounts: () => { defects: number };
   loadUserData: () => Promise<void>;
   saveUserData: () => Promise<void>;
 }
 
 export const useMetadataStore = create<MetadataState>((set, get) => ({
   images: [],
-  selectedImages: new Set(),
   formData: initialFormData,
   defectSortDirection: null,
   bulkDefects: [],
-  viewMode: 'images',
 
   setFormData: (data) => {
     set((state) => ({
@@ -162,7 +154,6 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
 
       set((state) => ({
         images: state.images.filter((img) => img.id !== id),
-        selectedImages: new Set([...state.selectedImages].filter(imgId => imgId !== id)),
       }));
 
       await get().saveUserData();
@@ -172,35 +163,6 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
     }
   },
 
-  toggleImageSelection: (id) => {
-    set((state) => {
-      const newSelected = new Set(state.selectedImages);
-      if (newSelected.has(id)) {
-        newSelected.delete(id);
-      } else {
-        newSelected.add(id);
-      }
-      
-      get().saveUserData().catch(console.error);
-      return { selectedImages: newSelected };
-    });
-  },
-
-  clearSelectedImages: () => {
-    set((state) => {
-      const updatedImages = state.images.map((img) =>
-        state.selectedImages.has(img.id)
-          ? { ...img, photoNumber: '', description: '' }
-          : img
-      );
-      
-      get().saveUserData().catch(console.error);
-      return {
-        selectedImages: new Set(),
-        images: updatedImages
-      };
-    });
-  },
 
   setDefectSortDirection: (direction) =>
     set((state) => {
@@ -226,8 +188,6 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
     get().saveUserData().catch(console.error);
   },
 
-  setViewMode: (mode) => set({ viewMode: mode }),
-
   updateBulkDefectFile: (photoNumber, fileName) => {
     set((state) => ({
       bulkDefects: state.bulkDefects.map((defect) =>
@@ -242,20 +202,10 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
   reset: () => {
     set({
       images: [],
-      selectedImages: new Set(),
       formData: initialFormData,
       defectSortDirection: null,
-      bulkDefects: [],
-      viewMode: 'images'
+      bulkDefects: []
     });
-  },
-
-  getSelectedCounts: () => {
-    const state = get();
-    const selectedImagesList = state.images.filter(img => state.selectedImages.has(img.id));
-    return {
-      defects: selectedImagesList.length
-    };
   },
 
   loadUserData: async () => {
@@ -273,11 +223,9 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       // Clear existing state first
       set({
         images: [],
-        selectedImages: new Set(),
         formData: initialFormData,
         defectSortDirection: null,
-        bulkDefects: [],
-        viewMode: projectData.viewMode || 'images'
+        bulkDefects: []
       });
 
       // Restore metadata (form data, bulkDefects, image metadata)
@@ -294,8 +242,7 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       
       set({
         formData: projectData.form_data || initialFormData,
-        bulkDefects: projectData.bulkDefects || [],
-        viewMode: projectData.viewMode || 'images'
+        bulkDefects: projectData.bulkDefects || []
       });
 
       // Note: images array remains empty - user must re-upload photos
@@ -313,11 +260,9 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       // METADATA-ONLY STORAGE (No base64 images to save localStorage space)
       // 
       // What gets saved:
-      // 1. form_data: Project form fields (elr, structureNo, date)
-      // 2. images: Image metadata only (fileName, photoNumber, description) - NO base64Data
+      // 1. form_data: Project form fields (elr, structureNo)
+      // 2. images: Image metadata only (fileName, photoNumber, description, date) - NO base64Data
       // 3. bulkDefects: Tile metadata (photoNumber, description, selectedFile)
-      // 4. selected_images: Array of selected image IDs
-      // 5. viewMode: Current view preference
       //
       // Storage capacity: ~27,900 tiles (Chrome/Edge 5MB limit) or ~55,800 tiles (Firefox 10MB)
       // Each tile: ~188 bytes (photoNumber + description + selectedFile)
@@ -346,9 +291,7 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       const projectData = {
         form_data: state.formData,
         images: imagesData, // Metadata only, no base64
-        selected_images: Array.from(state.selectedImages),
         bulkDefects: state.bulkDefects, // Contains selectedFile for auto-matching
-        viewMode: state.viewMode,
         updated_at: new Date().toISOString()
       };
 

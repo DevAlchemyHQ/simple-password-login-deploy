@@ -33,10 +33,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   useEffect(() => {
     const initialLoad = async () => {
       try {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MainLayout.tsx:34',message:'Initial load started',data:{isLoading:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
+        // #endregion
         await loadUserData();
       } catch (error) {
         console.error('Error loading user data:', error);
       } finally {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MainLayout.tsx:40',message:'Initial load completed',data:{isLoading:false},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
+        // #endregion
         setIsLoadingData(false);
         setIsInitialLoad(false);
       }
@@ -148,24 +154,36 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
         <div className="flex-1 h-[calc(100vh-96px)] overflow-hidden">
           <div className={`transition-opacity duration-300 ${isLoading ? 'opacity-50' : 'opacity-100'}`}>
-            {activeTab === 'images' ? (
-              <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-4">
-                <div className="lg:col-span-2 overflow-hidden">
-                  <Sidebar />
-                </div>
-                <MainContent />
+            {/* Images Tab */}
+            <div className={`h-full grid grid-cols-1 lg:grid-cols-12 gap-4 ${activeTab === 'images' ? '' : 'hidden'}`}>
+              <div className="lg:col-span-2 overflow-hidden">
+                <Sidebar />
               </div>
-            ) : activeTab === 'pdf' ? (
-              <div className="h-full">
-                <PDFViewer />
-              </div>
-            ) : activeTab === 'calculator' ? (
+              <MainContent />
+            </div>
+
+            {/* PDF Tab */}
+            <div className={`h-full ${activeTab === 'pdf' ? '' : 'hidden'}`}>
+              <PDFViewer />
+            </div>
+
+            {/* Calculator Tab */}
+            <div className={activeTab === 'calculator' ? '' : 'hidden'}>
               <CalculatorTabs />
-            ) : activeTab === 'grid' ? (
+            </div>
+
+            {/* Grid Tab */}
+            <div className={activeTab === 'grid' ? '' : 'hidden'}>
               <GridReferenceFinder />
-            ) : activeTab === 'games' ? (
+            </div>
+
+            {/* Games Tab */}
+            <div className={activeTab === 'games' ? '' : 'hidden'}>
               <GameTabs />
-            ) : (
+            </div>
+
+            {/* BCMI Tab */}
+            {activeTab === 'bcmi' && (
               <div className="h-full flex items-center justify-center text-slate-400 dark:text-gray-500">
                 <div className="text-center">
                   <Brain size={48} className="mx-auto mb-4 opacity-50" />

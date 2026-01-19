@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
-import { X, Trash2, ArrowUpDown, AlertTriangle, Maximize2, Minimize2, Images, FileText, Plus, ChevronDown, ChevronUp, Search, GripVertical, PlusCircle, Trash, Info, CheckCircle2, Calendar } from 'lucide-react';
+import { X, Trash2, ArrowUpDown, AlertTriangle, Grid, Images, FileText, Plus, ChevronDown, ChevronUp, Search, GripVertical, PlusCircle, Trash, Info, CheckCircle2, Calendar } from 'lucide-react';
 import { ImageZoom } from './ImageZoom';
 import { validateDescription } from '../utils/fileValidation';
 import { BulkTextInput } from './BulkTextInput';
@@ -52,15 +52,9 @@ interface SelectedImagesPanelProps {
 export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpand, isExpanded, activeDragId, overDragId }) => {
   const {
     images,
-    selectedImages,
-    toggleImageSelection,
     updateImageMetadata,
-    clearSelectedImages,
     defectSortDirection,
     setDefectSortDirection,
-    getSelectedCounts,
-    viewMode,
-    setViewMode,
     bulkDefects,
     setBulkDefects,
     updateBulkDefectFile
@@ -68,6 +62,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
   const [imageSelectorOpen, setImageSelectorOpen] = useState<string | null>(null);
   const [imageSearchQuery, setImageSearchQuery] = useState<Record<string, string>>({});
+  const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
 
   // Close selectors when clicking outside
   useEffect(() => {
@@ -86,35 +81,44 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
       };
     }
   }, [imageSelectorOpen]);
-  
-  const selectedImagesList = React.useMemo(() => {
-    return images.filter(img => selectedImages.has(img.id));
-  }, [images, selectedImages]);
 
-  const { defects } = getSelectedCounts();
 
-  const sortImages = (images: ImageMetadata[], direction: 'asc' | 'desc' | null) => {
-    if (!direction) return images;
+  // Group bulk defects by date for batch drag mode
+  const bulkDefectsByDate = useMemo(() => {
+    const grouped: { [date: string]: typeof bulkDefects } = {};
+    const noDate: typeof bulkDefects = [];
 
-    return [...images].sort((a, b) => {
-      // Put images without numbers at the bottom
-      const aNum = a.photoNumber ? parseInt(a.photoNumber) : Infinity;
-      const bNum = b.photoNumber ? parseInt(b.photoNumber) : Infinity;
-
-      if (aNum === Infinity && bNum === Infinity) {
-        return 0;
+    bulkDefects.forEach(defect => {
+      const img = images.find(i => i.file.name === defect.selectedFile);
+      const date = img?.date;
+      
+      if (date) {
+        if (!grouped[date]) {
+          grouped[date] = [];
+        }
+        grouped[date].push(defect);
+      } else {
+        noDate.push(defect);
       }
-      if (aNum === Infinity) return 1;
-      if (bNum === Infinity) return -1;
+    });
 
-      return direction === 'asc' ? aNum - bNum : bNum - aNum;
+    // Sort dates in descending order (newest first)
+    const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+
+    return { grouped, sortedDates, noDate };
+  }, [bulkDefects, images]);
+
+  const toggleDateCollapse = (date: string) => {
+    setCollapsedDates(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(date)) {
+        newSet.delete(date);
+      } else {
+        newSet.add(date);
+      }
+      return newSet;
     });
   };
-
-  const defectImages = sortImages(
-    selectedImagesList,
-    defectSortDirection
-  );
 
   // Helper function to get image for a defect
   const getImageForDefect = useCallback((selectedFile: string) => {
@@ -168,6 +172,9 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     }, [defect.description]);
 
     const updateDescription = (description: string) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:174',message:'Bulk defect description update',data:{photoNumber:defect.photoNumber,descriptionLength:description.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
+      // #endregion
       // Update local state immediately (no re-render of parent)
       setLocalValue(description);
       // Store pending update - will be applied on blur
@@ -213,7 +220,9 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             applyPendingUpdate();
           }}
           onFocus={(e) => {
-            // Focus handler - no action needed
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:219',message:'Bulk defect textarea focused',data:{photoNumber:defect.photoNumber,pointerEvents:window.getComputedStyle(e.target).pointerEvents},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H4'})}).catch(()=>{});
+            // #endregion
           }}
           onClick={(e) => {
             e.stopPropagation();
@@ -225,6 +234,9 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             e.stopPropagation();
           }}
           onKeyDown={(e) => {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:231',message:'Bulk defect textarea keydown',data:{key:e.key,defaultPrevented:e.defaultPrevented,photoNumber:defect.photoNumber},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+            // #endregion
             e.stopPropagation();
           }}
           onKeyUp={(e) => {
@@ -402,61 +414,23 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
         </div>
       )}
       
-      <div className="p-3 border-b border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-          </div>
-          
-          <div className="flex items-center gap-4 mx-4">
-            <div className="flex p-1 bg-slate-100 dark:bg-gray-700 rounded-lg">
-              <button
-                onClick={() => setViewMode('images')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all ${
-                  viewMode === 'images'
-                    ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                    : 'text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <Images size={18} />
-                <span className="text-sm font-medium">Single Select</span>
-              </button>
-              <button
-                onClick={() => setViewMode('text')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-all ${
-                  viewMode === 'text'
-                    ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                    : 'text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white'
-                }`}
-              >
-                <FileText size={18} />
-                <span className="text-sm font-medium">Batch drag</span>
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onExpand}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              title={isExpanded ? "Collapse view" : "Expand view"}
-            >
-              {isExpanded ? (
-                <Minimize2 size={20} className="text-slate-600 dark:text-gray-300" />
-              ) : (
-                <Maximize2 size={20} className="text-slate-600 dark:text-gray-300" />
-              )}
-            </button>
-          </div>
-        </div>
-        {viewMode === 'text' && (
-          <h3 className="text-xs font-medium text-slate-500 dark:text-gray-400 mt-1">
-            TILES ({bulkDefects.length})
-          </h3>
-        )}
+      <div className="p-3 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between">
+        <h3 className="text-xs font-medium text-slate-500 dark:text-gray-400">
+          TILES ({bulkDefects.length})
+        </h3>
+        
+        <button
+          onClick={onExpand}
+          className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          title={isExpanded ? "Collapse grid view" : "Expand to grid view"}
+        >
+          <Grid size={20} className="text-slate-600 dark:text-gray-300" />
+        </button>
       </div>
       
       <div className="flex-1 overflow-hidden">
-        {viewMode === 'images' ? (
+        {isExpanded ? (
+          // Expanded Batch drag view - show tiles sorted by tile number (no date grouping)
           <div 
             className="h-full overflow-y-auto scrollbar-thin"
             style={{ 
@@ -465,139 +439,14 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             }}
           >
             <div className="p-2">
-              {/* Simple header with controls */}
-              <div className="flex items-center justify-between py-2 px-2 mb-2">
-                <span className="text-sm font-medium text-slate-600 dark:text-gray-400">
-                  {defects} {defects === 1 ? 'photo' : 'photos'} selected
-                </span>
-                <div className="flex items-center gap-2">
-                  <SortButton
-                    direction={defectSortDirection}
-                    onChange={setDefectSortDirection}
-                  />
-                  <button
-                    onClick={clearSelectedImages}
-                    className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Clear all selected images"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Flat grid of all selected images */}
-              <div className={`grid gap-2 ${
-                isExpanded 
-                  ? 'grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8' 
-                  : 'grid-cols-2 lg:grid-cols-4'
-              }`}>
-                {defectImages.map((img) => (
-                  <div key={img.id} className="flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden">
-                    <div className="relative aspect-square">
-                      <img
-                        src={img.preview}
-                        alt={img.file.name}
-                        className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
-                        onClick={() => setEnlargedImage(img.preview)}
-                        draggable="false"
-                      />
-                      <button
-                        onClick={() => toggleImageSelection(img.id)}
-                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                    
-                    <div className="p-2 space-y-1">
-                      <div className="text-xs text-slate-500 dark:text-gray-400 truncate">
-                        {img.file.name}
-                      </div>
-                      <input
-                        type="number"
-                        value={img.photoNumber}
-                        onChange={(e) => updateImageMetadata(img.id, { photoNumber: e.target.value })}
-                        className="w-full p-1 text-sm border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
-                        placeholder="#"
-                      />
-                      {renderDescriptionField(img)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : isExpanded ? (
-          // Expanded Batch drag view - show tiles like Single Select
-          <div 
-            className="h-full overflow-y-auto scrollbar-thin"
-            style={{ 
-              overscrollBehavior: 'contain',
-              WebkitOverflowScrolling: 'touch'
-            }}
-          >
-            <div className="space-y-0 p-2">
-              {/* Tiles grouped by date */}
-              {bulkDefectsByDate.sortedDates.map((date) => {
-                const dateDefects = bulkDefectsByDate.grouped[date]
-                  .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
-                
-                const isCollapsed = collapsedDates.has(date);
-                const groupImages = dateDefects
-                  .map(defect => getImageForDefect(defect.selectedFile || ''))
-                  .filter(img => img !== undefined) as ImageMetadata[];
-                
-                return (
-                  <div key={date} className="space-y-0">
-                    {/* Date header as separator - spans full width with no extra spacing */}
-                    <div className="w-full py-3 px-4 bg-slate-100 dark:bg-gray-700/70 border-b-2 border-slate-300 dark:border-gray-600 flex items-center justify-between mb-0 mt-0">
-                      <div className="flex items-center gap-3 flex-1">
-                        <button
-                          onClick={() => toggleDateCollapse(date)}
-                          className="p-2 hover:bg-slate-200 dark:hover:bg-gray-600 rounded transition-colors flex-shrink-0"
-                          title={isCollapsed ? 'Expand group' : 'Collapse group'}
-                        >
-                          {isCollapsed ? (
-                            <ChevronDown size={20} className="text-slate-600 dark:text-gray-300" />
-                          ) : (
-                            <ChevronUp size={20} className="text-slate-600 dark:text-gray-300" />
-                          )}
-                        </button>
-                        <Calendar className="w-5 h-5 text-indigo-500 flex-shrink-0" />
-                        <div className="relative">
-                          <input
-                            type="date"
-                            value={date}
-                            onChange={(e) => {
-                              const newDate = e.target.value;
-                              if (newDate && newDate !== date) {
-                                // Update all images in this date group
-                                groupImages.forEach(img => {
-                                  updateImageMetadata(img.id, { date: newDate });
-                                });
-                              }
-                            }}
-                            className="text-base font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-800 border-2 border-slate-300 dark:border-gray-600 rounded-md px-3 py-2 pr-8 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition-all hover:border-indigo-400 dark:hover:border-indigo-500 min-w-[180px] cursor-pointer shadow-sm appearance-none"
-                            title="Click to edit date (including year)"
-                          />
-                          <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                        </div>
-                        <span className="text-sm font-normal text-slate-500 dark:text-gray-400 ml-2">
-                          ({dateDefects.length} {dateDefects.length === 1 ? 'tile' : 'tiles'})
-                        </span>
-                      </div>
-                    </div>
-                    {!isCollapsed && (
-                      <SortableContext
-                        items={dateDefects.map((d) => d.photoNumber)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div className={`grid gap-2 p-2 ${
-                          isExpanded 
-                            ? 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7' 
-                            : 'grid-cols-2 lg:grid-cols-4'
-                        }`}>
-                        {dateDefects.map((defect) => {
+              <SortableContext
+                items={bulkDefects.map((d) => d.photoNumber)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="grid gap-2 grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+                  {bulkDefects
+                    .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
+                    .map((defect) => {
                       const BulkDefectTile = () => {
                         const {
                           attributes,
@@ -928,287 +777,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                         );
                       };
                       return <BulkDefectTile key={defect.photoNumber} />;
-                        })}
-                      </div>
-                    </SortableContext>
-                    )}
+                    })}
                   </div>
-                );
-              })}
-              
-              {/* Tiles without date */}
-              {bulkDefectsByDate.noDate.length > 0 && (
-                <div className="space-y-2">
-                  <div className="col-span-full flex items-center gap-2 py-2">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <h4 className="text-sm font-semibold text-slate-700 dark:text-gray-300">
-                      No Date Assigned
-                    </h4>
-                    <span className="text-xs font-normal text-slate-500 dark:text-gray-400">
-                      ({bulkDefectsByDate.noDate.length} {bulkDefectsByDate.noDate.length === 1 ? 'tile' : 'tiles'})
-                    </span>
-                  </div>
-                  <SortableContext
-                    items={bulkDefectsByDate.noDate.map((d) => d.photoNumber)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className={`grid gap-2 ${
-                      isExpanded 
-                        ? 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7' 
-                        : 'grid-cols-2 lg:grid-cols-4'
-                    }`}>
-                      {bulkDefectsByDate.noDate
-                        .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
-                        .map((defect) => {
-                          const BulkDefectTile = () => {
-                            const {
-                              attributes,
-                              listeners,
-                              setNodeRef,
-                              transform,
-                              transition,
-                              isDragging,
-                            } = useSortable({ 
-                              id: defect.photoNumber,
-                              disabled: false,
-                            });
-
-                            const {
-                              setNodeRef: setDroppableRef,
-                              isOver,
-                            } = useDroppable({
-                              id: defect.photoNumber,
-                            });
-
-                            const image = getImageForDefect(defect.selectedFile || '');
-                            const isSelectorOpen = imageSelectorOpen === defect.photoNumber;
-                            const searchQuery = imageSearchQuery[defect.photoNumber] || '';
-                            
-                            const getLastFourDigits = (filename: string): string => {
-                              const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
-                              const digitSequences = nameWithoutExt.match(/\d+/g);
-                              if (!digitSequences || digitSequences.length === 0) return '';
-                              const lastSequence = digitSequences[digitSequences.length - 1];
-                              if (lastSequence.length >= 4) {
-                                return lastSequence.slice(-4);
-                              }
-                              return lastSequence.padStart(4, '0');
-                            };
-
-                            const filteredImages = React.useMemo(() => {
-                              if (!searchQuery) {
-                                return images;
-                              }
-
-                              const query = String(searchQuery).trim();
-                              if (!query || query.length === 0) {
-                                return images;
-                              }
-
-                              const isNumericQuery = /^\d+$/.test(query);
-                              
-                              if (isNumericQuery) {
-                                const filtered = images.filter(img => {
-                                  const lastFour = getLastFourDigits(img.file.name);
-                                  
-                                  if (!lastFour || lastFour.length !== 4) {
-                                    return false;
-                                  }
-                                  
-                                  if (query.length === 1) {
-                                    const lastDigit = lastFour.slice(-1);
-                                    const precedingDigits = lastFour.slice(0, -1);
-                                    const digitMatches = lastDigit === query;
-                                    const precedingAreZeros = /^0+$/.test(precedingDigits);
-                                    return digitMatches && precedingAreZeros;
-                                  } else {
-                                    return lastFour.endsWith(query);
-                                  }
-                                });
-                                
-                                return filtered;
-                              }
-                              
-                              const queryLower = query.toLowerCase();
-                              return images.filter(img => {
-                                const fileName = img.file.name.toLowerCase();
-                                return fileName.includes(queryLower);
-                              });
-                            }, [images, searchQuery]);
-                            
-                            const customListeners = {
-                              ...listeners,
-                              onPointerDown: (e: React.PointerEvent) => {
-                                const target = e.target as HTMLElement;
-                                if (target.closest('button') || 
-                                    target.closest('input') || 
-                                    target.closest('textarea') || 
-                                    target.closest('.image-selector-dropdown')) {
-                                  return;
-                                }
-                                if (listeners?.onPointerDown) {
-                                  listeners.onPointerDown(e);
-                                }
-                              },
-                            };
-
-                            const combinedRef = (node: HTMLDivElement | null) => {
-                              setNodeRef(node);
-                              setDroppableRef(node);
-                            };
-
-                            return (
-                              <div 
-                                ref={combinedRef}
-                                style={{
-                                  transform: CSS.Transform.toString(transform),
-                                  transition,
-                                  opacity: isDragging ? 0.5 : 1,
-                                }}
-                                className={`relative bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden border-2 ${
-                                  isOver ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent'
-                                } ${isDragging ? 'shadow-lg z-50' : ''}`}
-                                {...attributes}
-                                {...customListeners}
-                              >
-                                {/* Rest of the tile content - same as above */}
-                                <div className="relative aspect-square">
-                                  {image ? (
-                                    <img
-                                      src={image.preview}
-                                      alt={image.file.name}
-                                      className="w-full h-full object-cover"
-                                      draggable="false"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full bg-slate-200 dark:bg-gray-600 flex items-center justify-center">
-                                      <Images className="w-8 h-8 text-slate-400 dark:text-gray-500" />
-                                    </div>
-                                  )}
-                                  
-                                  {/* Photo number badge */}
-                                  {defect.photoNumber && (
-                                    <div className="absolute top-2 right-2 bg-indigo-500 w-6 h-6 rounded-full flex items-center justify-center z-30">
-                                      <span className="text-white text-xs font-medium">{defect.photoNumber}</span>
-                                    </div>
-                                  )}
-                                </div>
-
-                                <div className="p-2 space-y-1.5">
-                                  <div className="relative">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
-                                      }}
-                                      className="w-full flex items-center gap-2 px-2 py-1.5 text-xs border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors"
-                                    >
-                                      <div className="flex-1 text-left truncate">
-                                        {defect.selectedFile || 'Select image'}
-                                      </div>
-                                      <ChevronDown size={14} className={isSelectorOpen ? 'rotate-180' : ''} />
-                                    </button>
-
-                                    {isSelectorOpen && (
-                                      <div 
-                                        className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 z-30 flex flex-col"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        <div className="p-2 border-b border-slate-200 dark:border-gray-700">
-                                          <div className="relative">
-                                            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
-                                            <input
-                                              type="text"
-                                              value={searchQuery}
-                                              onChange={(e) => {
-                                                setImageSearchQuery(prev => ({
-                                                  ...prev,
-                                                  [defect.photoNumber]: e.target.value
-                                                }));
-                                              }}
-                                              placeholder="Search by title or last 4 digits..."
-                                              className="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
-                                              autoFocus
-                                              onClick={(e) => e.stopPropagation()}
-                                              onKeyDown={(e) => {
-                                                if (e.key === 'Escape') {
-                                                  setImageSelectorOpen(null);
-                                                }
-                                              }}
-                                            />
-                                          </div>
-                                        </div>
-
-                                        <div className="overflow-y-auto max-h-48">
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              updateBulkDefectFile(defect.photoNumber, '');
-                                              setImageSelectorOpen(null);
-                                              setImageSearchQuery(prev => {
-                                                const next = { ...prev };
-                                                delete next[defect.photoNumber];
-                                                return next;
-                                              });
-                                            }}
-                                            className="w-full px-3 py-2 text-left text-xs text-slate-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-700"
-                                          >
-                                            None
-                                          </button>
-                                          {filteredImages.map((img) => (
-                                            <button
-                                              key={img.id}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                updateBulkDefectFile(defect.photoNumber, img.file.name);
-                                                setImageSelectorOpen(null);
-                                                setImageSearchQuery(prev => {
-                                                  const next = { ...prev };
-                                                  delete next[defect.photoNumber];
-                                                  return next;
-                                                });
-                                              }}
-                                              className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-100 dark:hover:bg-gray-700 ${
-                                                defect.selectedFile === img.file.name
-                                                  ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300'
-                                                  : 'text-slate-700 dark:text-gray-300'
-                                              }`}
-                                            >
-                                              {img.file.name}
-                                            </button>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  <BulkDefectDescriptionField defect={defect} />
-                                </div>
-
-                                {/* Delete button */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    setBulkDefects((items) => items.filter(item => item.photoNumber !== defect.photoNumber));
-                                  }}
-                                  className="absolute top-2 left-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 z-40"
-                                  title="Delete tile"
-                                >
-                                  <X size={12} />
-                                </button>
-                              </div>
-                            );
-                          };
-                          return <BulkDefectTile key={defect.photoNumber} />;
-                        })}
-                    </div>
-                  </SortableContext>
-                </div>
-              )}
+                </SortableContext>
+              </div>
             </div>
-          </div>
         ) : (
           <BulkTextInput />
         )}
