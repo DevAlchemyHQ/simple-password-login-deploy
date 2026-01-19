@@ -268,7 +268,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Back button */}
+      {/* Toggle to single PDF + tiles button */}
       {onToggleBack && (
         <div className="mb-2">
           <button
@@ -276,7 +276,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
             className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             <ArrowLeft size={16} />
-            Back to Single PDF + Tiles
+            Show Single PDF + Image Tiles
           </button>
         </div>
       )}

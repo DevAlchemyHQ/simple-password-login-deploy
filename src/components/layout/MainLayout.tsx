@@ -157,10 +157,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
             {/* PDF Tab */}
             <div className={`h-full ${activeTab === 'pdf' ? '' : 'hidden'}`}>
-              {showBothPDFs ? (
-                // Show both PDF viewers side by side
-                <PDFViewer onToggleBack={() => setShowBothPDFs(false)} />
-              ) : (
+              {!showBothPDFs ? (
                 // Show left PDF viewer + tiles (like Browser tab)
                 <div className="lg:col-span-10 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
                   {/* Left PDF Viewer */}
@@ -179,6 +176,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     />
                   </div>
                 </div>
+              ) : (
+                // Show both PDF viewers side by side (DEFAULT)
+                <PDFViewer onToggleBack={() => setShowBothPDFs(false)} />
               )}
             </div>
 

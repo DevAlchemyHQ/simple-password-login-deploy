@@ -19,7 +19,7 @@ export const usePDFStore = create<PDFState>()(
     (set, get) => ({
       file1: null,
       file2: null,
-      showBothPDFs: false,
+      showBothPDFs: true,
       setShowBothPDFs: (show) => set({ showBothPDFs: show }),
       setFile1: async (file) => {
         try {

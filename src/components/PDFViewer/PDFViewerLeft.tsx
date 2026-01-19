@@ -147,7 +147,7 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
             <button
               onClick={onToggleBoth}
               className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
-              title="Show both PDF viewers"
+              title="Show both PDFs (Detailed + Visual)"
             >
               <Columns size={16} className="text-slate-600 dark:text-white" />
             </button>
