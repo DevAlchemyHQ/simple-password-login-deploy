@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogOut, Images, FileText, Calculator, Globe } from 'lucide-react';
+import { LogOut, Info } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { signOut } from '../lib/supabase';
@@ -36,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
   const { logout } = useAuthStore();
   const { isDark } = useThemeStore();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showBetaInfo, setShowBetaInfo] = useState(false);
   const [currentTime, setCurrentTime] = useState(getFormattedDate());
 
   const handleLogout = async () => {
@@ -70,81 +71,115 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
   }, []);
 
   const tabs = [
-    { id: 'images', icon: Images, label: 'Images' },
-    { id: 'calculator', icon: Calculator, label: 'Calc' },
-    { id: 'browser', icon: Globe, label: 'Site Exam' },
-    { id: 'pdf', icon: FileText, label: 'FAQ' }
+    { id: 'images', label: 'Images' },
+    { id: 'calculator', label: 'Calc' },
+    { id: 'browser', label: 'Browser' },
+    { id: 'pdf', label: 'FAQ' }
   ];
 
   return (
-    <header className="bg-slate-900 dark:bg-gray-900 shadow-md">
-      <div className="max-w-[1920px] mx-auto px-4">
-        <div className="h-16 flex items-center justify-between gap-8">
-          {/* Left: Profile + Greeting */}
-          <div className="flex items-center gap-3 min-w-fit">
-            <div className="relative">
-              <button
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="profile-button w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center text-lg hover:bg-indigo-600 transition overflow-hidden"
-              >
-                {PROFILE_EMOJI}
-              </button>
-
-              {showProfileMenu && (
-                <div className="profile-menu absolute left-0 top-12 w-48 bg-gray-800/95 rounded-lg shadow-xl border border-gray-700 backdrop-blur-lg z-50">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-red-900/20 flex items-center gap-2 rounded-lg"
-                  >
-                    <LogOut size={16} />
-                    Logout
-                  </button>
-                </div>
-              )}
+    <>
+      <header className="bg-slate-900 dark:bg-gray-900 shadow-md">
+        <div className="max-w-[1920px] mx-auto px-4">
+          <div className="h-16 flex items-center justify-between gap-8">
+            {/* Left: Greeting */}
+            <div className="flex items-center gap-3 min-w-fit">
+              <span className="text-white font-medium whitespace-nowrap">
+                {getGreeting()}, Test! 😊
+              </span>
             </div>
-            
-            <span className="text-white font-medium whitespace-nowrap">
-              {getGreeting()}, Test! 😊
-            </span>
-          </div>
 
-          {/* Center: Navigation Tabs */}
-          <nav className="flex items-center gap-1 flex-1 justify-center">
-            {tabs.map(({ id, icon: Icon, label }) => (
-              <button
-                key={id}
-                onClick={() => onTabChange(id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                  activeTab === id
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-300 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <Icon size={16} />
-                <span>{label}</span>
+            {/* Center: Navigation Tabs */}
+            <nav className="flex items-center gap-1 flex-1 justify-center">
+              {tabs.map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => onTabChange(id)}
+                  className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                    activeTab === id
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-gray-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+
+            {/* Right: Date, Premium, Beta, Version, Profile */}
+            <div className="flex items-center gap-4 min-w-fit">
+              <span className="text-gray-300 text-sm whitespace-nowrap">
+                {currentTime}
+              </span>
+              
+              <span className="text-gray-400 text-xs">UK</span>
+
+              <button className="px-3 py-1 bg-purple-600 text-white text-xs font-semibold rounded hover:bg-purple-700 transition-colors">
+                👑 Premium
               </button>
-            ))}
-          </nav>
 
-          {/* Right: Date, Premium, Version */}
-          <div className="flex items-center gap-4 min-w-fit">
-            <span className="text-gray-300 text-sm whitespace-nowrap">
-              {currentTime}
-            </span>
-            
-            <span className="text-gray-400 text-xs">UK</span>
+              <button
+                onClick={() => setShowBetaInfo(true)}
+                className="text-xs font-medium px-2 py-1 bg-indigo-900/50 text-indigo-400 rounded-full hover:bg-indigo-900/70 transition-colors flex items-center gap-1"
+              >
+                <Info size={12} />
+                BETA
+              </button>
 
-            <button className="px-3 py-1 bg-purple-600 text-white text-xs font-semibold rounded hover:bg-purple-700 transition-colors">
-              👑 Premium
-            </button>
+              <div className="flex items-center gap-1 px-2 py-1 bg-slate-800 rounded text-xs text-gray-300">
+                <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                <span>v1.1.1</span>
+              </div>
 
-            <div className="flex items-center gap-1 px-2 py-1 bg-slate-800 rounded text-xs text-gray-300">
-              <span className="w-2 h-2 rounded-full bg-green-400"></span>
-              <span>v1.1.1</span>
+              <div className="relative">
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="profile-button w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center text-lg hover:bg-indigo-600 transition overflow-hidden"
+                >
+                  {PROFILE_EMOJI}
+                </button>
+
+                {showProfileMenu && (
+                  <div className="profile-menu absolute right-0 top-12 w-48 bg-gray-800/95 rounded-lg shadow-xl border border-gray-700 backdrop-blur-lg z-50">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-red-900/20 flex items-center gap-2 rounded-lg"
+                    >
+                      <LogOut size={16} />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {showBetaInfo && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
+                <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
+                Beta Version
+              </h3>
+            </div>
+            <p className="text-slate-600 dark:text-gray-300 mb-6">
+              Some features may be incomplete or have occasional glitches. We value your
+              feedback and patience!
+            </p>
+            <button
+              onClick={() => setShowBetaInfo(false)}
+              className="w-full px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
