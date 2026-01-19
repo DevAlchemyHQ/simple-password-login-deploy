@@ -161,12 +161,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <div className={`h-full ${activeTab === 'browser' ? '' : 'hidden'}`}>
               <div className="lg:col-span-10 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
                 {/* Browser taking left side */}
-                <div className="h-full overflow-hidden lg:col-span-8">
+                <div className="h-full overflow-hidden lg:col-span-7">
                   <BrowserTabs />
                 </div>
 
                 {/* Selected Images Panel on right side */}
-                <div className="h-full overflow-hidden lg:col-span-4">
+                <div className="h-full overflow-hidden lg:col-span-5">
                   <SelectedImagesPanel 
                     onExpand={() => {}} 
                     isExpanded={false}
