@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '../Header';
 import { Sidebar } from './Sidebar';
 import { MainContent } from './MainContent';
+import { SelectedImagesPanel } from '../SelectedImagesPanel';
 import { GridReferenceFinder } from '../GridReferenceFinder/GridReferenceFinder';
 import { PDFViewer } from '../PDFViewer/PDFViewer';
 import { CalculatorTabs } from '../calculators/CalculatorTabs';
 import { BrowserTabs } from '../browser/BrowserTabs';
-import { SelectedImagesPanel } from '../SelectedImagesPanel';
 import { Images, Map, FileText, Calculator, Brain, Trash2, Loader2, Globe } from 'lucide-react';
 import { useMetadataStore } from '../../store/metadataStore';
 import { usePDFStore } from '../../store/pdfStore';
@@ -158,17 +158,22 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
 
             {/* Browser Tab */}
-            <div className={`h-full grid grid-cols-1 lg:grid-cols-12 gap-4 ${activeTab === 'browser' ? '' : 'hidden'}`}>
-              <div className="lg:col-span-8 overflow-hidden">
-                <BrowserTabs />
-              </div>
-              <div className="lg:col-span-4 overflow-hidden">
-                <SelectedImagesPanel 
-                  onExpand={() => {}} 
-                  isExpanded={true}
-                  activeDragId={null}
-                  overDragId={null}
-                />
+            <div className={`h-full ${activeTab === 'browser' ? '' : 'hidden'}`}>
+              <div className="lg:col-span-10 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
+                {/* Browser taking left side */}
+                <div className="h-full overflow-hidden lg:col-span-8">
+                  <BrowserTabs />
+                </div>
+
+                {/* Selected Images Panel on right side */}
+                <div className="h-full overflow-hidden lg:col-span-4">
+                  <SelectedImagesPanel 
+                    onExpand={() => {}} 
+                    isExpanded={false}
+                    activeDragId={null}
+                    overDragId={null}
+                  />
+                </div>
               </div>
             </div>
 
