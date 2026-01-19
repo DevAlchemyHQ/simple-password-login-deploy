@@ -135,7 +135,7 @@ export const usePDFStore = create<PDFState>()(
       }
     }),
     {
-      name: 'pdf-storage',
+      name: 'pdf-storage-v2',
       partialize: (state) => ({
         // We don't persist the actual files since they can't be serialized
         file1: null,
