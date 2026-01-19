@@ -5,6 +5,7 @@ import { validateDescription } from './fileValidation';
 /**
  * SINGLE SELECT DOWNLOAD LOGIC
  * Handles download for single select mode
+ * Creates ONE zip file with all images using their assigned dates
  */
 export const handleSingleSelectDownload = async (
   images: ImageMetadata[],
@@ -19,6 +20,12 @@ export const handleSingleSelectDownload = async (
     throw new Error('No images selected');
   }
 
+  // Check that all images have dates
+  const imagesWithoutDate = selectedImagesList.filter(img => !img.date);
+  if (imagesWithoutDate.length > 0) {
+    throw new Error(`Some images are missing dates: ${imagesWithoutDate.map(img => img.file.name).join(', ')}`);
+  }
+
   // Check for special characters
   const hasSpecialChars = selectedImagesList.some(img => 
     !validateDescription(img.description || '').isValid
@@ -27,15 +34,26 @@ export const handleSingleSelectDownload = async (
   if (hasSpecialChars) {
     throw new Error('Remove special characters from defect descriptions before downloading');
   }
-  
-  // Create download package
+
+  // Create ONE zip file with all images
   const zipBlob = await createDownloadPackage(selectedImagesList, formData);
+  
+  // Get primary date for filename (most common date or first date)
+  const dateCounts: { [date: string]: number } = {};
+  selectedImagesList.forEach(img => {
+    if (img.date) {
+      dateCounts[img.date] = (dateCounts[img.date] || 0) + 1;
+    }
+  });
+  const sortedDates = Object.keys(dateCounts).sort((a, b) => dateCounts[b] - dateCounts[a]);
+  const primaryDate = sortedDates[0] || selectedImagesList[0]?.date;
   
   // Trigger download
   const url = URL.createObjectURL(zipBlob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${formData.elr.trim().toUpperCase()}_${formData.structureNo.trim()}_${formData.date.split('-').reverse().join('-')}.zip`;
+  const dateStr = primaryDate ? primaryDate.split('-').reverse().join('-') : 'mixed';
+  a.download = `${formData.elr.trim().toUpperCase()}_${formData.structureNo.trim()}_${dateStr}.zip`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -45,7 +63,7 @@ export const handleSingleSelectDownload = async (
   onTrackEvent({
     action: 'download_package',
     category: 'user_action',
-    label: `${formData.elr.trim()}_${formData.structureNo.trim()}`,
+    label: `${formData.elr.trim()}_${formData.structureNo.trim()}_${dateStr}`,
     value: selectedImagesList.length
   });
 };
@@ -53,6 +71,7 @@ export const handleSingleSelectDownload = async (
 /**
  * BATCH DRAG DOWNLOAD LOGIC
  * Handles download for batch drag mode
+ * Creates ONE zip file with all images using their assigned dates
  */
 export const handleBatchDragDownload = async (
   images: ImageMetadata[],
@@ -82,6 +101,12 @@ export const handleBatchDragDownload = async (
     };
   });
 
+  // Check that all images have dates
+  const imagesWithoutDate = imagesForDownload.filter(img => !img.date);
+  if (imagesWithoutDate.length > 0) {
+    throw new Error(`Some images are missing dates: ${imagesWithoutDate.map(img => img.file.name).join(', ')}`);
+  }
+
   // Check for special characters
   const hasSpecialChars = imagesForDownload.some(img => 
     !validateDescription(img.description || '').isValid
@@ -90,15 +115,26 @@ export const handleBatchDragDownload = async (
   if (hasSpecialChars) {
     throw new Error('Remove special characters from defect descriptions before downloading');
   }
-  
-  // Create download package
+
+  // Create ONE zip file with all images
   const zipBlob = await createDownloadPackage(imagesForDownload, formData);
+  
+  // Get primary date for filename (most common date or first date)
+  const dateCounts: { [date: string]: number } = {};
+  imagesForDownload.forEach(img => {
+    if (img.date) {
+      dateCounts[img.date] = (dateCounts[img.date] || 0) + 1;
+    }
+  });
+  const sortedDates = Object.keys(dateCounts).sort((a, b) => dateCounts[b] - dateCounts[a]);
+  const primaryDate = sortedDates[0] || imagesForDownload[0]?.date;
   
   // Trigger download
   const url = URL.createObjectURL(zipBlob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${formData.elr.trim().toUpperCase()}_${formData.structureNo.trim()}_${formData.date.split('-').reverse().join('-')}.zip`;
+  const dateStr = primaryDate ? primaryDate.split('-').reverse().join('-') : 'mixed';
+  a.download = `${formData.elr.trim().toUpperCase()}_${formData.structureNo.trim()}_${dateStr}.zip`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -108,7 +144,7 @@ export const handleBatchDragDownload = async (
   onTrackEvent({
     action: 'download_batch_package',
     category: 'user_action',
-    label: `${formData.elr.trim()}_${formData.structureNo.trim()}`,
+    label: `${formData.elr.trim()}_${formData.structureNo.trim()}_${dateStr}`,
     value: imagesForDownload.length
   });
 };

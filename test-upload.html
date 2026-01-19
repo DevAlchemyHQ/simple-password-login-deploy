@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload</title>
+</head>
+<body>
+    <h1>Manual Test - Check localStorage</h1>
+    <button onclick="checkData()">Check localStorage Data</button>
+    <button onclick="clearData()">Clear localStorage</button>
+    <pre id="output"></pre>
+
+    <script>
+        function checkData() {
+            const data = localStorage.getItem('userProjectData');
+            if (data) {
+                const parsed = JSON.parse(data);
+                document.getElementById('output').textContent = JSON.stringify(parsed, null, 2);
+            } else {
+                document.getElementById('output').textContent = 'No data found';
+            }
+        }
+
+        function clearData() {
+            localStorage.clear();
+            document.getElementById('output').textContent = 'localStorage cleared!';
+        }
+    </script>
+</body>
+</html>

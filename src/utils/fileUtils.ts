@@ -4,38 +4,55 @@ import { formatDate, generateMetadataFileName, generateImageFileName, generateZi
 import { createZipFile } from './zipUtils';
 
 export const generateMetadataContent = (
-  images: ImageMetadata[],
-  date: string
+  images: ImageMetadata[]
 ): string => {
   if (!images?.length) {
     throw new Error('No images provided for metadata generation');
   }
 
-  if (!date) {
-    throw new Error('Date is required for metadata generation');
-  }
-
   try {
-    const formattedDate = formatDate(date);
-    
-    // Sort images by photo number
-    const sortedImages = images
-      .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
+    // Group images by date
+    const imagesByDate: { [date: string]: ImageMetadata[] } = {};
+    const noDate: ImageMetadata[] = [];
+
+    images.forEach(img => {
+      if (img.date) {
+        if (!imagesByDate[img.date]) {
+          imagesByDate[img.date] = [];
+        }
+        imagesByDate[img.date].push(img);
+      } else {
+        noDate.push(img);
+      }
+    });
+
+    if (noDate.length > 0) {
+      throw new Error(`Some images are missing dates: ${noDate.map(img => img.file.name).join(', ')}`);
+    }
 
     // Build content sections
     const content = [];
+    const sortedDates = Object.keys(imagesByDate).sort();
 
-    // Add Defects section with aligned format
-    if (sortedImages.length > 0) {
+    // Add Defects section grouped by date
+    if (images.length > 0) {
       content.push('Defects:');
-      sortedImages.forEach(img => {
-        if (!img.photoNumber?.trim()) {
-          throw new Error(`Missing photo number for defect: ${img.file.name}`);
-        }
-        if (!img.description?.trim()) {
-          throw new Error(`Missing description for defect: ${img.file.name}`);
-        }
-        content.push(`Photo ${img.photoNumber.trim().padStart(2, '0')} ^ ${img.description.trim()} ^ ${formattedDate}    ${img.file.name}`);
+      
+      sortedDates.forEach(date => {
+        const dateImages = imagesByDate[date]
+          .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
+        
+        const formattedDate = formatDate(date);
+        
+        dateImages.forEach(img => {
+          if (!img.photoNumber?.trim()) {
+            throw new Error(`Missing photo number for defect: ${img.file.name}`);
+          }
+          if (!img.description?.trim()) {
+            throw new Error(`Missing description for defect: ${img.file.name}`);
+          }
+          content.push(`Photo ${img.photoNumber.trim().padStart(2, '0')} ^ ${img.description.trim()} ^ ${formattedDate}    ${img.file.name}`);
+        });
       });
     }
 
@@ -77,23 +94,43 @@ export const createDownloadPackage = async (
       throw new Error(imagesError);
     }
 
+    // Validate all images have dates
+    const imagesWithoutDate = images.filter(img => !img.date);
+    if (imagesWithoutDate.length > 0) {
+      throw new Error(`Some images are missing dates: ${imagesWithoutDate.map(img => img.file.name).join(', ')}`);
+    }
+
     // Generate metadata content
-    const metadataContent = await generateMetadataContent(images, formData.date);
+    const metadataContent = await generateMetadataContent(images);
     if (!metadataContent) {
       throw new Error('Failed to generate metadata content');
+    }
+
+    // Get the most common date or first date for metadata/zip filename
+    const dateCounts: { [date: string]: number } = {};
+    images.forEach(img => {
+      if (img.date) {
+        dateCounts[img.date] = (dateCounts[img.date] || 0) + 1;
+      }
+    });
+    const sortedDates = Object.keys(dateCounts).sort((a, b) => dateCounts[b] - dateCounts[a]);
+    const primaryDate = sortedDates[0] || images[0]?.date;
+    
+    if (!primaryDate) {
+      throw new Error('No date found in images');
     }
 
     // Generate file names
     const metadataFileName = generateMetadataFileName(
       formData.elr.trim(),
       formData.structureNo.trim(),
-      formData.date
+      primaryDate
     );
 
     const zipFileName = generateZipFileName(
       formData.elr.trim(),
       formData.structureNo.trim(),
-      formData.date
+      primaryDate
     );
 
     // Create and return zip file
@@ -101,7 +138,6 @@ export const createDownloadPackage = async (
       images,
       metadataFileName,
       metadataContent,
-      formData.date,
       zipFileName
     );
 

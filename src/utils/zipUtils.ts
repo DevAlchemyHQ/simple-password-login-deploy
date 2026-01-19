@@ -6,7 +6,6 @@ export const createZipFile = async (
   images: ImageMetadata[],
   metadataFileName: string,
   metadataContent: string,
-  date: string,
   zipFileName: string
 ): Promise<Blob> => {
   // Input validation
@@ -18,24 +17,24 @@ export const createZipFile = async (
     throw new Error('Invalid metadata for zip file');
   }
 
-  if (!date) {
-    throw new Error('Date is required for zip file creation');
-  }
-
   try {
     const zip = new JSZip();
     
     // Add metadata file
     zip.file(metadataFileName, metadataContent);
     
-    // Add images with appropriate naming
+    // Add images with appropriate naming (using each image's date)
     for (const img of images) {
       if (!img.file) {
         throw new Error(`Invalid image entry: missing file data`);
       }
 
+      if (!img.date) {
+        throw new Error(`Image missing date: ${img.file.name}`);
+      }
+
       try {
-        const fileName = generateImageFileName(img, date);
+        const fileName = generateImageFileName(img);
         if (!fileName) {
           throw new Error(`Failed to generate filename for image: ${img.file.name}`);
         }

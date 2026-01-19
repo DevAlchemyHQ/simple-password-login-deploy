@@ -6,10 +6,10 @@ export interface ImageMetadata {
   preview: string;
   publicUrl?: string;
   userId?: string;
+  date?: string;
 }
 
 export interface FormData {
   elr: string;
   structureNo: string;
-  date: string;
 }

@@ -14,22 +14,21 @@ export const formatDate = (date: string): string => {
 };
 
 export const generateImageFileName = (
-  image: ImageMetadata,
-  date: string
+  image: ImageMetadata
 ): string => {
   if (!image) {
     throw new Error('Image metadata is required');
   }
 
-  if (!date) {
-    throw new Error('Date is required');
+  if (!image.date) {
+    throw new Error(`Date is required for image: ${image.file.name}`);
   }
 
   if (!image.photoNumber?.trim()) {
     throw new Error(`Missing photo number for image: ${image.file.name}`);
   }
 
-  const formattedDate = formatDate(date);
+  const formattedDate = formatDate(image.date);
   
   if (!image.description?.trim()) {
     throw new Error(`Missing description for defect image: ${image.file.name}`);

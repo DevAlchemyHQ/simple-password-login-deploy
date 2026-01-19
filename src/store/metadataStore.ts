@@ -11,7 +11,6 @@ interface BulkDefect {
 const initialFormData: FormData = {
   elr: '',
   structureNo: '',
-  date: '',
 };
 
 interface MetadataState {
@@ -22,7 +21,7 @@ interface MetadataState {
   bulkDefects: BulkDefect[];
   viewMode: 'images' | 'text';
   setFormData: (data: Partial<FormData>) => void;
-  addImages: (files: File[]) => Promise<void>;
+  addImages: (files: File[], date: string) => Promise<void>;
   updateImageMetadata: (id: string, data: Partial<Omit<ImageMetadata, 'id' | 'file' | 'preview'>>) => void;
   removeImage: (id: string) => Promise<void>;
   toggleImageSelection: (id: string) => void;
@@ -52,7 +51,8 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
     get().saveUserData().catch(console.error);
   },
 
-  addImages: async (files) => {
+  addImages: async (files, date) => {
+    console.log('[metadataStore] addImages called with', files.length, 'files and date:', date);
     try {
       // For simple password auth, use localStorage-based user ID
       const userId = localStorage.getItem('userId') || 'simple-auth-user';
@@ -60,19 +60,20 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       // Load stored metadata to restore photoNumber/description for re-uploaded images
       // This ensures user edits (photo numbers, descriptions) are never lost
       const storedData = localStorage.getItem('userProjectData');
-      const storedMetadata: { [fileName: string]: { photoNumber: string; description: string } } = {};
+      const storedMetadata: { [fileName: string]: { photoNumber: string; description: string; date?: string } } = {};
       
       if (storedData) {
         try {
           const projectData = JSON.parse(storedData);
           if (projectData.images && Array.isArray(projectData.images)) {
-            // Create a lookup map: fileName -> { photoNumber, description }
+            // Create a lookup map: fileName -> { photoNumber, description, date }
             // This allows us to restore user edits when images are re-uploaded
             projectData.images.forEach((imgData: any) => {
               if (imgData.fileName) {
                 storedMetadata[imgData.fileName] = {
                   photoNumber: imgData.photoNumber || '',
-                  description: imgData.description || ''
+                  description: imgData.description || '',
+                  date: imgData.date
                 };
               }
             });
@@ -83,14 +84,18 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
       }
 
       // Create image metadata - NO base64 conversion (saves localStorage space)
-      // Images will be re-uploaded by user, but metadata (photoNumber, description) is restored
+      // Images will be re-uploaded by user, but metadata (photoNumber, description, date) is restored
       const newImages = await Promise.all(files.map(async (file) => {
         const blobUrl = URL.createObjectURL(file);
         
-        // Restore photoNumber and description from stored metadata if this file was uploaded before
+        // Restore photoNumber, description, and date from stored metadata if this file was uploaded before
         // This ensures user work is never lost - all edits are preserved
-        const restored = storedMetadata[file.name] || { photoNumber: '', description: '' };
+        // If date is provided in upload, always use it; otherwise restore from stored metadata
+        const restored = storedMetadata[file.name] || { photoNumber: '', description: '', date: undefined };
 
+        // Always use the provided date if it exists, otherwise use restored date
+        const imageDate = (date && date.trim()) ? date : restored.date;
+        console.log('[metadataStore] Creating image:', file.name, 'with date:', imageDate);
         return {
           id: crypto.randomUUID(),
           file,
@@ -98,7 +103,8 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
           description: restored.description,
           preview: blobUrl,
           publicUrl: blobUrl,
-          userId: userId
+          userId: userId,
+          date: imageDate
         };
       }));
 
@@ -330,9 +336,10 @@ export const useMetadataStore = create<MetadataState>((set, get) => ({
         fileName: img.file.name,
         fileType: img.file.type,
         fileSize: img.file.size,
-        userId: img.userId
+        userId: img.userId,
+        date: img.date
         // NOTE: base64Data is NOT stored - images must be re-uploaded
-        // But photoNumber and description are preserved for restoration
+        // But photoNumber, description, and date are preserved for restoration
       }));
 
       // Save to localStorage (Edge/Chrome: ~5MB limit, Firefox: ~10MB limit)

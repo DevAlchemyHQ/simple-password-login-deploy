@@ -3,7 +3,6 @@ import { ImageMetadata, FormData } from '../types';
 export const validateFormData = (formData: FormData): string | null => {
   if (!formData.elr?.trim()) return 'ELR is required';
   if (!formData.structureNo?.trim()) return 'Structure number is required';
-  if (!formData.date?.trim()) return 'Date is required';
   return null;
 };
 

@@ -8,20 +8,24 @@ import { ImageMetadata } from '../types';
 const validateSingleSelect = (
   images: ImageMetadata[],
   selectedImages: Set<string>,
-  formData: { elr: string; structureNo: string; date: string }
+  formData: { elr: string; structureNo: string }
 ) => {
   const errors: string[] = [];
 
   // Basic form validation
   if (!formData.elr) errors.push('Enter ELR');
   if (!formData.structureNo) errors.push('Enter Structure No');
-  if (!formData.date) errors.push('Select Date');
   
   // Image selection validation
   if (selectedImages.size === 0) {
     errors.push('Select at least one image');
   } else {
     const selectedImagesList = images.filter(img => selectedImages.has(img.id));
+    
+    // Check for missing dates
+    if (selectedImagesList.some(img => !img.date)) {
+      errors.push('All images must have dates assigned');
+    }
     
     // Check for missing numbers
     if (selectedImagesList.some(img => !img.photoNumber?.trim())) {
@@ -43,14 +47,14 @@ const validateSingleSelect = (
  */
 const validateBatchDrag = (
   bulkDefects: Array<{ photoNumber: string; description: string; selectedFile?: string }>,
-  formData: { elr: string; structureNo: string; date: string }
+  images: ImageMetadata[],
+  formData: { elr: string; structureNo: string }
 ) => {
   const errors: string[] = [];
 
   // Basic form validation
   if (!formData.elr) errors.push('Enter ELR');
   if (!formData.structureNo) errors.push('Enter Structure No');
-  if (!formData.date) errors.push('Select Date');
   
   // Batch drag validation
   const defectsWithImages = bulkDefects.filter(defect => defect.selectedFile);
@@ -62,6 +66,15 @@ const validateBatchDrag = (
     if (defectsWithImages.some(defect => !defect.description?.trim())) {
       errors.push('Add descriptions to all defects with images');
     }
+    
+    // Check that all assigned images have dates
+    const assignedImages = defectsWithImages
+      .map(defect => images.find(img => img.file.name === defect.selectedFile))
+      .filter(img => img !== undefined) as ImageMetadata[];
+    
+    if (assignedImages.some(img => !img.date)) {
+      errors.push('All assigned images must have dates');
+    }
   }
 
   return errors;
@@ -72,7 +85,7 @@ export const useValidation = () => {
 
   const isValid = () => {
     // Basic form validation (common to both modes)
-    if (!formData.elr || !formData.structureNo || !formData.date) return false;
+    if (!formData.elr || !formData.structureNo) return false;
     
     if (viewMode === 'text') {
       // Batch drag mode validation
@@ -80,15 +93,24 @@ export const useValidation = () => {
       if (defectsWithImages.length === 0) return false;
       
       // All defects with images must have descriptions
-      return defectsWithImages.every(defect => defect.description?.trim() !== '');
+      const allHaveDescriptions = defectsWithImages.every(defect => defect.description?.trim() !== '');
+      if (!allHaveDescriptions) return false;
+      
+      // All assigned images must have dates
+      const assignedImages = defectsWithImages
+        .map(defect => images.find(img => img.file.name === defect.selectedFile))
+        .filter(img => img !== undefined) as ImageMetadata[];
+      
+      return assignedImages.every(img => img.date !== undefined);
     } else {
       // Single select mode validation
       if (selectedImages.size === 0) return false;
       
       const selectedImagesList = images.filter(img => selectedImages.has(img.id));
       
-      // All images must have numbers and descriptions
+      // All images must have dates, numbers and descriptions
       return selectedImagesList.every(img => 
+        img.date !== undefined &&
         img.photoNumber?.trim() !== '' && 
         img.description?.trim() !== ''
       );
@@ -97,7 +119,7 @@ export const useValidation = () => {
 
   const getValidationErrors = () => {
     if (viewMode === 'text') {
-      return validateBatchDrag(bulkDefects, formData);
+      return validateBatchDrag(bulkDefects, images, formData);
     } else {
       return validateSingleSelect(images, selectedImages, formData);
     }
