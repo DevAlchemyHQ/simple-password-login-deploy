@@ -112,9 +112,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 { id: 'images', icon: Images, label: 'Images' },
                 { id: 'pdf', icon: FileText, label: 'PDF' },
                 { id: 'calculator', icon: Calculator, label: 'Calc' },
-                { id: 'grid', icon: Map, label: 'Grid' },
-                { id: 'browser', icon: Globe, label: 'Browser' },
-                { id: 'bcmi', icon: Brain, label: 'BCMI & AI' }
+                { id: 'browser', icon: Globe, label: 'Browser' }
               ].map(({ id, icon: Icon, label }) => (
                 <button
                   key={id}
