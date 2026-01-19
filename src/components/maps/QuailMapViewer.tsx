@@ -80,6 +80,12 @@ export const QuailMapViewer: React.FC<QuailMapViewerProps> = ({
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (!embedded) {
+      // Don't interfere with typing in input fields
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      
       if (e.key === 'Escape') onClose();
       if (e.key === 'ArrowRight' && numPages && currentPage < numPages) {
         setCurrentPage(prev => prev + 1);

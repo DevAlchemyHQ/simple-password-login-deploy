@@ -15,6 +15,12 @@ export const ImageZoom: React.FC<ImageZoomProps> = ({ src, alt, onClose }) => {
   
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
+      // Don't interfere with typing in input fields
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      
       if (e.key === 'Escape') onClose();
     };
     

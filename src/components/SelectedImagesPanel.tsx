@@ -172,9 +172,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     }, [defect.description]);
 
     const updateDescription = (description: string) => {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:174',message:'Bulk defect description update',data:{photoNumber:defect.photoNumber,descriptionLength:description.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
-      // #endregion
       // Update local state immediately (no re-render of parent)
       setLocalValue(description);
       // Store pending update - will be applied on blur
@@ -220,9 +217,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             applyPendingUpdate();
           }}
           onFocus={(e) => {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:219',message:'Bulk defect textarea focused',data:{photoNumber:defect.photoNumber,pointerEvents:window.getComputedStyle(e.target).pointerEvents},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1,H4'})}).catch(()=>{});
-            // #endregion
+            // Focus handler - no action needed
           }}
           onClick={(e) => {
             e.stopPropagation();
@@ -234,9 +229,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             e.stopPropagation();
           }}
           onKeyDown={(e) => {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'SelectedImagesPanel.tsx:231',message:'Bulk defect textarea keydown',data:{key:e.key,defaultPrevented:e.defaultPrevented,photoNumber:defect.photoNumber},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
-            // #endregion
             e.stopPropagation();
           }}
           onKeyUp={(e) => {

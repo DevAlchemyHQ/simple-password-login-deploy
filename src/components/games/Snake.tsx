@@ -98,6 +98,12 @@ export const Snake: React.FC = () => {
   // Handle keyboard controls
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't interfere with typing in input fields
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      
       e.preventDefault(); // Prevent page scrolling
       switch (e.key) {
         case 'ArrowUp':

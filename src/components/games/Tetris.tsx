@@ -158,6 +158,14 @@ export const Tetris: React.FC = () => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!isPlaying || gameOver) return;
 
+      // Don't interfere with typing in input fields
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      e.preventDefault(); // Prevent page scrolling with arrow keys
+
       switch (e.key) {
         case 'ArrowLeft':
           movePiece(-1);

@@ -124,6 +124,12 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't interfere with typing in input fields
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      
       if (e.key === 'Escape') {
         if (isCropping) {
           setIsCropping(false);

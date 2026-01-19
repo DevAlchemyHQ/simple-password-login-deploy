@@ -33,16 +33,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   useEffect(() => {
     const initialLoad = async () => {
       try {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MainLayout.tsx:34',message:'Initial load started',data:{isLoading:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
-        // #endregion
         await loadUserData();
       } catch (error) {
         console.error('Error loading user data:', error);
       } finally {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/15e638a0-fe86-4f03-83fe-b5c93b699a49',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MainLayout.tsx:40',message:'Initial load completed',data:{isLoading:false},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
-        // #endregion
         setIsLoadingData(false);
         setIsInitialLoad(false);
       }
