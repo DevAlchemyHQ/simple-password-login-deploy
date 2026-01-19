@@ -562,15 +562,10 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
 
       // Temperature (warm/cool color balance)
       const tempFactor = adj.temperature / 100;
-      if (tempFactor > 0) {
-        // Warm (increase red, decrease blue)
-        r = Math.max(0, Math.min(1, r + tempFactor * 0.15));
-        b = Math.max(0, Math.min(1, b - tempFactor * 0.15));
-      } else {
-        // Cool (decrease red, increase blue)
-        r = Math.max(0, Math.min(1, r + tempFactor * 0.15));
-        b = Math.max(0, Math.min(1, b - tempFactor * 0.15));
-      }
+      // Warm (tempFactor > 0): increases red, decreases blue
+      // Cool (tempFactor < 0): decreases red, increases blue
+      r = Math.max(0, Math.min(1, r + tempFactor * 0.15));
+      b = Math.max(0, Math.min(1, b - tempFactor * 0.15));
 
       // Tint (green/magenta)
       const tintFactor = adj.tint / 100;
