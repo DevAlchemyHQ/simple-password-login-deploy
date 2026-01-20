@@ -139,11 +139,12 @@ export const BulkTextInput: React.FC = () => {
     // Clear the selectedFile for this defect
     updateBulkDefectFile(defectId, '');
 
-    // If this was the last image, close viewer
-    const remainingDefects = bulkDefects.filter(defect =>
-      defect.selectedFile && defect.photoNumber !== defectId
-    );
+    // Get the updated state from the store (after the sync update above)
+    // This ensures we're checking the current state, not the stale component value
+    const currentDefects = useMetadataStore.getState().bulkDefects;
+    const remainingDefects = currentDefects.filter(defect => defect.selectedFile);
 
+    // If this was the last image, close viewer
     if (remainingDefects.length === 0) {
       setViewerOpen(false);
     }
