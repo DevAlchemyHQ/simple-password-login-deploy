@@ -36,16 +36,18 @@ export const DefectTile: React.FC<DefectTileProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [localDescription, setLocalDescription] = useState(description);
   const [searchQuery, setSearchQuery] = useState('');
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLocalDescription(description);
   }, [description]);
 
-  // Reset search when dropdown closes
+  // Reset search and focused index when dropdown closes
   useEffect(() => {
     if (!isDropdownOpen) {
       setSearchQuery('');
+      setFocusedIndex(-1);
     }
   }, [isDropdownOpen]);
 
@@ -221,6 +223,27 @@ export const DefectTile: React.FC<DefectTileProps> = ({
     });
   }, [availableFiles, searchQuery]);
 
+  // Auto-focus first result when search changes
+  useEffect(() => {
+    if (searchQuery && filteredFiles.length > 0) {
+      setFocusedIndex(0);
+    } else if (!searchQuery) {
+      setFocusedIndex(-1);
+    }
+  }, [searchQuery, filteredFiles.length]);
+
+  // Scroll focused item into view
+  useEffect(() => {
+    if (focusedIndex >= 0 && isDropdownOpen) {
+      const buttons = dropdownRef.current?.querySelectorAll('button');
+      // +1 to account for "None" button
+      buttons?.[focusedIndex + 1]?.scrollIntoView({ 
+        block: 'nearest',
+        behavior: 'smooth'
+      });
+    }
+  }, [focusedIndex, isDropdownOpen]);
+
   return (
     <div
       ref={setSortableRef}
@@ -318,6 +341,21 @@ export const DefectTile: React.FC<DefectTileProps> = ({
                     onKeyDown={(e) => {
                       if (e.key === 'Escape') {
                         setIsDropdownOpen(false);
+                      } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        // Select the focused item or first item if none focused
+                        const indexToSelect = focusedIndex >= 0 ? focusedIndex : 0;
+                        if (filteredFiles[indexToSelect]) {
+                          handleFileSelect(filteredFiles[indexToSelect]);
+                        }
+                      } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setFocusedIndex(prev => 
+                          prev < filteredFiles.length - 1 ? prev + 1 : prev
+                        );
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setFocusedIndex(prev => prev > 0 ? prev - 1 : -1);
                       }
                     }}
                   />
@@ -326,14 +364,10 @@ export const DefectTile: React.FC<DefectTileProps> = ({
 
               {/* File List */}
               <div className="overflow-y-auto max-h-48">
-                {/* None option at the top */}
+                {/* None option at the top - always grey */}
                 <button
                   onClick={handleSelectNone}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-700 ${
-                    !selectedFile
-                      ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
-                      : 'text-slate-600 dark:text-gray-300'
-                  }`}
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-700 text-slate-500 dark:text-gray-400"
                 >
                   <div className="truncate">None</div>
                 </button>
@@ -343,10 +377,13 @@ export const DefectTile: React.FC<DefectTileProps> = ({
                     <button
                       key={`${searchQuery}-${file}-${index}`}
                       onClick={() => handleFileSelect(file)}
+                      onMouseEnter={() => setFocusedIndex(index)}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 ${
                         file === selectedFile
                           ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
-                          : 'text-slate-600 dark:text-gray-300'
+                          : focusedIndex === index
+                            ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                            : 'text-indigo-600 dark:text-indigo-400'
                       }`}
                     >
                       <div className="truncate">{file}</div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
-import { X, Trash2, ArrowUpDown, AlertTriangle, Grid, Images, FileText, Plus, ChevronDown, ChevronUp, Search, GripVertical, PlusCircle, Trash, Info, CheckCircle2, Calendar } from 'lucide-react';
-import { ImageZoom } from './ImageZoom';
+import { X, Trash2, ArrowUpDown, AlertTriangle, Grid, Images, FileText, Plus, ChevronDown, ChevronUp, Search, GripVertical, PlusCircle, Trash, Info, CheckCircle2, Calendar, Maximize2 } from 'lucide-react';
+import { BatchDefectImageViewer } from './BatchDefectImageViewer';
 import { validateDescription } from '../utils/fileValidation';
 import { BulkTextInput } from './BulkTextInput';
 import type { ImageMetadata } from '../types';
@@ -59,9 +59,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     setBulkDefects,
     updateBulkDefectFile
   } = useMetadataStore();
-  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
   const [imageSelectorOpen, setImageSelectorOpen] = useState<string | null>(null);
   const [imageSearchQuery, setImageSearchQuery] = useState<Record<string, string>>({});
+  const [focusedImageIndex, setFocusedImageIndex] = useState<Record<string, number>>({});
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
 
   // Close selectors when clicking outside
@@ -124,6 +126,56 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   const getImageForDefect = useCallback((selectedFile: string) => {
     return images.find(img => img.file.name === selectedFile);
   }, [images]);
+
+  // Handle clicking on an image to open the viewer
+  const handleImageClick = (photoNumber: string) => {
+    const defectsWithImages = bulkDefects
+      .filter(defect => defect.selectedFile)
+      .sort((a, b) => parseInt(a.photoNumber) - parseInt(b.photoNumber));
+    
+    const index = defectsWithImages.findIndex(defect => defect.photoNumber === photoNumber);
+    
+    if (index !== -1) {
+      setViewerInitialIndex(index);
+      setViewerOpen(true);
+    }
+  };
+
+  // Handle deleting image from viewer
+  const handleDeleteImageFromDefect = (defectId: string) => {
+    // Clear the selectedFile for this defect
+    updateBulkDefectFile(defectId, '');
+
+    // Get the updated state from the store (after the sync update above)
+    const currentDefects = useMetadataStore.getState().bulkDefects;
+    const remainingDefects = currentDefects.filter(defect => defect.selectedFile);
+
+    // If this was the last image, close viewer
+    if (remainingDefects.length === 0) {
+      setViewerOpen(false);
+    }
+  };
+
+  // Prepare defects for viewer
+  const defectsForViewer = React.useMemo(() => {
+    if (!viewerOpen) return [];
+
+    const result = bulkDefects
+      .filter(defect => defect.selectedFile)
+      .sort((a, b) => parseInt(a.photoNumber) - parseInt(b.photoNumber))
+      .map(defect => {
+        const image = images.find(img => img.file.name === defect.selectedFile);
+        if (!image) return null;
+        return {
+          photoNumber: defect.photoNumber,
+          description: defect.description,
+          image: image,
+          defectId: defect.photoNumber
+        };
+      })
+      .filter((item): item is { photoNumber: string; description: string; image: ImageMetadata; defectId: string } => item !== null);
+    return result;
+  }, [bulkDefects, images, viewerOpen]);
 
   const renderDescriptionField = (img: ImageMetadata) => {
     const { isValid, invalidChars } = validateDescription(img.description || '');
@@ -524,19 +576,40 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           });
                         }, [images, searchQuery]);
 
+                        // Scroll focused item into view
+                        React.useEffect(() => {
+                          const currentFocus = focusedImageIndex[defect.photoNumber];
+                          if (currentFocus !== undefined && currentFocus >= 0 && isSelectorOpen) {
+                            // Find all buttons in the dropdown for this defect's selector
+                            const dropdowns = document.querySelectorAll('.image-selector-dropdown');
+                            dropdowns.forEach(dropdown => {
+                              const buttons = dropdown.querySelectorAll('button');
+                              // +1 to account for "None" button
+                              const targetButton = buttons[currentFocus + 1];
+                              if (targetButton) {
+                                targetButton.scrollIntoView({
+                                  block: 'nearest',
+                                  behavior: 'smooth'
+                                });
+                              }
+                            });
+                          }
+                        }, [focusedImageIndex, defect.photoNumber, isSelectorOpen]);
+
                         // Create custom listeners that exclude interactive elements
                         const customListeners = {
                           ...listeners,
                           onPointerDown: (e: React.PointerEvent) => {
                             const target = e.target as HTMLElement;
-                            // Don't start drag if clicking on interactive elements
+                            // Don't start drag if clicking on interactive elements (buttons, inputs, etc.)
+                            // Images are now draggable since we have a separate expand button
                             if (target.closest('button') ||
                               target.closest('input') ||
                               target.closest('textarea') ||
                               target.closest('.image-selector-dropdown')) {
                               return;
                             }
-                            // Call original listener
+                            // Call original listener to enable drag
                             if (listeners?.onPointerDown) {
                               listeners.onPointerDown(e);
                             }
@@ -557,7 +630,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               transition: isDragging ? 'none' : (transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'),
                               opacity: isDragging ? 0.4 : 1,
                             }}
-                            className={`group flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-hidden transition-all duration-200 relative ${isDragging
+                            className={`group flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-visible transition-all duration-200 relative ${isDragging
                                 ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing'
                                 : (overDragId === defect.photoNumber && activeDragId && activeDragId !== defect.photoNumber)
                                   ? 'ring-4 ring-indigo-400 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 shadow-xl scale-[1.02] border-2 border-indigo-400'
@@ -603,18 +676,33 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 <PlusCircle size={16} />
                               </button>
                             </div>
-                            <div className="relative aspect-square">
+                            <div className="relative aspect-square overflow-hidden rounded-t-lg">
                               {image ? (
-                                <img
-                                  src={image.preview}
-                                  alt={image.file.name}
-                                  className="w-full h-full object-cover cursor-pointer hover:opacity-95 transition-opacity select-none"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEnlargedImage(image.preview);
-                                  }}
-                                  draggable="false"
-                                />
+                                <>
+                                  <img
+                                    src={image.preview}
+                                    alt={image.file.name}
+                                    className="w-full h-full object-cover cursor-grab hover:opacity-95 transition-opacity select-none"
+                                    draggable="false"
+                                  />
+                                  {/* Expand button - bottom right corner, always visible */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      handleImageClick(defect.photoNumber);
+                                    }}
+                                    onMouseDown={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                    }}
+                                    className="absolute bottom-2 right-2 p-1.5 bg-indigo-500/90 hover:bg-indigo-600 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-110 z-30"
+                                    title="Expand image"
+                                    style={{ pointerEvents: 'auto' }}
+                                  >
+                                    <Maximize2 size={16} />
+                                  </button>
+                                </>
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-gray-600 text-slate-400 dark:text-gray-500 text-xs">
                                   No image
@@ -629,7 +717,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             </div>
 
                             <div
-                              className="p-2 space-y-1 flex-shrink-0 relative z-30 pb-2"
+                              className="p-2 space-y-1 flex-shrink-0 relative z-10 pb-2"
                               onClick={(e) => e.stopPropagation()}
                               onMouseDown={(e) => {
                                 e.stopPropagation();
@@ -638,7 +726,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               style={{ pointerEvents: 'auto' }}
                             >
                               {/* Image selector dropdown - like DefectTile */}
-                              <div className="relative">
+                              <div className="relative z-[100]">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -658,7 +746,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
                                 {isSelectorOpen && (
                                   <div
-                                    className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 z-30 flex flex-col"
+                                    className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 z-[100] flex flex-col"
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     {/* Search Input */}
@@ -673,14 +761,63 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                               ...prev,
                                               [defect.photoNumber]: e.target.value
                                             }));
+                                            // Auto-focus first result when search changes
+                                            if (e.target.value && filteredImages.length > 0) {
+                                              setFocusedImageIndex(prev => ({
+                                                ...prev,
+                                                [defect.photoNumber]: 0
+                                              }));
+                                            } else {
+                                              setFocusedImageIndex(prev => {
+                                                const next = { ...prev };
+                                                delete next[defect.photoNumber];
+                                                return next;
+                                              });
+                                            }
                                           }}
                                           placeholder="Search by title or last 4 digits..."
                                           className="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
                                           autoFocus
                                           onClick={(e) => e.stopPropagation()}
                                           onKeyDown={(e) => {
+                                            const currentFocus = focusedImageIndex[defect.photoNumber] ?? -1;
+                                            
                                             if (e.key === 'Escape') {
                                               setImageSelectorOpen(null);
+                                              setFocusedImageIndex(prev => {
+                                                const next = { ...prev };
+                                                delete next[defect.photoNumber];
+                                                return next;
+                                              });
+                                            } else if (e.key === 'Enter') {
+                                              e.preventDefault();
+                                              const indexToSelect = currentFocus >= 0 ? currentFocus : 0;
+                                              if (filteredImages[indexToSelect]) {
+                                                updateBulkDefectFile(defect.photoNumber, filteredImages[indexToSelect].file.name);
+                                                setImageSelectorOpen(null);
+                                                setImageSearchQuery(prev => {
+                                                  const next = { ...prev };
+                                                  delete next[defect.photoNumber];
+                                                  return next;
+                                                });
+                                                setFocusedImageIndex(prev => {
+                                                  const next = { ...prev };
+                                                  delete next[defect.photoNumber];
+                                                  return next;
+                                                });
+                                              }
+                                            } else if (e.key === 'ArrowDown') {
+                                              e.preventDefault();
+                                              setFocusedImageIndex(prev => ({
+                                                ...prev,
+                                                [defect.photoNumber]: currentFocus < filteredImages.length - 1 ? currentFocus + 1 : currentFocus
+                                              }));
+                                            } else if (e.key === 'ArrowUp') {
+                                              e.preventDefault();
+                                              setFocusedImageIndex(prev => ({
+                                                ...prev,
+                                                [defect.photoNumber]: currentFocus > 0 ? currentFocus - 1 : -1
+                                              }));
                                             }
                                           }}
                                         />
@@ -689,7 +826,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
                                     {/* File List */}
                                     <div className="overflow-y-auto max-h-48">
-                                      {/* None option at the top */}
+                                      {/* None option at the top - always grey */}
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
@@ -701,36 +838,52 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                             return next;
                                           });
                                         }}
-                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-700 ${!defect.selectedFile
-                                            ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
-                                            : 'text-slate-600 dark:text-gray-300'
-                                          }`}
+                                        className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-700 text-slate-500 dark:text-gray-400"
                                       >
                                         <div className="truncate">None</div>
                                       </button>
 
                                       {filteredImages.length > 0 ? (
-                                        filteredImages.map((img, index) => (
-                                          <button
-                                            key={`${searchQuery}-${img.id}-${index}`}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              updateBulkDefectFile(defect.photoNumber, img.file.name);
-                                              setImageSelectorOpen(null);
-                                              setImageSearchQuery(prev => {
-                                                const next = { ...prev };
-                                                delete next[defect.photoNumber];
-                                                return next;
-                                              });
-                                            }}
-                                            className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 ${img.file.name === defect.selectedFile
-                                                ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
-                                                : 'text-slate-600 dark:text-gray-300'
+                                        filteredImages.map((img, index) => {
+                                          const currentFocus = focusedImageIndex[defect.photoNumber] ?? -1;
+                                          const isFocused = currentFocus === index;
+                                          
+                                          return (
+                                            <button
+                                              key={`${searchQuery}-${img.id}-${index}`}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                updateBulkDefectFile(defect.photoNumber, img.file.name);
+                                                setImageSelectorOpen(null);
+                                                setImageSearchQuery(prev => {
+                                                  const next = { ...prev };
+                                                  delete next[defect.photoNumber];
+                                                  return next;
+                                                });
+                                                setFocusedImageIndex(prev => {
+                                                  const next = { ...prev };
+                                                  delete next[defect.photoNumber];
+                                                  return next;
+                                                });
+                                              }}
+                                              onMouseEnter={() => {
+                                                setFocusedImageIndex(prev => ({
+                                                  ...prev,
+                                                  [defect.photoNumber]: index
+                                                }));
+                                              }}
+                                              className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 ${
+                                                img.file.name === defect.selectedFile
+                                                  ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
+                                                  : isFocused
+                                                    ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                                                    : 'text-indigo-600 dark:text-indigo-400'
                                               }`}
-                                          >
-                                            <div className="truncate">{img.file.name}</div>
-                                          </button>
-                                        ))
+                                            >
+                                              <div className="truncate">{img.file.name}</div>
+                                            </button>
+                                          );
+                                        })
                                       ) : (
                                         <div className="px-3 py-3 text-xs text-slate-500 dark:text-gray-400 text-center">
                                           No photos found matching "{searchQuery}"
@@ -770,14 +923,14 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
         )}
       </div>
 
-      {enlargedImage && (
-        <div className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center">
-          <ImageZoom
-            src={enlargedImage}
-            alt="Enlarged view"
-            onClose={() => setEnlargedImage(null)}
-          />
-        </div>
+      {/* Batch Defect Image Viewer */}
+      {viewerOpen && defectsForViewer.length > 0 && (
+        <BatchDefectImageViewer
+          defects={defectsForViewer}
+          initialIndex={viewerInitialIndex}
+          onClose={() => setViewerOpen(false)}
+          onDeleteImage={handleDeleteImageFromDefect}
+        />
       )}
     </div>
   );
