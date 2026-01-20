@@ -13,8 +13,8 @@ interface BatchDefectImage {
 interface BatchDefectImageViewerProps {
   defects: BatchDefectImage[];
   initialIndex: number;
-  onClose: () => void;
-  onDeleteImage: (defectId: string) => void;
+  onClose: (currentIndex?: number) => void;
+  onDeleteImage?: (defectId: string) => void;
 }
 
 interface CropArea {
@@ -135,7 +135,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
           setIsCropping(false);
           setCropArea(null);
         } else {
-          onClose();
+          onClose(currentIndex);
         }
       } else if (e.key === 'ArrowLeft' && !isCropping) {
         setCurrentIndex((prev) => (prev > 0 ? prev - 1 : defects.length - 1));
@@ -765,6 +765,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
   };
 
   const handleDelete = () => {
+    if (!onDeleteImage) return;
     const currentDefect = defects[currentIndex];
     onDeleteImage(currentDefect.defectId);
     
@@ -775,7 +776,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
 
   useEffect(() => {
     if (defects.length === 0) {
-      onClose();
+      onClose(currentIndex);
     } else if (currentIndex >= defects.length) {
       setCurrentIndex(Math.max(0, defects.length - 1));
     }
@@ -945,7 +946,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
               <Trash2 size={20} />
             </button>
             <button
-              onClick={onClose}
+              onClick={() => onClose(currentIndex)}
               className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <X size={24} className="text-slate-600 dark:text-gray-300" />

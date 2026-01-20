@@ -12,14 +12,15 @@ interface ImageGridItemProps {
 }
 
 // Component for draggable image
-const DraggableImage: React.FC<{
+const DraggableImage = React.forwardRef<HTMLDivElement, {
   img: ImageMetadata;
   isSelected: boolean;
   gridWidth: number;
   onToggle: () => void;
   onEnlarge: (imageId: string) => void;
   bulkDefectsCount: number;
-}> = ({ img, isSelected, onToggle, onEnlarge, bulkDefectsCount }) => {
+  isHighlighted: boolean;
+}>(({ img, isSelected, onToggle, onEnlarge, bulkDefectsCount, isHighlighted }, ref) => {
   const { bulkDefects } = useMetadataStore();
   
   // Automatically enable drag mode when tiles exist
@@ -48,7 +49,14 @@ const DraggableImage: React.FC<{
 
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => {
+        setNodeRef(node);
+        if (ref && typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        }
+      }}
       style={style}
       className={`relative aspect-square cursor-pointer group touch-manipulation ${
         isDragging ? 'opacity-50 z-50' : ''
@@ -56,9 +64,11 @@ const DraggableImage: React.FC<{
       onClick={isDragModeActive ? undefined : onToggle}
       {...(isDragModeActive ? { ...listeners, ...attributes } : {})}
     >
-      <div className={`relative rounded-lg overflow-hidden h-full ${
+      <div className={`relative rounded-lg overflow-hidden h-full transition-all duration-300 ${
         !isDragModeActive && isSelected ? 'ring-2 ring-indigo-500' : ''
-      } ${isDragModeActive && assignedDefects.length > 0 ? 'ring-2 ring-indigo-500' : ''}`}>
+      } ${isDragModeActive && assignedDefects.length > 0 ? 'ring-2 ring-indigo-500' : ''} ${
+        isHighlighted ? 'ring-4 ring-yellow-400 shadow-xl scale-105' : ''
+      }`}>
         <img
           src={img.preview}
           alt={img.file.name}
@@ -105,13 +115,15 @@ const DraggableImage: React.FC<{
       </div>
     </div>
   );
-};
+});
 
 export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth }) => {
   const { selectedImages, toggleImageSelection, bulkDefects, updateImageMetadata } = useMetadataStore();
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
+  const [lastViewedImageId, setLastViewedImageId] = useState<string | null>(null);
   const parentRef = React.useRef<HTMLDivElement>(null);
+  const imageRefs = React.useRef<Map<string, HTMLDivElement>>(new Map());
 
   const rowVirtualizer = useVirtualizer({
     count: Math.ceil(images.length / gridWidth),
@@ -134,6 +146,7 @@ export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth 
   const handleOpenViewer = (imageId: string) => {
     const index = images.findIndex(img => img.id === imageId);
     if (index !== -1) {
+      setLastViewedImageId(imageId);
       setViewerInitialIndex(index);
       setViewerOpen(true);
     }
@@ -142,6 +155,30 @@ export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth 
   // Handle description update from viewer
   const handleDescriptionUpdate = (imageId: string, description: string) => {
     updateImageMetadata(imageId, { description });
+  };
+
+  // Handle viewer close - scroll to and highlight the current image
+  const handleViewerClose = (currentIndex?: number) => {
+    setViewerOpen(false);
+    
+    // If we have a current index, scroll to and highlight that image
+    if (currentIndex !== undefined && currentIndex >= 0 && currentIndex < images.length) {
+      const imageId = images[currentIndex].id;
+      setLastViewedImageId(imageId);
+      
+      // Scroll to the image after a short delay to ensure DOM is updated
+      setTimeout(() => {
+        const imageElement = imageRefs.current.get(imageId);
+        if (imageElement) {
+          imageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+    
+    // Clear highlight after 3 seconds
+    setTimeout(() => {
+      setLastViewedImageId(null);
+    }, 3000);
   };
 
   return (
@@ -176,16 +213,25 @@ export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth 
               >
                 {rowImages.map((img) => {
                   const isSelected = selectedImages.has(img.id);
+                  const isHighlighted = lastViewedImageId === img.id;
                   
                   return (
                     <DraggableImage
                       key={img.id}
+                      ref={(node) => {
+                        if (node) {
+                          imageRefs.current.set(img.id, node);
+                        } else {
+                          imageRefs.current.delete(img.id);
+                        }
+                      }}
                       img={img}
                       isSelected={isSelected}
                       gridWidth={gridWidth}
                       onToggle={() => toggleImageSelection(img.id)}
                       onEnlarge={handleOpenViewer}
                       bulkDefectsCount={bulkDefects.length}
+                      isHighlighted={isHighlighted}
                     />
                   );
                 })}
@@ -199,7 +245,7 @@ export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth 
         <BatchDefectImageViewer
           defects={imagesForViewer}
           initialIndex={viewerInitialIndex}
-          onClose={() => setViewerOpen(false)}
+          onClose={handleViewerClose}
           onDescriptionChange={handleDescriptionUpdate}
         />
       )}
