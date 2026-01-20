@@ -3,7 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useDraggable } from '@dnd-kit/core';
 import { useMetadataStore } from '../store/metadataStore';
 import { Maximize2, Check } from 'lucide-react';
-import { ImageZoom } from './ImageZoom';
+import { BatchDefectImageViewer } from './BatchDefectImageViewer';
 import { ImageMetadata } from '../types';
 
 interface ImageGridItemProps {
@@ -17,7 +17,7 @@ const DraggableImage: React.FC<{
   isSelected: boolean;
   gridWidth: number;
   onToggle: () => void;
-  onEnlarge: () => void;
+  onEnlarge: (imageId: string) => void;
   bulkDefectsCount: number;
 }> = ({ img, isSelected, onToggle, onEnlarge, bulkDefectsCount }) => {
   const { bulkDefects } = useMetadataStore();
@@ -25,10 +25,10 @@ const DraggableImage: React.FC<{
   // Automatically enable drag mode when tiles exist
   const isDragModeActive = bulkDefectsCount > 0;
   
-  // Find which defect this image is assigned to
-  const assignedDefect = isDragModeActive
-    ? bulkDefects.find(defect => defect.selectedFile === img.file.name)
-    : null;
+  // Find ALL defects this image is assigned to
+  const assignedDefects = isDragModeActive
+    ? bulkDefects.filter(defect => defect.selectedFile === img.file.name)
+    : [];
   
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `image-${img.id}`,
@@ -58,7 +58,7 @@ const DraggableImage: React.FC<{
     >
       <div className={`relative rounded-lg overflow-hidden h-full ${
         !isDragModeActive && isSelected ? 'ring-2 ring-indigo-500' : ''
-      } ${isDragModeActive && assignedDefect ? 'ring-2 ring-indigo-500' : ''}`}>
+      } ${isDragModeActive && assignedDefects.length > 0 ? 'ring-2 ring-indigo-500' : ''}`}>
         <img
           src={img.preview}
           alt={img.file.name}
@@ -76,10 +76,14 @@ const DraggableImage: React.FC<{
             )}
           </div>
         )}
-        {/* Show defect number when assigned to a tile */}
-        {isDragModeActive && assignedDefect && (
-          <div className="absolute top-2 right-2 bg-indigo-500 w-6 h-6 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-medium">{assignedDefect.photoNumber}</span>
+        {/* Show ALL defect numbers when assigned to tiles */}
+        {isDragModeActive && assignedDefects.length > 0 && (
+          <div className="absolute top-2 right-2 flex flex-wrap gap-1 justify-end max-w-[80%]">
+            {assignedDefects.map(defect => (
+              <div key={defect.photoNumber} className="bg-indigo-500 min-w-[24px] h-6 rounded-full flex items-center justify-center px-1.5">
+                <span className="text-white text-xs font-medium">{defect.photoNumber}</span>
+              </div>
+            ))}
           </div>
         )}
         <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-1.5 text-xs truncate">
@@ -90,9 +94,10 @@ const DraggableImage: React.FC<{
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onEnlarge();
+              onEnlarge(img.id);
             }}
             className="absolute bottom-2 right-2 bg-white text-gray-800 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Expand and scroll through all images"
           >
             <Maximize2 size={16} />
           </button>
@@ -103,8 +108,9 @@ const DraggableImage: React.FC<{
 };
 
 export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth }) => {
-  const { selectedImages, toggleImageSelection, bulkDefects } = useMetadataStore();
-  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const { selectedImages, toggleImageSelection, bulkDefects, updateImageMetadata } = useMetadataStore();
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
   const parentRef = React.useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -113,6 +119,30 @@ export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth 
     estimateSize: () => 200,
     overscan: 5,
   });
+
+  // Prepare images for viewer (convert to defect-like structure)
+  const imagesForViewer = React.useMemo(() => {
+    return images.map((img, index) => ({
+      photoNumber: `${index + 1}`,
+      description: img.description || '',
+      image: img,
+      defectId: img.id
+    }));
+  }, [images]);
+
+  // Handle opening viewer
+  const handleOpenViewer = (imageId: string) => {
+    const index = images.findIndex(img => img.id === imageId);
+    if (index !== -1) {
+      setViewerInitialIndex(index);
+      setViewerOpen(true);
+    }
+  };
+
+  // Handle description update from viewer
+  const handleDescriptionUpdate = (imageId: string, description: string) => {
+    updateImageMetadata(imageId, { description });
+  };
 
   return (
     <>
@@ -154,7 +184,7 @@ export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth 
                       isSelected={isSelected}
                       gridWidth={gridWidth}
                       onToggle={() => toggleImageSelection(img.id)}
-                      onEnlarge={() => setEnlargedImage(img.preview)}
+                      onEnlarge={handleOpenViewer}
                       bulkDefectsCount={bulkDefects.length}
                     />
                   );
@@ -165,14 +195,13 @@ export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth 
         </div>
       </div>
 
-      {enlargedImage && (
-        <div className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center">
-          <ImageZoom
-            src={enlargedImage}
-            alt="Enlarged view"
-            onClose={() => setEnlargedImage(null)}
-          />
-        </div>
+      {viewerOpen && imagesForViewer.length > 0 && (
+        <BatchDefectImageViewer
+          defects={imagesForViewer}
+          initialIndex={viewerInitialIndex}
+          onClose={() => setViewerOpen(false)}
+          onDescriptionChange={handleDescriptionUpdate}
+        />
       )}
     </>
   );
