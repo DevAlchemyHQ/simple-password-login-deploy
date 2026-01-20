@@ -13,6 +13,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
 }
 
 html, body {
@@ -21,6 +22,18 @@ html, body {
   overflow: hidden; /* Changed from overflow-x: hidden to prevent all document scrolling */
   font-size: 1rem;
   min-height: -webkit-fill-available;
+}
+
+/* Smooth scrolling performance optimizations */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Optimize scrolling containers */
+.overflow-y-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 #root {

@@ -417,7 +417,9 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             className="h-full overflow-y-auto scrollbar-thin"
             style={{
               overscrollBehavior: 'contain',
-              WebkitOverflowScrolling: 'touch'
+              WebkitOverflowScrolling: 'touch',
+              transform: 'translateZ(0)',
+              willChange: 'scroll-position'
             }}
           >
             <div className="p-2">

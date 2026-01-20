@@ -144,7 +144,14 @@ export const ImageGrid: React.FC = () => {
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto scroll-smooth">
+      <div 
+        className="flex-1 min-h-0 overflow-y-auto scroll-smooth"
+        style={{
+          transform: 'translateZ(0)',
+          WebkitOverflowScrolling: 'touch',
+          willChange: 'scroll-position'
+        }}
+      >
         {images.length === 0 ? (
           <div className="h-full flex items-center justify-center text-slate-400 dark:text-gray-500">
             Please upload your Exam photos to the canvas.
