@@ -2,6 +2,14 @@ import React, { useRef, useState } from "react";
 import { Upload, Loader2 } from "lucide-react";
 import { useMetadataStore } from "../store/metadataStore";
 import { DatePickerModal } from "./DatePickerModal";
+import { ImageSizeCheckModal } from "./ImageSizeCheckModal";
+import { validateFileSize } from "../utils/fileValidation";
+
+interface SizeValidationData {
+  oversizedFiles: { name: string; sizeKB: number }[];
+  totalFiles: number;
+  averageSizeKB: number;
+}
 
 export const ImageUpload: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -10,16 +18,42 @@ export const ImageUpload: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
+  const [isSizeWarningOpen, setIsSizeWarningOpen] = useState(false);
+  const [sizeValidationData, setSizeValidationData] = useState<SizeValidationData | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
       // Store files and show date picker modal
       const files = Array.from(e.target.files);
       console.log('[ImageUpload] Files selected:', files.length);
+      
+      // Validate file sizes before proceeding
+      const sizeValidation = validateFileSize(files, 500);
+      
+      if (!sizeValidation.valid) {
+        // Show custom size warning modal
+        setSizeValidationData({
+          oversizedFiles: sizeValidation.oversizedFiles || [],
+          totalFiles: sizeValidation.totalFiles || files.length,
+          averageSizeKB: sizeValidation.averageSizeKB || 0
+        });
+        setIsSizeWarningOpen(true);
+        // Clear the input so user can select different files
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+      
       setPendingFiles(files);
       console.log('[ImageUpload] Setting modal open, isDateModalOpen will be:', true);
       setIsDateModalOpen(true);
     }
+  };
+
+  const handleSizeWarningClose = () => {
+    setIsSizeWarningOpen(false);
+    setSizeValidationData(null);
   };
 
   const handleDateConfirm = async (date: string) => {
@@ -99,6 +133,16 @@ export const ImageUpload: React.FC = () => {
         onConfirm={handleDateConfirm}
         defaultDate={undefined}
       />
+      {sizeValidationData && (
+        <ImageSizeCheckModal
+          isOpen={isSizeWarningOpen}
+          onClose={handleSizeWarningClose}
+          oversizedFiles={sizeValidationData.oversizedFiles}
+          totalFiles={sizeValidationData.totalFiles}
+          averageSizeKB={sizeValidationData.averageSizeKB}
+          maxSizeKB={500}
+        />
+      )}
     </>
   );
 };

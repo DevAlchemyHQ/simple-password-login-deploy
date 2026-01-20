@@ -6,6 +6,39 @@ export const validateFormData = (formData: FormData): string | null => {
   return null;
 };
 
+export const validateFileSize = (
+  files: File[], 
+  maxSizeKB: number = 500
+): { 
+  valid: boolean; 
+  oversizedFiles?: { name: string; sizeKB: number }[];
+  totalFiles?: number;
+  averageSizeKB?: number;
+} => {
+  const MAX_SIZE = maxSizeKB * 1024;
+  const oversized = files.filter(f => f.size > MAX_SIZE);
+  
+  if (oversized.length === 0) {
+    return { valid: true };
+  }
+  
+  // For bulk uploads, calculate statistics
+  const totalOversizedSize = oversized.reduce((sum, f) => sum + f.size, 0);
+  const avgSize = totalOversizedSize / oversized.length;
+  
+  const oversizedFiles = oversized.map(f => ({
+    name: f.name,
+    sizeKB: f.size / 1024
+  }));
+  
+  return {
+    valid: false,
+    oversizedFiles,
+    totalFiles: files.length,
+    averageSizeKB: avgSize / 1024
+  };
+};
+
 export const validateDescription = (description: string): { 
   isValid: boolean;
   invalidChars: string[];
