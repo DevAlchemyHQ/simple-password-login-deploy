@@ -17,7 +17,7 @@ interface ParsedEntry {
 
 export const BulkTextInput: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
-  const { updateImageMetadata, images, bulkDefects, setBulkDefects, updateBulkDefectFile } = useMetadataStore();
+  const { updateImageMetadata, images, bulkDefects, setBulkDefects, updateBulkDefectFile, setFormData } = useMetadataStore();
   const [bulkText, setBulkText] = useState('');
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
@@ -69,34 +69,112 @@ export const BulkTextInput: React.FC = () => {
   };
 
   const handleBulkPaste = () => {
-    const lines = bulkText.split('\n').filter(line => line.trim());
+    const text = bulkText.trim();
+    
+    if (!text) return;
+    
+    // Check if this is the full format (contains "ELR:" or "Photo XX ^")
+    const isFullFormat = /ELR:|Photo \d+ \^/.test(text);
+    
+    if (isFullFormat) {
+      // === FULL FORMAT PARSING ===
+      try {
+        // 1. Parse ELR
+        const elrMatch = text.match(/ELR:\s*(.+)/);
+        const elr = elrMatch ? elrMatch[1].trim() : '';
+        
+        // 2. Parse Structure No
+        const structureMatch = text.match(/Structure No:\s*(.+)/);
+        const structureNo = structureMatch ? structureMatch[1].trim() : '';
+        
+        // 3. Update form data if ELR or Structure No found
+        if (elr || structureNo) {
+          setFormData({ elr, structureNo });
+        }
+        
+        // 4. Parse Photo lines (format: Photo 01 ^ description ^ date    filename.jpg)
+        const photoLines = text.match(/Photo \d+ \^ .+ \^ .+/g);
+        
+        if (!photoLines || photoLines.length === 0) {
+          setError('No valid photo lines found in the format: Photo 01 ^ description ^ date    filename.jpg');
+          return;
+        }
+        
+        // 5. Create defects from photo lines
+        const newDefects = photoLines.map(line => {
+          // Split by ^
+          const parts = line.split('^').map(p => p.trim());
+          
+          // Extract photo number (remove "Photo " prefix and leading zeros)
+          const photoNumberRaw = parts[0].replace(/^Photo\s+/, '').trim();
+          const photoNumber = String(parseInt(photoNumberRaw, 10)); // Remove leading zeros
+          
+          // Extract description
+          const description = parts[1];
+          
+          // Extract filename (after multiple spaces in third part)
+          const thirdPart = parts[2];
+          const filenamePart = thirdPart.split(/\s{2,}/); // Split by 2+ spaces
+          const filename = filenamePart[1]?.trim() || '';
+          
+          // Auto-match with uploaded images by filename
+          const matchedImage = images.find(img => img.file.name === filename);
+          
+          return {
+            photoNumber,
+            description,
+            selectedFile: matchedImage ? filename : ''
+          };
+        });
+        
+        // 6. REPLACE all existing tiles
+        setBulkDefects(newDefects);
+        
+        // 7. Clear textarea
+        setBulkText('');
+        if (textareaRef.current) {
+          textareaRef.current.value = '';
+        }
+        
+        setError(null);
+        
+      } catch (error) {
+        console.error('Parse error:', error);
+        setError('Failed to parse the full format. Please check the format.');
+      }
+      
+    } else {
+      // === SIMPLE FORMAT (existing behavior) ===
+      const lines = text.split('\n').filter(line => line.trim());
 
-    // Validate each line for special characters
-    const invalidLines = lines.filter(line => !validateDescription(line.trim()).isValid);
-    if (invalidLines.length > 0) {
-      setError('Some descriptions contain invalid characters (/ or \\). Please remove them before proceeding.');
-      return;
-    }
+      // Validate each line for special characters
+      const invalidLines = lines.filter(line => !validateDescription(line.trim()).isValid);
+      if (invalidLines.length > 0) {
+        setError('Some descriptions contain invalid characters (/ or \\). Please remove them before proceeding.');
+        return;
+      }
 
-    setBulkDefects((prev) => {
-      const sortedPrev = [...prev].sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
-      const newDefects = lines.map((line) => ({
-        photoNumber: '',
-        description: line.trim(),
-        selectedFile: ''
-      }));
+      setBulkDefects((prev) => {
+        const sortedPrev = [...prev].sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'));
+        const newDefects = lines.map((line) => ({
+          photoNumber: '',
+          description: line.trim(),
+          selectedFile: ''
+        }));
 
-      const allDefects = [...sortedPrev, ...newDefects];
-      // Renumber all items
-      return allDefects.map((item, index) => ({
-        ...item,
-        photoNumber: String(index + 1),
-      }));
-    });
+        const allDefects = [...sortedPrev, ...newDefects];
+        // Renumber all items
+        return allDefects.map((item, index) => ({
+          ...item,
+          photoNumber: String(index + 1),
+        }));
+      });
 
-    setBulkText('');
-    if (textareaRef.current) {
-      textareaRef.current.value = '';
+      setBulkText('');
+      if (textareaRef.current) {
+        textareaRef.current.value = '';
+      }
+      setError(null);
     }
   };
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
-import { X, Trash2, ArrowUpDown, AlertTriangle, Grid, Images, FileText, Plus, ChevronDown, ChevronUp, Search, GripVertical, PlusCircle, Trash, Info, CheckCircle2, Calendar, Maximize2 } from 'lucide-react';
+import { X, Trash2, ArrowUpDown, AlertTriangle, Grid, List, Images, FileText, Plus, ChevronDown, ChevronUp, Search, GripVertical, PlusCircle, Trash, Info, CheckCircle2, Calendar, Maximize2 } from 'lucide-react';
 import { BatchDefectImageViewer } from './BatchDefectImageViewer';
 import { validateDescription } from '../utils/fileValidation';
 import { BulkTextInput } from './BulkTextInput';
@@ -65,6 +65,20 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   const [imageSearchQuery, setImageSearchQuery] = useState<Record<string, string>>({});
   const [focusedImageIndex, setFocusedImageIndex] = useState<Record<string, number>>({});
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
+  const [isDefectListPanelOpen, setIsDefectListPanelOpen] = useState(false);
+
+  // Load defect list panel state from localStorage
+  useEffect(() => {
+    const savedState = localStorage.getItem('defectListPanelOpen');
+    if (savedState !== null) {
+      setIsDefectListPanelOpen(JSON.parse(savedState));
+    }
+  }, []);
+
+  // Save defect list panel state to localStorage
+  useEffect(() => {
+    localStorage.setItem('defectListPanelOpen', JSON.stringify(isDefectListPanelOpen));
+  }, [isDefectListPanelOpen]);
 
   // Close selectors when clicking outside
   useEffect(() => {
@@ -153,6 +167,34 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     // If this was the last image, close viewer
     if (remainingDefects.length === 0) {
       setViewerOpen(false);
+    }
+  };
+
+  // Toggle defect list panel
+  const toggleDefectListPanel = () => {
+    setIsDefectListPanelOpen(!isDefectListPanelOpen);
+  };
+
+  // Handle copying defect list to clipboard
+  const handleCopyDefectList = async () => {
+    if (bulkDefects.length === 0) {
+      alert('No defects to copy');
+      return;
+    }
+
+    // Generate defect list: description - P1 format (NO zero padding)
+    const defectList = bulkDefects
+      .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
+      .map(defect => `${defect.description} - P${defect.photoNumber}`) // NO padding
+      .join('\n');
+
+    try {
+      await navigator.clipboard.writeText(defectList);
+      // Show success feedback
+      alert(`Copied ${bulkDefects.length} defect${bulkDefects.length !== 1 ? 's' : ''} to clipboard!`);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      alert('Failed to copy to clipboard');
     }
   };
 
@@ -453,14 +495,77 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           TILES ({bulkDefects.length})
         </h3>
 
-        <button
-          onClick={onExpand}
-          className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          title={isExpanded ? "Collapse grid view" : "Expand to grid view"}
-        >
-          <Grid size={16} className="text-slate-600 dark:text-gray-300" />
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Toggle Defect List Panel Button */}
+          <button
+            onClick={toggleDefectListPanel}
+            className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title={isDefectListPanelOpen ? "Close defect list" : "View defect list"}
+          >
+            <FileText 
+              size={16} 
+              className={isDefectListPanelOpen 
+                ? 'text-indigo-600 dark:text-indigo-400' 
+                : 'text-slate-600 dark:text-gray-300'
+              } 
+            />
+          </button>
+          
+          {/* Grid/List view toggle button */}
+          <button
+            onClick={onExpand}
+            className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            title={isExpanded ? "Collapse to list view" : "Expand to grid view"}
+          >
+            {isExpanded ? (
+              <List size={16} className="text-slate-600 dark:text-gray-300" />
+            ) : (
+              <Grid size={16} className="text-slate-600 dark:text-gray-300" />
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Collapsible Defect List Panel */}
+      {isDefectListPanelOpen && (
+        <div className="p-3 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-medium text-slate-600 dark:text-gray-400">
+              Defect List ({bulkDefects.length})
+            </label>
+            <button
+              onClick={handleCopyDefectList}
+              disabled={bulkDefects.length === 0}
+              className={`text-xs px-3 py-1.5 rounded transition-colors ${
+                bulkDefects.length === 0
+                  ? 'bg-slate-200 dark:bg-gray-700 text-slate-400 dark:text-gray-500 cursor-not-allowed'
+                  : 'bg-indigo-500 text-white hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700'
+              }`}
+            >
+              Copy List
+            </button>
+          </div>
+          
+          <div className="max-h-64 overflow-y-auto space-y-1 p-2 bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-gray-700">
+            {bulkDefects.length > 0 ? (
+              bulkDefects
+                .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
+                .map(defect => (
+                  <div 
+                    key={defect.photoNumber}
+                    className="text-sm text-slate-700 dark:text-gray-300 py-1"
+                  >
+                    {defect.description || '(no description)'} - P{defect.photoNumber}
+                  </div>
+                ))
+            ) : (
+              <div className="text-sm text-slate-400 dark:text-gray-500 text-center py-4">
+                No defects yet
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-hidden">
         {isExpanded ? (

@@ -117,7 +117,7 @@ export const handleSingleSelectDownload = async (
   }
 
   // Generate metadata content
-  const metadataContent = generateMetadataContent(selectedImagesList);
+  const metadataContent = generateMetadataContent(selectedImagesList, formData);
 
   // Try to save to folder first (if supported)
   const folderName = await saveFilesToFolder(
@@ -233,7 +233,7 @@ export const handleBatchDragDownload = async (
   }
 
   // Generate metadata content
-  const metadataContent = generateMetadataContent(imagesForDownload);
+  const metadataContent = generateMetadataContent(imagesForDownload, formData);
 
   // Try to save to folder first (if supported)
   const folderName = await saveFilesToFolder(

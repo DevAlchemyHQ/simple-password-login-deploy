@@ -6,9 +6,13 @@ interface PDFState {
   file1: File | null;
   file2: File | null;
   showBothPDFs: boolean;
+  scrollPosition1: number;
+  scrollPosition2: number;
   setShowBothPDFs: (show: boolean) => void;
   setFile1: (file: File | null) => Promise<void>;
   setFile2: (file: File | null) => Promise<void>;
+  setScrollPosition1: (position: number) => void;
+  setScrollPosition2: (position: number) => void;
   clearFiles: () => void;
   loadPDFs: () => Promise<void>;
   savePDFs: () => Promise<void>;
@@ -20,7 +24,11 @@ export const usePDFStore = create<PDFState>()(
       file1: null,
       file2: null,
       showBothPDFs: true,
+      scrollPosition1: 0,
+      scrollPosition2: 0,
       setShowBothPDFs: (show) => set({ showBothPDFs: show }),
+      setScrollPosition1: (position) => set({ scrollPosition1: position }),
+      setScrollPosition2: (position) => set({ scrollPosition2: position }),
       setFile1: async (file) => {
         try {
           if (file) {
@@ -141,6 +149,8 @@ export const usePDFStore = create<PDFState>()(
         file1: null,
         file2: null,
         showBothPDFs: state.showBothPDFs,
+        scrollPosition1: state.scrollPosition1,
+        scrollPosition2: state.scrollPosition2,
       }),
     }
   )

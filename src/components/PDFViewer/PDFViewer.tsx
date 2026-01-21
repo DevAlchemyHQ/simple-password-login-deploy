@@ -14,6 +14,8 @@ interface PDFViewerSectionProps {
   onFileChange: (file: File | null) => void;
   onZoom: (action: 'in' | 'out') => void;
   onToggleView?: () => void;
+  scrollPosition: number;
+  onScrollChange: (position: number) => void;
 }
 
 interface PageRotation {
@@ -27,6 +29,8 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
   onFileChange,
   onZoom,
   onToggleView,
+  scrollPosition,
+  onScrollChange,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -87,6 +91,18 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
     }));
   };
 
+  // Save scroll position on scroll
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      onScrollChange(scrollContainer.scrollTop);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, [onScrollChange]);
 
   return (
     <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col overflow-hidden">
@@ -240,7 +256,17 @@ interface PDFViewerProps {
 }
 
 export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
-  const { file1, file2, setFile1, setFile2, loadPDFs } = usePDFStore();
+  const { 
+    file1, 
+    file2, 
+    setFile1, 
+    setFile2, 
+    loadPDFs, 
+    scrollPosition1, 
+    scrollPosition2, 
+    setScrollPosition1, 
+    setScrollPosition2 
+  } = usePDFStore();
   const [scale1, setScale1] = useState(1.0);
   const [scale2, setScale2] = useState(1.0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -291,6 +317,8 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
           onFileChange={setFile1}
           onZoom={(action) => handleZoom(1, action)}
           onToggleView={onToggleBack}
+          scrollPosition={scrollPosition1}
+          onScrollChange={setScrollPosition1}
         />
 
         {/* PDF Viewer 2 */}
@@ -301,6 +329,8 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
           onFileChange={setFile2}
           onZoom={(action) => handleZoom(2, action)}
           onToggleView={onToggleBack}
+          scrollPosition={scrollPosition2}
+          onScrollChange={setScrollPosition2}
         />
       </div>
     </div>

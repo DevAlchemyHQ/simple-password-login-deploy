@@ -109,31 +109,29 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             {/* PDF Tab */}
             <div className={`lg:col-span-10 h-full overflow-hidden ${activeTab === 'pdf' ? '' : 'hidden'}`}>
               {/* Single PDF + Image Tiles View */}
-              {!showBothPDFs ? (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden min-h-0">
-                  {/* Left PDF Viewer */}
-                  <div className="h-full overflow-hidden lg:col-span-7 min-h-0">
-                    <PDFViewerLeft onToggleBoth={() => setShowBothPDFs(true)} />
-                  </div>
+              <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden min-h-0 ${!showBothPDFs ? '' : 'hidden'}`}>
+                {/* Left PDF Viewer */}
+                <div className="h-full overflow-hidden lg:col-span-7 min-h-0">
+                  <PDFViewerLeft onToggleBoth={() => setShowBothPDFs(true)} />
+                </div>
 
-                  {/* Selected Images Panel on right side */}
-                  <div className="h-full overflow-hidden lg:col-span-5 min-h-0">
-                    <SelectedImagesPanel
-                      key="pdf-panel"
-                      onExpand={() => setIsPDFExpanded(!isPDFExpanded)}
-                      isExpanded={isPDFExpanded}
-                      activeDragId={null}
-                      overDragId={null}
-                      activeTab="browser"
-                    />
-                  </div>
+                {/* Selected Images Panel on right side */}
+                <div className="h-full overflow-hidden lg:col-span-5 min-h-0">
+                  <SelectedImagesPanel
+                    key="pdf-panel"
+                    onExpand={() => setIsPDFExpanded(!isPDFExpanded)}
+                    isExpanded={isPDFExpanded}
+                    activeDragId={null}
+                    overDragId={null}
+                    activeTab="browser"
+                  />
                 </div>
-              ) : (
-                /* Both PDFs View */
-                <div className="h-full overflow-hidden">
-                  <PDFViewer onToggleBack={() => setShowBothPDFs(false)} />
-                </div>
-              )}
+              </div>
+
+              {/* Both PDFs View */}
+              <div className={`h-full overflow-hidden ${showBothPDFs ? '' : 'hidden'}`}>
+                <PDFViewer onToggleBack={() => setShowBothPDFs(false)} />
+              </div>
             </div>
 
             {/* Calculator Tab */}

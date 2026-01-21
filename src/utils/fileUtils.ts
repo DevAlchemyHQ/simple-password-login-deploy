@@ -4,7 +4,8 @@ import { formatDate, generateMetadataFileName, generateImageFileName, generateZi
 import { createZipFile } from './zipUtils';
 
 export const generateMetadataContent = (
-  images: ImageMetadata[]
+  images: ImageMetadata[],
+  formData: FormData
 ): string => {
   if (!images?.length) {
     throw new Error('No images provided for metadata generation');
@@ -34,6 +35,15 @@ export const generateMetadataContent = (
     const content = [];
     const sortedDates = Object.keys(imagesByDate).sort();
 
+    // Extract unique formatted dates for header
+    const uniqueDates = sortedDates.map(date => formatDate(date)).join(', ');
+
+    // Add header section
+    content.push(`ELR: ${formData.elr.trim().toUpperCase()}`);
+    content.push(`Structure No: ${formData.structureNo.trim()}`);
+    content.push(`Date(s): ${uniqueDates}`);
+    content.push(''); // Empty line
+
     // Add Defects section grouped by date
     if (images.length > 0) {
       content.push('Defects:');
@@ -53,6 +63,22 @@ export const generateMetadataContent = (
           }
           content.push(`Photo ${img.photoNumber.trim().padStart(2, '0')} ^ ${img.description.trim()} ^ ${formattedDate}    ${img.file.name}`);
         });
+      });
+
+      // Add empty line before defect list
+      content.push('');
+
+      // Add Defect List section (description - P1 format, no zero padding)
+      content.push('Defect List:');
+      
+      // Sort all images by photo number for the defect list
+      const sortedImages = [...images].sort((a, b) => 
+        parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0')
+      );
+      
+      sortedImages.forEach(img => {
+        // Use P1, P2, P3 format (no zero padding)
+        content.push(`${img.description.trim()} - P${img.photoNumber.trim()}`);
       });
     }
 
@@ -101,7 +127,7 @@ export const createDownloadPackage = async (
     }
 
     // Generate metadata content
-    const metadataContent = await generateMetadataContent(images);
+    const metadataContent = await generateMetadataContent(images, formData);
     if (!metadataContent) {
       throw new Error('Failed to generate metadata content');
     }

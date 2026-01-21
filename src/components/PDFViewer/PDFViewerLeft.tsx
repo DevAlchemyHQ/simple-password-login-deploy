@@ -16,7 +16,7 @@ interface PDFViewerLeftProps {
 }
 
 export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) => {
-  const { file1, setFile1, loadPDFs } = usePDFStore();
+  const { file1, setFile1, loadPDFs, scrollPosition1, setScrollPosition1 } = usePDFStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -93,6 +93,19 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
       return newScale;
     });
   };
+
+  // Save scroll position on scroll
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      setScrollPosition1(scrollContainer.scrollTop);
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, [setScrollPosition1]);
 
   if (isInitialLoad) {
     return (
