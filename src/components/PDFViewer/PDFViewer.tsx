@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, ZoomIn, ZoomOut, Upload, RotateCw, Loader2, ArrowLeft } from 'lucide-react';
+import { FileText, ZoomIn, ZoomOut, Upload, RotateCw, Loader2, Images } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { usePDFStore } from '../../store/pdfStore';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -13,6 +13,7 @@ interface PDFViewerSectionProps {
   scale: number;
   onFileChange: (file: File | null) => void;
   onZoom: (action: 'in' | 'out') => void;
+  onToggleView?: () => void;
 }
 
 interface PageRotation {
@@ -25,6 +26,7 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
   scale,
   onFileChange,
   onZoom,
+  onToggleView,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -139,12 +141,21 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
             >
               <ZoomIn size={16} className="text-slate-600 dark:text-white" />
             </button>
+            {onToggleView && (
+              <button
+                onClick={onToggleView}
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
+                title="Show Single PDF + Image Tiles"
+              >
+                <Images size={16} className="text-slate-600 dark:text-white" />
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      <div 
-        ref={scrollContainerRef} 
+      <div
+        ref={scrollContainerRef}
         className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-800 p-4"
       >
         {file ? (
@@ -271,27 +282,15 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Toggle to single PDF + tiles button */}
-      {onToggleBack && (
-        <div className="mb-2">
-          <button
-            onClick={onToggleBack}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Show Single PDF + Image Tiles
-          </button>
-        </div>
-      )}
-
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0 overflow-hidden">
         {/* PDF Viewer 1 */}
         <PDFViewerSection
-          title="Upload Detailed Exam"
+          title="Upload detailed report/Site notes"
           file={file1}
           scale={scale1}
           onFileChange={setFile1}
           onZoom={(action) => handleZoom(1, action)}
+          onToggleView={onToggleBack}
         />
 
         {/* PDF Viewer 2 */}
@@ -301,6 +300,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
           scale={scale2}
           onFileChange={setFile2}
           onZoom={(action) => handleZoom(2, action)}
+          onToggleView={onToggleBack}
         />
       </div>
     </div>

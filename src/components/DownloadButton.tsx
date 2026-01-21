@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, AlertCircle, Loader2 } from 'lucide-react';
+import { Download, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
 import { useMetadataStore } from '../store/metadataStore';
 import { useValidation } from '../hooks/useValidation';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -12,6 +12,7 @@ export const DownloadButton: React.FC = () => {
   const { trackEvent } = useAnalytics();
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Automatically detect mode based on whether tiles exist
   const isBatchMode = bulkDefects.length > 0;
@@ -43,10 +44,12 @@ export const DownloadButton: React.FC = () => {
     try {
       setIsDownloading(true);
       setError(null);
+      setSuccessMessage(null);
       
+      let result;
       if (isBatchMode) {
         // BATCH DRAG MODE DOWNLOAD - when tiles exist
-        await handleBatchDragDownload(
+        result = await handleBatchDragDownload(
           images,
           bulkDefects,
           formData,
@@ -54,13 +57,21 @@ export const DownloadButton: React.FC = () => {
         );
       } else {
         // SINGLE SELECT MODE DOWNLOAD - when no tiles exist
-        await handleSingleSelectDownload(
+        result = await handleSingleSelectDownload(
           images,
           selectedImages,
           formData,
           trackEvent
         );
       }
+      
+      // Show success message
+      setSuccessMessage(result.message);
+      
+      // Auto-clear success message after 5 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
     } catch (error) {
       console.error('Error creating download package:', error);
       setError(error instanceof Error ? error.message : 'Failed to create download package');
@@ -101,6 +112,15 @@ export const DownloadButton: React.FC = () => {
         )}
         {buttonText}
       </button>
+
+      {successMessage && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+          <div className="flex items-start gap-2 text-green-700 dark:text-green-400">
+            <CheckCircle size={16} className="mt-0.5 flex-shrink-0" />
+            <p className="text-sm">{successMessage}</p>
+          </div>
+        </div>
+      )}
 
       {(error || (!isValid() && errors.length > 0) || hasSpecialCharacters) && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">

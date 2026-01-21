@@ -13,8 +13,8 @@ interface BatchDefectImage {
 interface BatchDefectImageViewerProps {
   defects: BatchDefectImage[];
   initialIndex: number;
-  onClose: (currentIndex?: number) => void;
-  onDeleteImage?: (defectId: string) => void;
+  onClose: () => void;
+  onDeleteImage: (defectId: string) => void;
 }
 
 interface CropArea {
@@ -56,11 +56,11 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [showAdjustments, setShowAdjustments] = useState(false);
-  
+
   // Crop resizing state
   const [cropResizing, setCropResizing] = useState<'none' | 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w' | 'move'>('none');
   const [cropResizeStart, setCropResizeStart] = useState<{ x: number; y: number; crop: CropArea } | null>(null);
-  
+
   const [adjustments, setAdjustments] = useState<ImageAdjustments>({
     brightness: 0,
     contrast: 0,
@@ -71,13 +71,13 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
     temperature: 0,
     tint: 0,
   });
-  
+
   // History for undo/redo
   const [history, setHistory] = useState<HistoryState[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [originalImageSrc, setOriginalImageSrc] = useState<string>('');
   const [originalImageBlob, setOriginalImageBlob] = useState<Blob | null>(null); // Store original blob
-  
+
   const imageRef = useRef<HTMLImageElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -91,7 +91,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
       // Get the original image from store
       const originalImage = images.find(img => img.id === image.id);
       const src = originalImage?.preview || image.preview;
-      
+
       // Load original image as blob to preserve it
       fetch(src)
         .then(res => res.blob())
@@ -99,7 +99,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
           setOriginalImageBlob(blob);
           const blobUrl = URL.createObjectURL(blob);
           setOriginalImageSrc(blobUrl);
-          
+
           const resetAdjustments = {
             brightness: 0,
             contrast: 0,
@@ -112,7 +112,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
           };
           setHistory([{ imageSrc: blobUrl, adjustments: resetAdjustments, cropArea: null }]);
           setHistoryIndex(0);
-          
+
           // Set image source
           if (imageRef.current) {
             imageRef.current.src = blobUrl;
@@ -129,13 +129,13 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         return;
       }
-      
+
       if (e.key === 'Escape') {
         if (isCropping) {
           setIsCropping(false);
           setCropArea(null);
         } else {
-          onClose(currentIndex);
+          onClose();
         }
       } else if (e.key === 'ArrowLeft' && !isCropping) {
         setCurrentIndex((prev) => (prev > 0 ? prev - 1 : defects.length - 1));
@@ -210,30 +210,30 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
   const handleAdjustmentChange = (key: keyof ImageAdjustments, value: number) => {
     setAdjustments((prev) => {
       const newAdjustments = { ...prev, [key]: value };
-      
+
       // Apply edits immediately for preview
       applyAllEdits(newAdjustments, cropArea);
-      
+
       // Debounce history updates - only add to history when user stops adjusting
       if (adjustmentTimeoutRef.current) {
         clearTimeout(adjustmentTimeoutRef.current);
       }
-      
+
       adjustmentTimeoutRef.current = setTimeout(() => {
         // Only add to history if this is a meaningful change
         const currentState = { adjustments: newAdjustments, cropArea };
         const lastState = lastHistoryStateRef.current;
-        
-        if (!lastState || 
-            JSON.stringify(currentState.adjustments) !== JSON.stringify(lastState.adjustments) ||
-            JSON.stringify(currentState.cropArea) !== JSON.stringify(lastState.cropArea)) {
+
+        if (!lastState ||
+          JSON.stringify(currentState.adjustments) !== JSON.stringify(lastState.adjustments) ||
+          JSON.stringify(currentState.cropArea) !== JSON.stringify(lastState.cropArea)) {
           if (imageRef.current) {
             addToHistory(imageRef.current.src, newAdjustments, cropArea);
             lastHistoryStateRef.current = currentState;
           }
         }
       }, 500); // Wait 500ms after last change
-      
+
       return newAdjustments;
     });
   };
@@ -254,7 +254,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
       tint: 0,
     };
     setAdjustments(resetAdjustments);
-    
+
     // Restore original image
     if (originalImageBlob) {
       const blobUrl = URL.createObjectURL(originalImageBlob);
@@ -293,32 +293,32 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
         const cropHeight = cropArea.height * imgRect.height / imageRef.current.naturalHeight;
 
         // Determine which handle or area
-        if (x >= cropLeft - handleSize && x <= cropLeft + handleSize && 
-            y >= cropTop - handleSize && y <= cropTop + handleSize) {
+        if (x >= cropLeft - handleSize && x <= cropLeft + handleSize &&
+          y >= cropTop - handleSize && y <= cropTop + handleSize) {
           setCropResizing('nw');
-        } else if (x >= cropLeft + cropWidth - handleSize && x <= cropLeft + cropWidth + handleSize && 
-                   y >= cropTop - handleSize && y <= cropTop + handleSize) {
+        } else if (x >= cropLeft + cropWidth - handleSize && x <= cropLeft + cropWidth + handleSize &&
+          y >= cropTop - handleSize && y <= cropTop + handleSize) {
           setCropResizing('ne');
-        } else if (x >= cropLeft - handleSize && x <= cropLeft + handleSize && 
-                   y >= cropTop + cropHeight - handleSize && y <= cropTop + cropHeight + handleSize) {
+        } else if (x >= cropLeft - handleSize && x <= cropLeft + handleSize &&
+          y >= cropTop + cropHeight - handleSize && y <= cropTop + cropHeight + handleSize) {
           setCropResizing('sw');
-        } else if (x >= cropLeft + cropWidth - handleSize && x <= cropLeft + cropWidth + handleSize && 
-                   y >= cropTop + cropHeight - handleSize && y <= cropTop + cropHeight + handleSize) {
+        } else if (x >= cropLeft + cropWidth - handleSize && x <= cropLeft + cropWidth + handleSize &&
+          y >= cropTop + cropHeight - handleSize && y <= cropTop + cropHeight + handleSize) {
           setCropResizing('se');
-        } else if (x >= cropLeft && x <= cropLeft + cropWidth && 
-                   y >= cropTop - handleSize && y <= cropTop + handleSize) {
+        } else if (x >= cropLeft && x <= cropLeft + cropWidth &&
+          y >= cropTop - handleSize && y <= cropTop + handleSize) {
           setCropResizing('n');
-        } else if (x >= cropLeft && x <= cropLeft + cropWidth && 
-                   y >= cropTop + cropHeight - handleSize && y <= cropTop + cropHeight + handleSize) {
+        } else if (x >= cropLeft && x <= cropLeft + cropWidth &&
+          y >= cropTop + cropHeight - handleSize && y <= cropTop + cropHeight + handleSize) {
           setCropResizing('s');
-        } else if (x >= cropLeft - handleSize && x <= cropLeft + handleSize && 
-                   y >= cropTop && y <= cropTop + cropHeight) {
+        } else if (x >= cropLeft - handleSize && x <= cropLeft + handleSize &&
+          y >= cropTop && y <= cropTop + cropHeight) {
           setCropResizing('w');
-        } else if (x >= cropLeft + cropWidth - handleSize && x <= cropLeft + cropWidth + handleSize && 
-                   y >= cropTop && y <= cropTop + cropHeight) {
+        } else if (x >= cropLeft + cropWidth - handleSize && x <= cropLeft + cropWidth + handleSize &&
+          y >= cropTop && y <= cropTop + cropHeight) {
           setCropResizing('e');
-        } else if (x >= cropLeft && x <= cropLeft + cropWidth && 
-                   y >= cropTop && y <= cropTop + cropHeight) {
+        } else if (x >= cropLeft && x <= cropLeft + cropWidth &&
+          y >= cropTop && y <= cropTop + cropHeight) {
           setCropResizing('move');
         } else {
           // Create new crop at click position, constrained to image bounds
@@ -326,21 +326,21 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
           const newY = (y - (imgRect.top - rect.top)) * scaleY;
           const maxSize = Math.min(imageRef.current.naturalWidth, imageRef.current.naturalHeight);
           const size = maxSize * 0.3;
-          
+
           // Constrain to image bounds
           const constrainedX = Math.max(0, Math.min(imageRef.current.naturalWidth - size, newX));
           const constrainedY = Math.max(0, Math.min(imageRef.current.naturalHeight - size, newY));
           const constrainedSize = Math.min(
-            size, 
-            imageRef.current.naturalWidth - constrainedX, 
+            size,
+            imageRef.current.naturalWidth - constrainedX,
             imageRef.current.naturalHeight - constrainedY
           );
-          
-          setCropArea({ 
-            x: constrainedX, 
-            y: constrainedY, 
-            width: Math.max(10, constrainedSize), 
-            height: Math.max(10, constrainedSize) 
+
+          setCropArea({
+            x: constrainedX,
+            y: constrainedY,
+            width: Math.max(10, constrainedSize),
+            height: Math.max(10, constrainedSize)
           });
           setCropResizing('se');
         }
@@ -354,23 +354,23 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
         const newY = (y - (imgRect.top - rect.top)) * scaleY;
         const maxSize = Math.min(imageRef.current.naturalWidth, imageRef.current.naturalHeight);
         const size = maxSize * 0.3;
-        
+
         // Constrain to image bounds
         const constrainedX = Math.max(0, Math.min(imageRef.current.naturalWidth - size, newX));
         const constrainedY = Math.max(0, Math.min(imageRef.current.naturalHeight - size, newY));
         const constrainedSize = Math.min(
-          size, 
-          imageRef.current.naturalWidth - constrainedX, 
+          size,
+          imageRef.current.naturalWidth - constrainedX,
           imageRef.current.naturalHeight - constrainedY
         );
-        
-        const newCrop = { 
-          x: constrainedX, 
-          y: constrainedY, 
-          width: Math.max(10, constrainedSize), 
-          height: Math.max(10, constrainedSize) 
+
+        const newCrop = {
+          x: constrainedX,
+          y: constrainedY,
+          width: Math.max(10, constrainedSize),
+          height: Math.max(10, constrainedSize)
         };
-        
+
         setCropArea(newCrop);
         setCropResizing('se');
         setCropResizeStart({ x: e.clientX, y: e.clientY, crop: newCrop });
@@ -442,7 +442,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
 
   const handleMouseUp = () => {
     setIsDragging(false);
-    
+
     // If we were resizing crop, add to history
     if (cropResizing !== 'none' && cropArea) {
       if (imageRef.current) {
@@ -450,7 +450,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
         lastHistoryStateRef.current = { adjustments, cropArea };
       }
     }
-    
+
     setCropResizing('none');
     setCropResizeStart(null);
   };
@@ -501,7 +501,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
       const delta = max - min;
       const lightness = (max + min) / 2;
       let saturation = delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
-      
+
       // Apply saturation adjustment
       const saturationFactor = 1 + (adj.saturation / 100);
       saturation = Math.max(0, Math.min(1, saturation * saturationFactor));
@@ -518,20 +518,20 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
           hue = (r - g) / delta + 4;
         }
         hue = hue / 6;
-        
+
         const x = c * (1 - Math.abs((hue * 6) % 2 - 1));
         const m = lightness - c / 2;
 
         let newR = 0, newG = 0, newB = 0;
-        if (hue < 1/6) {
+        if (hue < 1 / 6) {
           newR = c; newG = x; newB = 0;
-        } else if (hue < 2/6) {
+        } else if (hue < 2 / 6) {
           newR = x; newG = c; newB = 0;
-        } else if (hue < 3/6) {
+        } else if (hue < 3 / 6) {
           newR = 0; newG = c; newB = x;
-        } else if (hue < 4/6) {
+        } else if (hue < 4 / 6) {
           newR = 0; newG = x; newB = c;
-        } else if (hue < 5/6) {
+        } else if (hue < 5 / 6) {
           newR = x; newG = 0; newB = c;
         } else {
           newR = c; newG = 0; newB = x;
@@ -607,7 +607,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
 
     // Create new preview URL
     const newPreview = URL.createObjectURL(blob);
-    
+
     // Revoke old preview URL if it's a blob
     if (image.preview.startsWith('blob:')) {
       URL.revokeObjectURL(image.preview);
@@ -629,7 +629,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
       }
       return img;
     });
-    
+
     // Update store state
     useMetadataStore.setState({ images: updatedImages });
 
@@ -663,7 +663,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
     // Load original image
     const tempImg = new Image();
     tempImg.crossOrigin = 'anonymous';
-    
+
     await new Promise<void>((resolve, reject) => {
       tempImg.onload = () => resolve();
       tempImg.onerror = reject;
@@ -698,7 +698,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
         if (blob && imageRef.current) {
           const url = URL.createObjectURL(blob);
           imageRef.current.src = url;
-          
+
           // Update the image in the store
           const currentDefect = defects[currentIndex];
           await updateImageInStore(blob, currentDefect.image.id);
@@ -710,7 +710,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
 
   const applyCrop = async () => {
     if (!cropArea || !imageRef.current) return;
-    
+
     // Ensure crop is within bounds before applying
     const constrainedCrop = {
       x: Math.max(0, Math.min(imageRef.current.naturalWidth - cropArea.width, cropArea.x)),
@@ -718,7 +718,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
       width: Math.max(10, Math.min(imageRef.current.naturalWidth - cropArea.x, cropArea.width)),
       height: Math.max(10, Math.min(imageRef.current.naturalHeight - cropArea.y, cropArea.height)),
     };
-    
+
     setCropArea(constrainedCrop);
     await applyAllEdits(adjustments, constrainedCrop);
     setIsCropping(false);
@@ -765,10 +765,9 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
   };
 
   const handleDelete = () => {
-    if (!onDeleteImage) return;
     const currentDefect = defects[currentIndex];
     onDeleteImage(currentDefect.defectId);
-    
+
     if (defects.length > 1 && currentIndex >= defects.length - 1) {
       setCurrentIndex(Math.max(0, currentIndex - 1));
     }
@@ -776,7 +775,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
 
   useEffect(() => {
     if (defects.length === 0) {
-      onClose(currentIndex);
+      onClose();
     } else if (currentIndex >= defects.length) {
       setCurrentIndex(Math.max(0, defects.length - 1));
     }
@@ -793,14 +792,14 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
   // Calculate crop overlay position - fixed to account for image transform
   const getCropOverlayStyle = () => {
     if (!cropArea || !imageRef.current || !imageRef.current.complete) return null;
-    
+
     // Get the image's displayed dimensions
     const imgRect = imageRef.current.getBoundingClientRect();
     const naturalWidth = imageRef.current.naturalWidth;
     const naturalHeight = imageRef.current.naturalHeight;
-    
+
     if (naturalWidth === 0 || naturalHeight === 0) return null;
-    
+
     // Calculate scale factors from natural to displayed size
     const scaleX = imgRect.width / naturalWidth;
     const scaleY = imgRect.height / naturalHeight;
@@ -882,11 +881,10 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
             {/* Adjustments Toggle */}
             <button
               onClick={() => setShowAdjustments(!showAdjustments)}
-              className={`p-2 rounded-lg transition-colors ${
-                showAdjustments
-                  ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                  : 'hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300'
-              }`}
+              className={`p-2 rounded-lg transition-colors ${showAdjustments
+                ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                : 'hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300'
+                }`}
               title="Image Adjustments"
             >
               <Settings2 size={20} />
@@ -903,19 +901,18 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                   const x = Math.max(0, Math.min(imageRef.current.naturalWidth - size, (imageRef.current.naturalWidth - size) / 2));
                   const y = Math.max(0, Math.min(imageRef.current.naturalHeight - size, (imageRef.current.naturalHeight - size) / 2));
                   const constrainedSize = Math.min(size, imageRef.current.naturalWidth - x, imageRef.current.naturalHeight - y);
-                  setCropArea({ 
-                    x, 
-                    y, 
-                    width: Math.max(10, constrainedSize), 
-                    height: Math.max(10, constrainedSize) 
+                  setCropArea({
+                    x,
+                    y,
+                    width: Math.max(10, constrainedSize),
+                    height: Math.max(10, constrainedSize)
                   });
                 }
               }}
-              className={`p-2 rounded-lg transition-colors ${
-                isCropping
-                  ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                  : 'hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300'
-              }`}
+              className={`p-2 rounded-lg transition-colors ${isCropping
+                ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                : 'hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300'
+                }`}
               title="Crop Image"
             >
               <Crop size={20} />
@@ -946,7 +943,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
               <Trash2 size={20} />
             </button>
             <button
-              onClick={() => onClose(currentIndex)}
+              onClick={onClose}
               className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <X size={24} className="text-slate-600 dark:text-gray-300" />
@@ -996,7 +993,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
         {/* Image and Description Container */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           {/* Image Section with Navigation Arrows */}
-          <div 
+          <div
             ref={imageContainerRef}
             className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-gray-800 p-4 overflow-hidden relative"
             onMouseDown={handleMouseDown}
@@ -1037,20 +1034,20 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                   draggable="false"
                   style={{ maxHeight: 'calc(90vh - 200px)' }}
                 />
-                
+
                 {/* Resizable Crop Overlay - positioned absolutely relative to image (same container as img) */}
                 {isCropping && cropOverlayStyle && (
                   <div
                     ref={cropOverlayRef}
                     className="absolute border-2 border-indigo-500 bg-indigo-500/10"
-                    style={{ 
-                      ...cropOverlayStyle, 
+                    style={{
+                      ...cropOverlayStyle,
                       pointerEvents: 'auto'
                     }}
                   >
                     {/* Resize Handles */}
-                    <div 
-                      className="absolute -top-1 -left-1 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-nw-resize z-20" 
+                    <div
+                      className="absolute -top-1 -left-1 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-nw-resize z-20"
                       onMouseDown={(e) => {
                         e.stopPropagation();
                         setCropResizing('nw');
@@ -1059,7 +1056,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                         }
                       }}
                     />
-                    <div 
+                    <div
                       className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-ne-resize z-20"
                       onMouseDown={(e) => {
                         e.stopPropagation();
@@ -1069,7 +1066,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                         }
                       }}
                     />
-                    <div 
+                    <div
                       className="absolute -bottom-1 -left-1 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-sw-resize z-20"
                       onMouseDown={(e) => {
                         e.stopPropagation();
@@ -1079,7 +1076,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                         }
                       }}
                     />
-                    <div 
+                    <div
                       className="absolute -bottom-1 -right-1 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-se-resize z-20"
                       onMouseDown={(e) => {
                         e.stopPropagation();
@@ -1089,7 +1086,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                         }
                       }}
                     />
-                    <div 
+                    <div
                       className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-n-resize z-20"
                       onMouseDown={(e) => {
                         e.stopPropagation();
@@ -1099,7 +1096,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                         }
                       }}
                     />
-                    <div 
+                    <div
                       className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-s-resize z-20"
                       onMouseDown={(e) => {
                         e.stopPropagation();
@@ -1109,7 +1106,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                         }
                       }}
                     />
-                    <div 
+                    <div
                       className="absolute -left-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-w-resize z-20"
                       onMouseDown={(e) => {
                         e.stopPropagation();
@@ -1119,7 +1116,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                         }
                       }}
                     />
-                    <div 
+                    <div
                       className="absolute -right-1 top-1/2 -translate-y-1/2 w-3 h-3 bg-indigo-500 border border-white rounded-full cursor-e-resize z-20"
                       onMouseDown={(e) => {
                         e.stopPropagation();
@@ -1161,7 +1158,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                   {currentDefect.photoNumber}
                 </p>
               </div>
-              
+
               <div>
                 <h3 className="text-sm font-medium text-slate-500 dark:text-gray-400 mb-1">
                   Description
@@ -1191,11 +1188,10 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index)}
-                  className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                    index === currentIndex
-                      ? 'border-indigo-500 ring-2 ring-indigo-200 dark:ring-indigo-800'
-                      : 'border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600'
-                  }`}
+                  className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${index === currentIndex
+                    ? 'border-indigo-500 ring-2 ring-indigo-200 dark:ring-indigo-800'
+                    : 'border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-600'
+                    }`}
                 >
                   <img
                     src={defect.image.preview}

@@ -22,8 +22,8 @@ const SortButton: React.FC<{
           null
     )}
     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${direction
-        ? 'bg-indigo-500 text-white'
-        : 'text-slate-600 hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-700'
+      ? 'bg-indigo-500 text-white'
+      : 'text-slate-600 hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-700'
       }`}
     title={direction === null ? 'Enable sorting' : 'Change sort order'}
   >
@@ -132,9 +132,9 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
     const defectsWithImages = bulkDefects
       .filter(defect => defect.selectedFile)
       .sort((a, b) => parseInt(a.photoNumber) - parseInt(b.photoNumber));
-    
+
     const index = defectsWithImages.findIndex(defect => defect.photoNumber === photoNumber);
-    
+
     if (index !== -1) {
       setViewerInitialIndex(index);
       setViewerOpen(true);
@@ -430,7 +430,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   const hasSavedMetadata = bulkDefects.length > 0 && dataRestoredFromStorage;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full flex flex-col">
       {/* Data Persistence Notification Banner */}
       {images.length === 0 && hasSavedMetadata && (
         <div className="mx-3 mt-3 mb-2 p-4 bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-300 dark:border-indigo-700 rounded-lg flex items-start gap-3 shadow-sm">
@@ -455,10 +455,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
         <button
           onClick={onExpand}
-          className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           title={isExpanded ? "Collapse grid view" : "Expand to grid view"}
         >
-          <Grid size={20} className="text-slate-600 dark:text-gray-300" />
+          <Grid size={16} className="text-slate-600 dark:text-gray-300" />
         </button>
       </div>
 
@@ -480,8 +480,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                 strategy={verticalListSortingStrategy}
               >
                 <div className={`grid gap-2 ${activeTab === 'browser'
-                    ? 'grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5'
-                    : 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7'
+                  ? 'grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5'
+                  : 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7'
                   }`}>
                   {bulkDefects
                     .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
@@ -631,10 +631,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               opacity: isDragging ? 0.4 : 1,
                             }}
                             className={`group flex flex-col bg-slate-50 dark:bg-gray-700 rounded-lg overflow-visible transition-all duration-200 relative ${isDragging
-                                ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing'
-                                : (overDragId === defect.photoNumber && activeDragId && activeDragId !== defect.photoNumber)
-                                  ? 'ring-4 ring-indigo-400 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 shadow-xl scale-[1.02] border-2 border-indigo-400'
-                                  : 'cursor-grab hover:shadow-lg hover:ring-1 hover:ring-indigo-300 dark:hover:ring-indigo-600'
+                              ? 'shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 z-50 cursor-grabbing'
+                              : (overDragId === defect.photoNumber && activeDragId && activeDragId !== defect.photoNumber)
+                                ? 'ring-4 ring-indigo-400 border-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 shadow-xl scale-[1.02] border-2 border-indigo-400'
+                                : 'cursor-grab hover:shadow-lg hover:ring-1 hover:ring-indigo-300 dark:hover:ring-indigo-600'
                               }`}
                             {...attributes}
                             {...customListeners}
@@ -734,8 +734,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   }}
                                   onMouseDown={(e) => e.stopPropagation()}
                                   className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors ${defect.selectedFile
-                                      ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                                      : 'text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-600'
+                                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                                    : 'text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-600'
                                     }`}
                                 >
                                   <div className="flex-1 text-left truncate">
@@ -781,7 +781,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                           onClick={(e) => e.stopPropagation()}
                                           onKeyDown={(e) => {
                                             const currentFocus = focusedImageIndex[defect.photoNumber] ?? -1;
-                                            
+
                                             if (e.key === 'Escape') {
                                               setImageSelectorOpen(null);
                                               setFocusedImageIndex(prev => {
@@ -847,7 +847,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                         filteredImages.map((img, index) => {
                                           const currentFocus = focusedImageIndex[defect.photoNumber] ?? -1;
                                           const isFocused = currentFocus === index;
-                                          
+
                                           return (
                                             <button
                                               key={`${searchQuery}-${img.id}-${index}`}
@@ -872,13 +872,12 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                                   [defect.photoNumber]: index
                                                 }));
                                               }}
-                                              className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 ${
-                                                img.file.name === defect.selectedFile
+                                              className={`w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-gray-700 ${img.file.name === defect.selectedFile
                                                   ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
                                                   : isFocused
                                                     ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
                                                     : 'text-indigo-600 dark:text-indigo-400'
-                                              }`}
+                                                }`}
                                             >
                                               <div className="truncate">{img.file.name}</div>
                                             </button>

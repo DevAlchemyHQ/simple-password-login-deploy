@@ -109,7 +109,7 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
     <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full flex flex-col overflow-hidden">
       <div className="p-2 border-b border-slate-200 dark:border-gray-700 flex-shrink-0">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-slate-800 dark:text-white">Upload Detailed Exam</h3>
+          <h3 className="text-sm font-medium text-slate-800 dark:text-white">Upload detailed report/Site notes</h3>
           <div className="flex items-center gap-1">
             <input
               type="file"
@@ -155,8 +155,8 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
         </div>
       </div>
 
-      <div 
-        ref={scrollContainerRef} 
+      <div
+        ref={scrollContainerRef}
         className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-800 p-4"
       >
         {file1 ? (
@@ -210,7 +210,7 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
           <div className="h-full flex items-center justify-center text-slate-400 dark:text-gray-500">
             <div className="flex flex-col items-center gap-2 text-center">
               <FileText size={40} />
-              <p className="font-medium">Upload Detailed or Visual Exam</p>
+              <p className="font-medium">Upload detailed report/Site notes</p>
               <p className="text-sm">Click the upload button above to select a PDF file</p>
             </div>
           </div>

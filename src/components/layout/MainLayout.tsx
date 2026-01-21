@@ -27,7 +27,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { file1, file2, showBothPDFs, setShowBothPDFs } = usePDFStore();
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [isBrowserExpanded, setIsBrowserExpanded] = useState(false);
   const [isPDFExpanded, setIsPDFExpanded] = useState(false);
 
   // Load user data only on initial mount
@@ -102,23 +101,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
             {/* Browser Tab */}
             <div className={`h-full ${activeTab === 'browser' ? '' : 'hidden'}`}>
-              <div className="lg:col-span-10 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
-                {/* Browser taking left side */}
-                <div className="h-full overflow-hidden lg:col-span-7">
-                  <BrowserTabs />
-                </div>
-
-                {/* Selected Images Panel on right side */}
-                <div className="h-full overflow-hidden lg:col-span-5">
-                  <SelectedImagesPanel
-                    key="browser-panel"
-                    onExpand={() => setIsBrowserExpanded(!isBrowserExpanded)}
-                    isExpanded={isBrowserExpanded}
-                    activeDragId={null}
-                    overDragId={null}
-                    activeTab="browser"
-                  />
-                </div>
+              <div className="h-full overflow-hidden">
+                <BrowserTabs />
               </div>
             </div>
 

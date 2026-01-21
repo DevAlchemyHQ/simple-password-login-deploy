@@ -11,11 +11,11 @@ interface HeaderProps {
   onTabChange: (tab: string) => void;
 }
 
-const getGreeting = () => {
+const getGreetingWithEmoji = () => {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour >= 5 && hour < 12) return 'Good morning 🌅';
+  if (hour >= 12 && hour < 19) return 'Good afternoon ☀️';
+  return 'Working late 🌃'; // For night shifts/late work (7 PM - 5 AM)
 };
 
 const getFormattedDate = () => {
@@ -71,10 +71,10 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
   }, []);
 
   const tabs = [
-    { id: 'images', label: 'Images' },
+    { id: 'images', label: 'Photos' },
     { id: 'pdf', label: 'PDF' },
-    { id: 'calculator', label: 'Calc' },
-    { id: 'browser', label: 'Browser' }
+    { id: 'calculator', label: 'Tools' },
+    { id: 'browser', label: 'Maps' }
   ];
 
   return (
@@ -82,12 +82,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
       <header className="bg-slate-900 dark:bg-gray-900 shadow-md">
         <div className="max-w-[1920px] mx-auto px-4">
           <div className="h-16 flex items-center justify-between gap-8">
-            {/* Left: Greeting */}
-            <div className="flex items-center gap-3 min-w-fit">
-              <span className="text-white font-medium whitespace-nowrap">
-                {getGreeting()}, Test! 😊
-              </span>
-            </div>
+            {/* Left: Empty */}
+            <div className="min-w-fit"></div>
 
             {/* Center: Navigation Tabs */}
             <nav className="flex items-center gap-1 flex-1 justify-center">
@@ -106,8 +102,14 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
               ))}
             </nav>
 
-            {/* Right: Date, Premium, Beta, Version, Profile */}
+            {/* Right: Greeting, Date, Version, Profile */}
             <div className="flex items-center gap-4 min-w-fit">
+              <span className="text-white font-medium whitespace-nowrap">
+                {getGreetingWithEmoji()}
+              </span>
+              
+              <span className="text-gray-500">•</span>
+              
               <span className="text-gray-300 text-sm whitespace-nowrap">
                 {currentTime}
               </span>
@@ -118,12 +120,8 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 onClick={() => setShowBetaInfo(true)}
                 className="text-xs font-medium px-2 py-1 bg-slate-800 rounded hover:bg-slate-700 transition-colors flex items-center gap-2"
               >
-                <div className="flex items-center gap-1 text-indigo-400">
-                  <Info size={12} />
-                  <span>BETA</span>
-                </div>
                 <div className="flex items-center gap-1 text-gray-300">
-                  <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                  <Info size={12} />
                   <span>v1.1.1</span>
                 </div>
               </button>
@@ -161,12 +159,11 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
                 <Info className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               </div>
               <h3 className="text-lg font-semibold text-slate-800 dark:text-white">
-                Beta Version
+                Version Information
               </h3>
             </div>
             <p className="text-slate-600 dark:text-gray-300 mb-6">
-              Some features may be incomplete or have occasional glitches. We value your
-              feedback and patience!
+              Current version: 1.1.1. We value your feedback and are continuously improving the app!
             </p>
             <button
               onClick={() => setShowBetaInfo(false)}
