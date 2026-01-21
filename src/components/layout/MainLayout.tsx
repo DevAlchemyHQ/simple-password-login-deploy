@@ -71,12 +71,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   // Show loading screen on initial load
   if (isInitialLoad) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-gray-900 flex flex-col">
+      <div className="min-h-screen bg-white dark:bg-neutral-950 flex flex-col">
         <Header activeTab={activeTab} onTabChange={setActiveTab} />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-gray-400">Loading your project...</p>
+            <Loader2 className="w-8 h-8 animate-spin text-accent mx-auto mb-4" />
+            <p className="text-neutral-600 dark:text-neutral-400 text-sm">Loading your project...</p>
           </div>
         </main>
       </div>
@@ -84,7 +84,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="h-screen bg-slate-50 dark:bg-gray-900 flex flex-col overflow-hidden">
+    <div className="h-screen bg-white dark:bg-neutral-950 flex flex-col overflow-hidden">
       <Header activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="flex-1 max-w-[1920px] mx-auto w-full px-2 overflow-hidden flex flex-col">
         <div className="flex-1 min-h-0 overflow-hidden">

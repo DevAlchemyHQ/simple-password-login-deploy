@@ -39,40 +39,42 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/40 dark:bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
       onClick={handleCancel}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+        className="bg-white dark:bg-neutral-900 rounded-xl shadow-large max-w-md w-full p-6 border border-neutral-200 dark:border-neutral-800"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-indigo-500" />
+          <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+            <div className="p-2 bg-accent/10 rounded-lg">
+              <Calendar className="w-5 h-5 text-accent" />
+            </div>
             Select Examination Date
           </h3>
           <button
             onClick={handleCancel}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition-colors"
+            className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
             aria-label="Close"
           >
             <X size={20} />
           </button>
         </div>
 
-        <p className="text-sm text-slate-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6 leading-relaxed">
           Choose the date when the examination was undertaken. All images in this batch will be assigned this date.
         </p>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
             Examination Date
           </label>
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full p-3 border border-slate-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
+            className="w-full px-4 py-3 border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent transition-all bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm"
             required
           />
         </div>
@@ -80,14 +82,14 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
         <div className="flex gap-3 justify-end">
           <button
             onClick={handleCancel}
-            className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-gray-300 bg-slate-100 dark:bg-gray-700 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-600 transition-colors"
+            className="px-4 py-2.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-800 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={!selectedDate}
-            className="px-4 py-2 text-sm font-medium text-white bg-indigo-500 rounded-lg hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2.5 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Confirm & Upload
           </button>

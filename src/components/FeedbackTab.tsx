@@ -14,35 +14,35 @@ export const FeedbackTab: React.FC = () => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 bg-[#6366f1] text-white p-3 rounded-lg shadow-lg hover:bg-[#4f46e5] transition-colors z-40"
+        className="fixed bottom-6 left-6 bg-accent text-white p-3 rounded-xl shadow-large hover:bg-accent-dark transition-all z-40 hover:scale-105 active:scale-95"
         title="Contact Support"
       >
-        <Mail size={24} />
+        <Mail size={20} />
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
-            <div className="p-4 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-800 dark:text-white">
+        <div className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-large w-full max-w-md border border-neutral-200 dark:border-neutral-800">
+            <div className="p-5 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 Contact Support
               </h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-slate-500 dark:text-gray-400 dark:hover:text-gray-300"
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="p-4">
-              <p className="text-slate-600 dark:text-gray-300 text-sm">
-                Need assistance or offer suggestions? We'd love to hear it 🙂
+            <div className="p-5">
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed mb-4">
+                Need assistance or have suggestions? We'd love to hear from you.
               </p>
               <button
                 type="button"
                 onClick={handleEmailClick}
-                className="mt-4 w-full flex items-center justify-center gap-2 bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors"
+                className="w-full flex items-center justify-center gap-2 bg-accent text-white px-4 py-2.5 rounded-lg hover:bg-accent-dark transition-colors font-medium text-sm"
               >
                 <Mail size={18} /> Email Us
               </button>

@@ -99,22 +99,22 @@ export const DownloadButton: React.FC = () => {
       <button
         onClick={handleDownload}
         disabled={isDownloadDisabled}
-        className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg transition-all ${
+        className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all font-medium text-sm ${
           isDownloadDisabled
-            ? 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-            : 'bg-green-500 text-white hover:bg-green-600 shadow-sm hover:shadow-md'
+            ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-600 cursor-not-allowed'
+            : 'bg-green-600 text-white hover:bg-green-700 shadow-soft hover:shadow-medium active:scale-[0.98]'
         }`}
       >
         {isDownloading ? (
-          <Loader2 size={20} className="animate-spin" />
+          <Loader2 size={18} className="animate-spin" />
         ) : (
-          <Download size={20} />
+          <Download size={18} />
         )}
         {buttonText}
       </button>
 
       {successMessage && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-lg p-3">
           <div className="flex items-start gap-2 text-green-700 dark:text-green-400">
             <CheckCircle size={16} className="mt-0.5 flex-shrink-0" />
             <p className="text-sm">{successMessage}</p>
@@ -123,7 +123,7 @@ export const DownloadButton: React.FC = () => {
       )}
 
       {(error || (!isValid() && errors.length > 0) || hasSpecialCharacters) && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg p-3">
           <div className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
             <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
             <div className="text-sm">

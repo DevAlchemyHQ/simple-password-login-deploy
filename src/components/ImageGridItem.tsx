@@ -55,8 +55,8 @@ const DraggableImage: React.FC<{
       onClick={isDragModeActive ? undefined : onToggle}
       {...(isDragModeActive ? { ...listeners, ...attributes } : {})}
     >
-      <div className={`relative rounded-lg overflow-hidden h-full ${!isDragModeActive && isSelected ? 'ring-2 ring-indigo-500' : ''
-        } ${isDragModeActive && assignedDefects.length > 0 ? 'ring-2 ring-indigo-500' : ''}`}>
+      <div className={`relative rounded-lg overflow-hidden h-full ${!isDragModeActive && isSelected ? 'ring-2 ring-[#28323C]' : ''
+        } ${isDragModeActive && assignedDefects.length > 0 ? 'ring-2 ring-[#28323C]' : ''}`}>
         <img
           src={img.preview}
           alt={img.file.name}
@@ -66,11 +66,11 @@ const DraggableImage: React.FC<{
         />
         {/* Show selected state in single select mode (when no tiles exist) */}
         {!isDragModeActive && isSelected && (
-          <div className="absolute top-2 right-2 bg-indigo-500 w-6 h-6 rounded-full flex items-center justify-center">
+          <div className="absolute top-2 right-2 flex items-center justify-center">
             {img.photoNumber ? (
-              <span className="text-white text-sm font-medium">{img.photoNumber}</span>
+              <span className="text-[#28323C] text-sm font-semibold">{img.photoNumber}</span>
             ) : (
-              <Check size={16} className="text-white" />
+              <Check size={16} className="text-[#28323C]" />
             )}
           </div>
         )}
@@ -78,17 +78,17 @@ const DraggableImage: React.FC<{
         {isDragModeActive && assignedDefects.length > 0 && (
           <div className="absolute top-2 right-2 flex flex-wrap gap-1 justify-end max-w-[80%]">
             {assignedDefects.map(defect => (
-              <div key={defect.photoNumber} className="bg-indigo-500 min-w-[24px] h-6 rounded-full flex items-center justify-center px-1.5">
+              <div key={defect.photoNumber} className="bg-[#28323C] min-w-[24px] h-6 rounded-full flex items-center justify-center px-1.5">
                 <span className="text-white text-xs font-medium">{defect.photoNumber}</span>
               </div>
             ))}
           </div>
         )}
-        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-1.5 text-xs truncate">
+        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-[#28323C] p-1.5 text-xs truncate font-medium">
           {img.file.name}
         </div>
 
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all pointer-events-none">
+        <div className="absolute inset-0 pointer-events-none">
           <button
             onClick={(e) => {
               e.stopPropagation();

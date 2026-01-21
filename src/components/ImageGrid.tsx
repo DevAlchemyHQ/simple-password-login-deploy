@@ -50,7 +50,7 @@ const EditableDateInput: React.FC<{
         }}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="text-sm font-semibold text-slate-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-md px-3 py-1.5 focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-800 focus:border-indigo-400 dark:focus:border-indigo-500 focus:outline-none transition-all duration-200 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow min-w-[200px] cursor-pointer shadow-sm"
+        className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-accent focus:border-transparent focus:outline-none transition-all duration-200 hover:border-neutral-400 dark:hover:border-neutral-600 hover:shadow-soft min-w-[200px] cursor-pointer shadow-soft"
         title="Click to edit date (including year). Press Enter to save, Escape to cancel."
       />
     </div>
@@ -128,11 +128,11 @@ export const ImageGrid: React.FC = () => {
   }, [imagesByDate.sortedDates, collapsedDates]);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-full flex flex-col">
-      <div className="p-3 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between">
+    <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-soft border border-neutral-200 dark:border-neutral-800 h-full flex flex-col">
+      <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
         {images.length > 0 && (
-          <h3 className="text-xs font-medium text-slate-500 dark:text-gray-400">
-            EXAM PHOTOS ({images.length})
+          <h3 className="text-xs font-semibold text-neutral-500 dark:text-neutral-500 uppercase tracking-wide">
+            Exam Photos ({images.length})
           </h3>
         )}
         {images.length === 0 && <div></div>}
@@ -148,11 +148,11 @@ export const ImageGrid: React.FC = () => {
         }}
       >
         {images.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-slate-400 dark:text-gray-500">
+          <div className="h-full flex items-center justify-center text-neutral-400 dark:text-neutral-500 text-sm">
             Please upload your Exam photos to the canvas.
           </div>
         ) : (
-          <div className="space-y-3 p-4 min-h-full flex flex-col">
+          <div className="space-y-4 p-4 min-h-full flex flex-col">
             {/* Images grouped by date - expanded first, collapsed at bottom */}
             {sortedDatesWithCollapsed.map((date, index) => {
               const isCollapsed = collapsedDates.has(date);
@@ -165,20 +165,20 @@ export const ImageGrid: React.FC = () => {
               return (
                 <div
                   key={date}
-                  className={`rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col ${isLastExpandedGroup ? 'flex-1' : ''
+                  className={`rounded-xl shadow-soft hover:shadow-medium transition-all duration-200 overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex flex-col ${isLastExpandedGroup ? 'flex-1' : ''
                     }`}
                 >
                   {/* Date Group Header with Editable Date */}
-                  <div className="w-full py-1.5 px-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-gray-800 dark:to-gray-700 border-b border-slate-200 dark:border-gray-600 backdrop-blur-sm transition-all duration-200 flex items-center justify-between gap-3 flex-shrink-0">
+                  <div className="w-full py-2 px-4 bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-800 transition-all duration-200 flex items-center justify-between gap-3 flex-shrink-0">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {/* Collapse/Expand Button */}
                       <button
                         onClick={() => toggleDateCollapse(date)}
-                        className="p-1.5 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded-lg transition-all duration-200 hover:scale-110 flex-shrink-0 group"
+                        className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-all duration-200 flex-shrink-0"
                         title={isCollapsed ? 'Expand group' : 'Collapse group'}
                       >
                         <div className={`transition-transform duration-300 ${isCollapsed ? '' : 'rotate-180'}`}>
-                          <ChevronDown size={18} className="text-slate-600 dark:text-gray-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" />
+                          <ChevronDown size={18} className="text-neutral-500 dark:text-neutral-400" />
                         </div>
                       </button>
 
@@ -188,7 +188,7 @@ export const ImageGrid: React.FC = () => {
                         onDateChange={updateDateForGroup}
                       />
 
-                      <span className="text-xs font-medium text-slate-500 dark:text-gray-400 bg-slate-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2.5 py-1 rounded-full">
                         {imageCount} {imageCount === 1 ? 'photo' : 'photos'}
                       </span>
                     </div>
@@ -207,11 +207,11 @@ export const ImageGrid: React.FC = () => {
 
             {/* Images without date */}
             {imagesByDate.noDate.length > 0 && (
-              <div className="rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden border border-amber-200 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-900/10">
-                <div className="flex items-center gap-3 py-1.5 px-4 bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-b border-amber-200 dark:border-amber-800/50">
-                  <Calendar className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-semibold text-slate-700 dark:text-gray-300">No Date Assigned</span>
-                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
+              <div className="rounded-xl shadow-soft hover:shadow-medium transition-all duration-200 overflow-hidden border border-amber-200 dark:border-amber-800/50 bg-amber-50/30 dark:bg-amber-900/10">
+                <div className="flex items-center gap-3 py-2 px-4 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/50">
+                  <Calendar className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">No Date Assigned</span>
+                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2.5 py-1 rounded-full">
                     {imagesByDate.noDate.length} {imagesByDate.noDate.length === 1 ? 'photo' : 'photos'}
                   </span>
                 </div>

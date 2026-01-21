@@ -57,40 +57,46 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 p-6">
-      <div className="bg-gray-800/90 p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-700 backdrop-blur-lg">
-        <div className="flex justify-center mb-6">
-          <span className="text-5xl">🪶</span>
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 p-6">
+      <div className="bg-white dark:bg-neutral-900 p-10 rounded-2xl shadow-large w-full max-w-md border border-neutral-200 dark:border-neutral-800">
+        <div className="flex justify-center mb-8">
+          <div className="w-16 h-16 rounded-xl bg-accent flex items-center justify-center">
+            <span className="text-white text-2xl font-bold">E</span>
+          </div>
         </div>
-        <h1 className="text-3xl font-extrabold text-center mb-6 text-white tracking-wide">
-          Welcome to <span className="text-indigo-400">Exametry</span>
+        
+        <h1 className="text-2xl font-semibold text-center mb-2 text-neutral-900 dark:text-neutral-100">
+          Welcome to Exametry
         </h1>
+        <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mb-8">
+          Sign in to continue
+        </p>
         
         <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError(null);
-                }}
-                className="w-full p-3 border border-gray-600 rounded-lg bg-gray-700 text-white pr-10 transition-all focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-gray-400"
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null);
+              }}
+              className="w-full px-4 py-3 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 pr-10 transition-all focus:ring-2 focus:ring-accent focus:border-transparent outline-none placeholder-neutral-400 dark:placeholder-neutral-500 text-sm"
               placeholder="Enter password"
-                required
+              required
               autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-gray-400 hover:text-white transition"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
 
           {error && (
-            <div className="flex items-center gap-2 text-red-400 bg-red-400/10 p-3 rounded-lg">
+            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-900/50">
               <AlertCircle size={18} />
               <span className="text-sm">{error}</span>
             </div>
@@ -99,7 +105,7 @@ export const LoginScreen: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-indigo-500 text-white py-3 rounded-lg font-semibold hover:bg-indigo-600 transition flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+            className="w-full bg-accent text-white py-3 rounded-lg font-medium hover:bg-accent-dark transition-colors flex items-center justify-center gap-2 shadow-soft disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             {isLoading ? (
               <>
@@ -112,15 +118,15 @@ export const LoginScreen: React.FC = () => {
           </button>
         </form>
 
-        <div className="mt-6 p-4 bg-gray-700/50 rounded-lg">
-          <p className="text-sm text-gray-300 text-center">
-            Need assistance or have suggestions? <br /> We'd love to hear from you.
+        <div className="mt-8 p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center mb-3">
+            Need assistance or have suggestions? We'd love to hear from you.
           </p>
           <button
             onClick={handleEmailClick}
-            className="mt-3 w-full flex items-center justify-center gap-2 bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors"
+            className="w-full flex items-center justify-center gap-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-4 py-2.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm font-medium"
           >
-            <Mail size={18} />
+            <Mail size={16} />
             Email Support
           </button>
         </div>

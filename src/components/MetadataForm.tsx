@@ -9,15 +9,15 @@ export const MetadataForm: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-slate-200 dark:border-gray-700">
-      <h2 className="text-sm font-semibold text-slate-800 dark:text-white mb-2">Structure Details</h2>
+    <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl shadow-soft border border-neutral-200 dark:border-neutral-800">
+      <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-3">Structure Details</h2>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <input
             type="text"
             value={formData.elr}
             onChange={handleELRChange}
-            className="w-full p-2 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all uppercase bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+            className="w-full px-3 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent transition-all uppercase bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500"
             placeholder="Enter ELR"
           />
         </div>
@@ -26,7 +26,7 @@ export const MetadataForm: React.FC = () => {
             type="text"
             value={formData.structureNo}
             onChange={(e) => setFormData({ structureNo: e.target.value })}
-            className="w-full p-2 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+            className="w-full px-3 py-2.5 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent transition-all bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500"
             placeholder="Struct Ref"
           />
         </div>

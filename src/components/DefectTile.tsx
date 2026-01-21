@@ -248,12 +248,12 @@ export const DefectTile: React.FC<DefectTileProps> = ({
     <div
       ref={setSortableRef}
       style={style}
-      className={`bg-white dark:bg-gray-800 rounded-lg border-2 shadow-sm transition-all ${
-        isDragging ? 'shadow-lg opacity-50' : ''
+      className={`bg-white dark:bg-neutral-900 rounded-lg border shadow-soft transition-all ${
+        isDragging ? 'shadow-large opacity-50' : ''
       } ${
         isOver 
-          ? 'ring-4 ring-indigo-500 border-indigo-500 bg-indigo-100 dark:bg-indigo-900/30 shadow-lg scale-[1.02]' 
-          : 'border-slate-200 dark:border-gray-700'
+          ? 'ring-2 ring-accent border-accent bg-accent/10 dark:bg-accent/20 shadow-medium scale-[1.02]' 
+          : 'border-neutral-200 dark:border-neutral-800 hover:shadow-medium'
       }`}
     >
       <div 
@@ -263,7 +263,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-300"
+          className="cursor-grab active:cursor-grabbing text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300"
         >
           <GripVertical size={20} />
         </div>
@@ -275,13 +275,13 @@ export const DefectTile: React.FC<DefectTileProps> = ({
               e.stopPropagation();
               onPhotoNumberClick(photoNumber);
             }}
-            className="w-12 text-center font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors cursor-pointer"
+            className="w-12 text-center font-semibold text-[#28323C] hover:text-[#1a2530] hover:bg-[#28323C]/10 dark:hover:bg-[#28323C]/20 rounded transition-colors cursor-pointer"
             title="Click to view image"
           >
             {photoNumber}
           </button>
         ) : (
-          <div className="w-12 text-center font-medium text-slate-700 dark:text-gray-300">
+          <div className="w-12 text-center font-semibold text-neutral-700 dark:text-neutral-300">
             {photoNumber}
           </div>
         )}
@@ -294,12 +294,12 @@ export const DefectTile: React.FC<DefectTileProps> = ({
               onChange={(e) => handleDescriptionChange(e.target.value)}
               onBlur={handleDescriptionBlur}
               autoFocus
-              className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
+              className="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 transition-all"
             />
           ) : (
             <div
               onClick={() => setIsEditing(true)}
-              className="px-2 py-1 text-sm text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700 rounded cursor-text"
+              className="px-3 py-2 text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-lg cursor-text transition-colors"
             >
               {localDescription || 'Click to edit'}
             </div>
@@ -309,10 +309,10 @@ export const DefectTile: React.FC<DefectTileProps> = ({
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg ${
+            className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors font-medium ${
               selectedFile
-                ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                : 'text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700'
+                ? 'bg-accent/10 dark:bg-accent/20 text-accent'
+                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-700'
             }`}
           >
             <div className="max-w-[150px] truncate">
@@ -322,11 +322,11 @@ export const DefectTile: React.FC<DefectTileProps> = ({
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-1 w-64 max-h-64 overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700 z-10 flex flex-col">
+            <div className="absolute right-0 mt-1 w-64 max-h-64 overflow-hidden bg-white dark:bg-neutral-900 rounded-lg shadow-large border border-neutral-200 dark:border-neutral-800 z-10 flex flex-col">
               {/* Search Input */}
-              <div className="p-2 border-b border-slate-200 dark:border-gray-700">
+              <div className="p-2 border-b border-neutral-200 dark:border-neutral-800">
                 <div className="relative">
-                  <Search size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 dark:text-gray-500" />
+                  <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
                   <input
                     type="text"
                     value={searchQuery || ''}
@@ -335,7 +335,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
                       setSearchQuery(newValue);
                     }}
                     placeholder="Search by title or last 4 digits..."
-                    className="w-full pl-8 pr-2 py-1.5 text-sm border border-slate-200 dark:border-gray-600 rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-slate-900 dark:text-white"
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 transition-all"
                     autoFocus
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
@@ -367,7 +367,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
                 {/* None option at the top - always grey */}
                 <button
                   onClick={handleSelectNone}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 border-b border-slate-200 dark:border-gray-700 text-slate-500 dark:text-gray-400"
+                  className="w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 transition-colors"
                 >
                   <div className="truncate">None</div>
                 </button>
@@ -378,19 +378,19 @@ export const DefectTile: React.FC<DefectTileProps> = ({
                       key={`${searchQuery}-${file}-${index}`}
                       onClick={() => handleFileSelect(file)}
                       onMouseEnter={() => setFocusedIndex(index)}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-gray-700 ${
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors ${
                         file === selectedFile
-                          ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
+                          ? 'text-accent font-semibold bg-accent/10 dark:bg-accent/20'
                           : focusedIndex === index
-                            ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                            : 'text-indigo-600 dark:text-indigo-400'
+                            ? 'bg-accent/5 dark:bg-accent/10 text-accent'
+                            : 'text-neutral-700 dark:text-neutral-300'
                       }`}
                     >
                       <div className="truncate">{file}</div>
                     </button>
                   ))
                 ) : (
-                  <div className="px-4 py-3 text-sm text-slate-500 dark:text-gray-400 text-center">
+                  <div className="px-4 py-3 text-sm text-neutral-500 dark:text-neutral-400 text-center">
                     No photos found matching "{searchQuery}"
                   </div>
                 )}
@@ -398,7 +398,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
             </div>
           )}
           {error && (
-            <div className="absolute right-0 mt-1 w-64 p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg">
+            <div className="absolute right-0 mt-1 w-64 p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm rounded-lg border border-red-200 dark:border-red-900/50">
               {error}
             </div>
           )}
@@ -406,7 +406,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
 
         <button
           onClick={onDelete}
-          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+          className="p-1.5 text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
         >
           <X size={16} />
         </button>
@@ -417,7 +417,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
               e.stopPropagation();
               onAddBelow();
             }}
-            className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+            className="p-1.5 text-neutral-400 hover:text-accent hover:bg-accent/10 dark:hover:bg-accent/20 rounded-lg transition-colors"
             title="Add defect below"
           >
             <Plus size={16} />
@@ -426,7 +426,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
       </div>
       {error && (
         <div className="px-3 pb-3">
-          <div className="flex items-center gap-2 text-red-500 text-sm">
+          <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded-lg border border-red-200 dark:border-red-900/50">
             <AlertCircle size={14} />
             {error}
           </div>

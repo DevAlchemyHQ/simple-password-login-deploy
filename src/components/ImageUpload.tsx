@@ -109,20 +109,21 @@ export const ImageUpload: React.FC = () => {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isLoading}
-          className={`w-full flex items-center justify-center gap-2 bg-indigo-500 text-white px-4 py-2 rounded-lg transition-all group shadow ${isLoading
-            ? 'opacity-50 cursor-not-allowed'
-            : 'hover:bg-indigo-600'
-            }`}
+          className={`w-full flex items-center justify-center gap-2 bg-accent text-white px-4 py-3 rounded-lg transition-all font-medium text-sm shadow-soft ${
+            isLoading
+              ? 'opacity-50 cursor-not-allowed'
+              : 'hover:bg-accent-dark hover:shadow-medium active:scale-[0.98]'
+          }`}
         >
           {isLoading ? (
             <>
-              <Loader2 size={20} className="animate-spin" />
-              <span className="text-sm font-medium">Uploading...</span>
+              <Loader2 size={18} className="animate-spin" />
+              <span>Uploading...</span>
             </>
           ) : (
             <>
-              <Upload size={20} className="group-hover:scale-110 transition-transform" />
-              <span className="text-sm font-medium">Upload Exam Photos</span>
+              <Upload size={18} />
+              <span>Upload Exam Photos</span>
             </>
           )}
         </button>

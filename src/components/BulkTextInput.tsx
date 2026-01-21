@@ -258,7 +258,7 @@ export const BulkTextInput: React.FC = () => {
               value={bulkText}
               placeholder="Paste or type multiple defect descriptions here, one per line..."
               onChange={(e) => setBulkText(e.target.value)}
-              className="w-full min-h-[96px] p-2 text-sm border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-y"
+              className="w-full min-h-[96px] p-2 text-sm border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-[#28323C] text-slate-900 dark:text-white resize-y"
               style={{ height: Math.max(96, Math.min(300, 24 * (bulkText.split('\n').length + 2))) + 'px' }}
             />
             <button

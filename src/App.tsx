@@ -31,7 +31,7 @@ const App: React.FC = () => {
           path="/profile"
           element={
             isAuthenticated ? (
-              <div className="min-h-screen bg-slate-50 dark:bg-gray-900">
+              <div className="min-h-screen bg-white dark:bg-neutral-950">
                 <MainLayout>
                   <UserProfile />
                 </MainLayout>
