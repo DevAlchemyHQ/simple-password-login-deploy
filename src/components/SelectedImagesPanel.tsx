@@ -66,6 +66,12 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   const [focusedImageIndex, setFocusedImageIndex] = useState<Record<string, number>>({});
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [isDefectListPanelOpen, setIsDefectListPanelOpen] = useState(false);
+  // Ref to preserve scroll positions across re-renders
+  const scrollPositionRefs = React.useRef<Record<string, { element: HTMLElement; position: number }>>({});
+  // Track if user is actively scrolling to prevent state updates
+  const isScrollingRef = React.useRef<Record<string, boolean>>({});
+  // Store scroll timeout IDs
+  const scrollTimeoutRefs = React.useRef<Record<string, NodeJS.Timeout>>({});
 
   // Load defect list panel state from localStorage
   useEffect(() => {
@@ -558,7 +564,34 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch',
               transform: 'translateZ(0)',
-              willChange: 'scroll-position'
+              contain: 'layout style',
+            }}
+            onWheel={(e) => {
+              // Don't scroll parent if event originated from dropdown
+              const target = e.target as HTMLElement;
+              if (target.closest('.image-selector-dropdown') || 
+                  target.closest('[data-defect-id]') ||
+                  target.closest('.overflow-y-auto.max-h-48')) {
+                e.stopPropagation();
+                e.preventDefault();
+                const event = e.nativeEvent;
+                if (event.stopImmediatePropagation) {
+                  event.stopImmediatePropagation();
+                }
+                return false;
+              }
+            }}
+            onScroll={(e) => {
+              // Prevent scroll events from dropdown affecting parent
+              const target = e.target as HTMLElement;
+              if (target.closest('.image-selector-dropdown') || 
+                  target.closest('[data-defect-id]')) {
+                e.stopPropagation();
+                const event = e.nativeEvent;
+                if (event.stopImmediatePropagation) {
+                  event.stopImmediatePropagation();
+                }
+              }
             }}
           >
             <div className="p-2">
@@ -593,6 +626,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                         } = useDroppable({
                           id: defect.photoNumber,
                         });
+
 
 
                         const image = getImageForDefect(defect.selectedFile || '');
@@ -663,25 +697,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                           });
                         }, [images, searchQuery]);
 
-                        // Scroll focused item into view
-                        React.useEffect(() => {
-                          const currentFocus = focusedImageIndex[defect.photoNumber];
-                          if (currentFocus !== undefined && currentFocus >= 0 && isSelectorOpen) {
-                            // Find all buttons in the dropdown for this defect's selector
-                            const dropdowns = document.querySelectorAll('.image-selector-dropdown');
-                            dropdowns.forEach(dropdown => {
-                              const buttons = dropdown.querySelectorAll('button');
-                              // +1 to account for "None" button
-                              const targetButton = buttons[currentFocus + 1];
-                              if (targetButton) {
-                                targetButton.scrollIntoView({
-                                  block: 'nearest',
-                                  behavior: 'smooth'
-                                });
-                              }
-                            });
-                          }
-                        }, [focusedImageIndex, defect.photoNumber, isSelectorOpen]);
+                        // Auto-scroll completely removed - all scrolling is user-controlled
 
                         // Create custom listeners that exclude interactive elements
                         const customListeners = {
@@ -693,18 +709,45 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             if (target.closest('button') ||
                               target.closest('input') ||
                               target.closest('textarea') ||
-                              target.closest('.image-selector-dropdown')) {
+                              target.closest('.image-selector-dropdown') ||
+                              target.closest('[data-defect-id]')) {
+                              e.stopPropagation();
+                              e.preventDefault();
                               return;
                             }
                             // Don't start drag if clicking in the bottom section (description/selector area)
                             const tileElement = e.currentTarget as HTMLElement;
                             const bottomSection = tileElement.querySelector('.p-2.space-y-1');
                             if (bottomSection && bottomSection.contains(target)) {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              return;
+                            }
+                            // Don't start drag if dropdown is open for this tile
+                            if (isSelectorOpen) {
+                              e.stopPropagation();
+                              e.preventDefault();
                               return;
                             }
                             // Call original listener to enable drag
                             if (listeners?.onPointerDown) {
                               listeners.onPointerDown(e);
+                            }
+                          },
+                          onMouseDown: (e: React.MouseEvent) => {
+                            const target = e.target as HTMLElement;
+                            // Prevent drag if interacting with dropdown or bottom section
+                            if (target.closest('.image-selector-dropdown') ||
+                              target.closest('[data-defect-id]') ||
+                              target.closest('.p-2.space-y-1') ||
+                              isSelectorOpen) {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              return;
+                            }
+                            // Call original listener if it exists
+                            if (listeners?.onMouseDown) {
+                              listeners.onMouseDown(e as any);
                             }
                           },
                         };
@@ -722,12 +765,19 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               transform: CSS.Transform.toString(transform),
                               transition: isDragging ? 'none' : (transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'),
                               opacity: isDragging ? 0.4 : 1,
+                              // Ensure tile independence - prevent layout shifts affecting other tiles
+                              contain: 'layout style paint',
+                              isolation: isSelectorOpen ? 'auto' : 'isolate',
+                              zIndex: isSelectorOpen ? 1000 : 'auto',
+                              willChange: isDragging ? 'transform' : 'auto',
                             }}
-                            className={`group flex flex-col bg-neutral-50 dark:bg-neutral-800 rounded-lg overflow-visible transition-all duration-200 relative border border-neutral-200 dark:border-neutral-700 ${isDragging
+                            className={`group flex flex-col bg-neutral-50 dark:bg-neutral-800 rounded-lg overflow-visible relative border border-neutral-200 dark:border-neutral-700 ${isDragging
                               ? 'shadow-large ring-2 ring-neutral-900 dark:ring-neutral-100 ring-opacity-50 z-50 cursor-grabbing'
                               : (overDragId === defect.photoNumber && activeDragId && activeDragId !== defect.photoNumber)
-                                ? 'ring-2 ring-neutral-900 dark:ring-neutral-100 border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 shadow-medium scale-[1.02] border-2'
-                                : 'cursor-grab hover:shadow-medium hover:ring-1 hover:ring-neutral-300 dark:hover:ring-neutral-700'
+                                ? 'ring-2 ring-neutral-900 dark:ring-neutral-100 border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 shadow-medium border-2'
+                                : isSelectorOpen
+                                  ? 'cursor-default z-[1000]' // Don't show grab cursor when dropdown is open
+                                  : 'cursor-grab'
                               }`}
                             {...attributes}
                             {...customListeners}
@@ -810,7 +860,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             </div>
 
                             <div
-                              className="p-2 space-y-1 flex-shrink-0 relative z-10 pb-2"
+                              className="p-2 space-y-1 flex-shrink-0 relative pb-2"
                               onClick={(e) => e.stopPropagation()}
                               onMouseDown={(e) => {
                                 e.stopPropagation();
@@ -820,14 +870,19 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 e.stopPropagation();
                                 e.preventDefault();
                               }}
-                              style={{ pointerEvents: 'auto' }}
+                              style={{ pointerEvents: 'auto', zIndex: isSelectorOpen ? 1001 : 'auto' }}
                             >
                               {/* Image selector dropdown - like DefectTile */}
-                              <div className="relative z-[100]">
+                              <div className="relative" style={{ zIndex: isSelectorOpen ? 1002 : 'auto' }}>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
+                                    // Toggle dropdown - preserve scroll position when reopening
+                                    if (isSelectorOpen) {
+                                      setImageSelectorOpen(null);
+                                    } else {
+                                      setImageSelectorOpen(defect.photoNumber);
+                                    }
                                   }}
                                   onMouseDown={(e) => {
                                     e.stopPropagation();
@@ -850,11 +905,43 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
                                 {isSelectorOpen && (
                                   <div
-                                    className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-neutral-900 rounded-lg shadow-large border border-neutral-200 dark:border-neutral-800 z-[100] flex flex-col"
-                                    onClick={(e) => e.stopPropagation()}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    onPointerDown={(e) => e.stopPropagation()}
-                                    onWheel={(e) => e.stopPropagation()}
+                                    className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-neutral-900 rounded-lg shadow-large border border-neutral-200 dark:border-neutral-800 flex flex-col"
+                                    data-defect-id={defect.photoNumber}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                    }}
+                                    onMouseDown={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                    }}
+                                    onPointerDown={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                    }}
+                                    onWheel={(e) => {
+                                      // Completely stop wheel events from propagating
+                                      e.stopPropagation();
+                                      const event = e.nativeEvent;
+                                      if (event.stopImmediatePropagation) {
+                                        event.stopImmediatePropagation();
+                                      }
+                                    }}
+                                    onScroll={(e) => {
+                                      // Completely stop scroll events from propagating
+                                      e.stopPropagation();
+                                      const event = e.nativeEvent;
+                                      if (event.stopImmediatePropagation) {
+                                        event.stopImmediatePropagation();
+                                      }
+                                    }}
+                                    style={{
+                                      pointerEvents: 'auto',
+                                      isolation: 'auto',
+                                      contain: 'layout style paint',
+                                      transform: 'translateZ(0)', // GPU acceleration
+                                      zIndex: 9999,
+                                    }}
                                   >
                                     {/* Search Input */}
                                     <div className="p-2 border-b border-neutral-200 dark:border-neutral-800">
@@ -868,13 +955,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                               ...prev,
                                               [defect.photoNumber]: e.target.value
                                             }));
-                                            // Auto-focus first result when search changes
-                                            if (e.target.value && filteredImages.length > 0) {
-                                              setFocusedImageIndex(prev => ({
-                                                ...prev,
-                                                [defect.photoNumber]: 0
-                                              }));
-                                            } else {
+                                            // Don't auto-focus first result on search change - this causes unwanted scrolling
+                                            // Only update focus if user explicitly navigates with keyboard
+                                            // Clear focus when search is cleared
+                                            if (!e.target.value) {
                                               setFocusedImageIndex(prev => {
                                                 const next = { ...prev };
                                                 delete next[defect.photoNumber];
@@ -935,20 +1019,78 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
                                     {/* File List */}
                                     <div 
+                                      ref={(node) => {
+                                        // Store scroll position ref to preserve across re-renders
+                                        if (node) {
+                                          const defectId = defect.photoNumber;
+                                          if (!scrollPositionRefs.current[defectId]) {
+                                            scrollPositionRefs.current[defectId] = { element: node, position: 0 };
+                                          } else {
+                                            scrollPositionRefs.current[defectId].element = node;
+                                            // Restore scroll position if it was saved
+                                            if (scrollPositionRefs.current[defectId].position > 0) {
+                                              requestAnimationFrame(() => {
+                                                node.scrollTop = scrollPositionRefs.current[defectId].position;
+                                              });
+                                            }
+                                          }
+                                        }
+                                      }}
                                       className="overflow-y-auto max-h-48 scrollbar-thin"
                                       style={{
                                         overscrollBehavior: 'contain',
                                         WebkitOverflowScrolling: 'touch',
-                                        touchAction: 'pan-y'
+                                        touchAction: 'pan-y',
+                                        isolation: 'isolate',
+                                        contain: 'layout style paint',
+                                        transform: 'translateZ(0)', // GPU acceleration for smooth scrolling
                                       }}
                                       onWheel={(e) => {
+                                        // Stop propagation immediately
                                         e.stopPropagation();
-                                        // Allow normal scrolling within this element
+                                        // Mark scrolling with debounce
+                                        const defectId = defect.photoNumber;
+                                        isScrollingRef.current[defectId] = true;
+                                        if (scrollTimeoutRefs.current[defectId]) {
+                                          clearTimeout(scrollTimeoutRefs.current[defectId]);
+                                        }
+                                        scrollTimeoutRefs.current[defectId] = setTimeout(() => {
+                                          isScrollingRef.current[defectId] = false;
+                                        }, 200);
                                       }}
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                      onPointerDown={(e) => e.stopPropagation()}
-                                      onTouchStart={(e) => e.stopPropagation()}
-                                      onTouchMove={(e) => e.stopPropagation()}
+                                      onScroll={(e) => {
+                                        // Save scroll position efficiently
+                                        const defectId = defect.photoNumber;
+                                        const scrollTop = e.currentTarget.scrollTop;
+                                        if (!scrollPositionRefs.current[defectId]) {
+                                          scrollPositionRefs.current[defectId] = {
+                                            element: e.currentTarget,
+                                            position: scrollTop
+                                          };
+                                        } else {
+                                          scrollPositionRefs.current[defectId].position = scrollTop;
+                                        }
+                                        // Stop propagation
+                                        e.stopPropagation();
+                                        const event = e.nativeEvent;
+                                        if (event.stopImmediatePropagation) {
+                                          event.stopImmediatePropagation();
+                                        }
+                                      }}
+                                      onMouseDown={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                      }}
+                                      onPointerDown={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                      }}
+                                      onTouchStart={(e) => {
+                                        e.stopPropagation();
+                                      }}
+                                      onTouchMove={(e) => {
+                                        e.stopPropagation();
+                                      }}
                                     >
                                       {/* None option at the top - always grey */}
                                       <button
@@ -982,10 +1124,13 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
                                           return (
                                             <button
-                                              key={`${searchQuery}-${img.id}-${index}`}
+                                              key={img.id}
                                               onClick={(e) => {
                                                 e.stopPropagation();
+                                                e.preventDefault();
+                                                // Update the selected file immediately
                                                 updateBulkDefectFile(defect.photoNumber, img.file.name);
+                                                // Close dropdown immediately but preserve scroll position
                                                 setImageSelectorOpen(null);
                                                 setImageSearchQuery(prev => {
                                                   const next = { ...prev };
@@ -1007,10 +1152,19 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                                 e.preventDefault();
                                               }}
                                               onMouseEnter={() => {
-                                                setFocusedImageIndex(prev => ({
-                                                  ...prev,
-                                                  [defect.photoNumber]: index
-                                                }));
+                                                // Debounce focus updates to prevent lag during scrolling
+                                                const defectId = defect.photoNumber;
+                                                if (!isScrollingRef.current[defectId]) {
+                                                  // Use requestAnimationFrame to batch updates and reduce lag
+                                                  requestAnimationFrame(() => {
+                                                    if (!isScrollingRef.current[defectId]) {
+                                                      setFocusedImageIndex(prev => ({
+                                                        ...prev,
+                                                        [defectId]: index
+                                                      }));
+                                                    }
+                                                  });
+                                                }
                                               }}
                                               className={`w-full px-3 py-2 text-left text-xs hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors ${img.file.name === defect.selectedFile
                                                 ? 'text-neutral-900 dark:text-neutral-100 font-semibold bg-neutral-100 dark:bg-neutral-800'
