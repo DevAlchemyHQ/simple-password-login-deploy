@@ -22,7 +22,7 @@ const SortButton: React.FC<{
           null
     )}
     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${direction
-      ? 'bg-indigo-500 text-white'
+      ? 'bg-black dark:bg-neutral-800 text-white'
       : 'text-slate-600 hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-700'
       }`}
     title={direction === null ? 'Enable sorting' : 'Change sort order'}
@@ -228,7 +228,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
           value={img.description}
           onChange={(e) => updateImageMetadata(img.id, { description: e.target.value })}
           maxLength={100}
-          className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-y min-h-[60px] ${!isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
+          className={`w-full p-1.5 text-sm border rounded bg-white dark:bg-neutral-800 text-slate-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 resize-y min-h-[60px] ${!isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
             }`}
           placeholder="Description"
         />
@@ -336,7 +336,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
           }}
           maxLength={100}
-          className={`w-full p-1.5 text-sm border rounded focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white resize-none overflow-hidden ${!isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
+          className={`w-full p-1.5 text-sm border rounded bg-white dark:bg-neutral-800 text-slate-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 resize-none overflow-hidden ${!isValid ? 'border-amber-300' : 'border-slate-200 dark:border-gray-600'
             }`}
           placeholder="Description"
           rows={1}
@@ -473,23 +473,6 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-soft border border-neutral-200 dark:border-neutral-800 h-full flex flex-col">
-      {/* Data Persistence Notification Banner */}
-      {images.length === 0 && hasSavedMetadata && (
-        <div className="mx-4 mt-4 mb-2 p-4 bg-accent/10 dark:bg-accent/20 border border-accent/30 dark:border-accent/50 rounded-lg flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
-              Your data is safe and has been restored
-            </p>
-            <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-              You have <strong className="font-semibold">{bulkDefects.length} tile{bulkDefects.length !== 1 ? 's' : ''}</strong> with saved descriptions and photo numbers.
-              <br />
-              <span className="mt-1 block">Re-upload your photos and they will <strong>automatically match</strong> to their tiles. All your work is preserved.</span>
-            </p>
-          </div>
-        </div>
-      )}
-
       <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
         <h3 className="text-xs font-semibold text-neutral-500 dark:text-neutral-500 uppercase tracking-wide">
           Tiles ({bulkDefects.length})
@@ -502,15 +485,15 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
             title={isDefectListPanelOpen ? "Close defect list" : "View defect list"}
           >
-            <FileText 
-              size={16} 
-              className={isDefectListPanelOpen 
-                ? 'text-accent' 
+            <FileText
+              size={16}
+              className={isDefectListPanelOpen
+                ? 'text-neutral-900 dark:text-neutral-100'
                 : 'text-neutral-500 dark:text-neutral-400'
-              } 
+              }
             />
           </button>
-          
+
           {/* Grid/List view toggle button */}
           <button
             onClick={onExpand}
@@ -536,22 +519,21 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
             <button
               onClick={handleCopyDefectList}
               disabled={bulkDefects.length === 0}
-              className={`text-xs px-3 py-1.5 rounded-lg transition-colors font-medium ${
-                bulkDefects.length === 0
+              className={`text-xs px-3 py-1.5 rounded-lg transition-colors font-medium ${bulkDefects.length === 0
                   ? 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-600 cursor-not-allowed'
-                  : 'bg-accent text-white hover:bg-accent-dark'
-              }`}
+                  : 'bg-black dark:bg-neutral-800 text-white hover:bg-neutral-900 dark:hover:bg-neutral-700'
+                }`}
             >
               Copy List
             </button>
           </div>
-          
+
           <div className="max-h-64 overflow-y-auto space-y-1 p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
             {bulkDefects.length > 0 ? (
               bulkDefects
                 .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
                 .map(defect => (
-                  <div 
+                  <div
                     key={defect.photoNumber}
                     className="text-sm text-slate-700 dark:text-gray-300 py-1"
                   >
@@ -736,9 +718,9 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               opacity: isDragging ? 0.4 : 1,
                             }}
                             className={`group flex flex-col bg-neutral-50 dark:bg-neutral-800 rounded-lg overflow-visible transition-all duration-200 relative border border-neutral-200 dark:border-neutral-700 ${isDragging
-                              ? 'shadow-large ring-2 ring-accent ring-opacity-50 z-50 cursor-grabbing'
+                              ? 'shadow-large ring-2 ring-neutral-900 dark:ring-neutral-100 ring-opacity-50 z-50 cursor-grabbing'
                               : (overDragId === defect.photoNumber && activeDragId && activeDragId !== defect.photoNumber)
-                                ? 'ring-2 ring-accent border-accent bg-accent/10 dark:bg-accent/20 shadow-medium scale-[1.02] border-2'
+                                ? 'ring-2 ring-neutral-900 dark:ring-neutral-100 border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 shadow-medium scale-[1.02] border-2'
                                 : 'cursor-grab hover:shadow-medium hover:ring-1 hover:ring-neutral-300 dark:hover:ring-neutral-700'
                               }`}
                             {...attributes}
@@ -775,7 +757,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   e.stopPropagation();
                                   e.preventDefault();
                                 }}
-                                className="p-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-110"
+                                className="p-2 bg-black dark:bg-neutral-800 hover:bg-neutral-900 dark:hover:bg-neutral-700 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-110"
                                 title="Add tile below"
                               >
                                 <PlusCircle size={16} />
@@ -801,7 +783,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                       e.stopPropagation();
                                       e.preventDefault();
                                     }}
-                                    className="absolute bottom-2 right-2 p-1.5 bg-indigo-500/90 hover:bg-indigo-600 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-110 z-30"
+                                    className="absolute bottom-2 right-2 bg-white text-gray-800 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto z-30"
                                     title="Expand image"
                                     style={{ pointerEvents: 'auto' }}
                                   >
@@ -839,7 +821,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   }}
                                   onMouseDown={(e) => e.stopPropagation()}
                                   className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors font-medium ${defect.selectedFile
-                                    ? 'bg-accent/10 dark:bg-accent/20 text-accent'
+                                    ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
                                     : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-700'
                                     }`}
                                 >
@@ -881,7 +863,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                             }
                                           }}
                                           placeholder="Search by title or last 4 digits..."
-                                          className="w-full pl-9 pr-3 py-2 text-xs border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 transition-all"
+                                          className="w-full pl-9 pr-3 py-2 text-xs border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 transition-all"
                                           autoFocus
                                           onClick={(e) => e.stopPropagation()}
                                           onKeyDown={(e) => {
@@ -978,10 +960,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                                 }));
                                               }}
                                               className={`w-full px-3 py-2 text-left text-xs hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors ${img.file.name === defect.selectedFile
-                                                  ? 'text-accent font-semibold bg-accent/10 dark:bg-accent/20'
-                                                  : isFocused
-                                                    ? 'bg-accent/5 dark:bg-accent/10 text-accent'
-                                                    : 'text-neutral-700 dark:text-neutral-300'
+                                                ? 'text-neutral-900 dark:text-neutral-100 font-semibold bg-neutral-100 dark:bg-neutral-800'
+                                                : isFocused
+                                                  ? 'bg-neutral-50 dark:bg-neutral-800/50 text-neutral-900 dark:text-neutral-100'
+                                                  : 'text-neutral-700 dark:text-neutral-300'
                                                 }`}
                                             >
                                               <div className="truncate">{img.file.name}</div>

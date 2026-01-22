@@ -71,7 +71,7 @@ export const PDFContent: React.FC<PDFContentProps> = ({ file, scale }) => {
   }
 
   return (
-    <div ref={containerRef} className="h-full overflow-auto bg-white dark:bg-gray-800">
+    <div ref={containerRef} className="h-full overflow-auto bg-white dark:bg-neutral-900">
       <canvas ref={canvasRef} className="mx-auto" />
     </div>
   );

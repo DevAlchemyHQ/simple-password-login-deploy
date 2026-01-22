@@ -75,7 +75,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <Header activeTab={activeTab} onTabChange={setActiveTab} />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-accent mx-auto mb-4" />
+            <Loader2 className="w-8 h-8 animate-spin text-neutral-700 dark:text-neutral-300 mx-auto mb-4" />
             <p className="text-neutral-600 dark:text-neutral-400 text-sm">Loading your project...</p>
           </div>
         </main>

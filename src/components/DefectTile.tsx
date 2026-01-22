@@ -248,12 +248,12 @@ export const DefectTile: React.FC<DefectTileProps> = ({
     <div
       ref={setSortableRef}
       style={style}
-      className={`bg-white dark:bg-neutral-900 rounded-lg border shadow-soft transition-all ${
+      className={`bg-white dark:bg-neutral-900 rounded-lg border-2 transition-all ${
         isDragging ? 'shadow-large opacity-50' : ''
       } ${
         isOver 
-          ? 'ring-2 ring-accent border-accent bg-accent/10 dark:bg-accent/20 shadow-medium scale-[1.02]' 
-          : 'border-neutral-200 dark:border-neutral-800 hover:shadow-medium'
+          ? 'ring-2 ring-neutral-900 dark:ring-neutral-100 border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 shadow-medium scale-[1.02]' 
+          : 'border-neutral-300 dark:border-neutral-700 hover:shadow-medium'
       }`}
     >
       <div 
@@ -275,13 +275,13 @@ export const DefectTile: React.FC<DefectTileProps> = ({
               e.stopPropagation();
               onPhotoNumberClick(photoNumber);
             }}
-            className="w-12 text-center font-semibold text-[#28323C] hover:text-[#1a2530] hover:bg-[#28323C]/10 dark:hover:bg-[#28323C]/20 rounded transition-colors cursor-pointer"
+            className="w-12 text-center font-semibold text-neutral-900 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors cursor-pointer"
             title="Click to view image"
           >
             {photoNumber}
           </button>
         ) : (
-          <div className="w-12 text-center font-semibold text-neutral-700 dark:text-neutral-300">
+          <div className="w-12 text-center font-semibold text-neutral-900 dark:text-neutral-300">
             {photoNumber}
           </div>
         )}
@@ -294,12 +294,16 @@ export const DefectTile: React.FC<DefectTileProps> = ({
               onChange={(e) => handleDescriptionChange(e.target.value)}
               onBlur={handleDescriptionBlur}
               autoFocus
-              className="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 transition-all"
+              className="w-full px-3 py-2 text-sm border-0 rounded-lg bg-white dark:bg-neutral-800 text-slate-900 dark:text-white transition-all outline-none hover:shadow-medium focus:shadow-none"
             />
           ) : (
             <div
               onClick={() => setIsEditing(true)}
-              className="px-3 py-2 text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-lg cursor-text transition-colors"
+              className={`px-3 py-2 text-sm rounded-lg cursor-text transition-all hover:shadow-medium ${
+                localDescription 
+                  ? 'text-slate-900 dark:text-white' 
+                  : 'text-neutral-500 dark:text-neutral-500'
+              }`}
             >
               {localDescription || 'Click to edit'}
             </div>
@@ -311,8 +315,8 @@ export const DefectTile: React.FC<DefectTileProps> = ({
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors font-medium ${
               selectedFile
-                ? 'bg-accent/10 dark:bg-accent/20 text-accent'
-                : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-700'
+                ? 'text-slate-900 dark:text-white'
+                : 'text-neutral-600 dark:text-neutral-400'
             }`}
           >
             <div className="max-w-[150px] truncate">
@@ -335,7 +339,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
                       setSearchQuery(newValue);
                     }}
                     placeholder="Search by title or last 4 digits..."
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 transition-all"
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 transition-all"
                     autoFocus
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
@@ -380,9 +384,9 @@ export const DefectTile: React.FC<DefectTileProps> = ({
                       onMouseEnter={() => setFocusedIndex(index)}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors ${
                         file === selectedFile
-                          ? 'text-accent font-semibold bg-accent/10 dark:bg-accent/20'
+                          ? 'text-neutral-900 dark:text-neutral-100 font-semibold bg-neutral-100 dark:bg-neutral-800'
                           : focusedIndex === index
-                            ? 'bg-accent/5 dark:bg-accent/10 text-accent'
+                            ? 'bg-neutral-50 dark:bg-neutral-800/50 text-neutral-900 dark:text-neutral-100'
                             : 'text-neutral-700 dark:text-neutral-300'
                       }`}
                     >
@@ -417,7 +421,7 @@ export const DefectTile: React.FC<DefectTileProps> = ({
               e.stopPropagation();
               onAddBelow();
             }}
-            className="p-1.5 text-neutral-400 hover:text-accent hover:bg-accent/10 dark:hover:bg-accent/20 rounded-lg transition-colors"
+            className="p-1.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
             title="Add defect below"
           >
             <Plus size={16} />

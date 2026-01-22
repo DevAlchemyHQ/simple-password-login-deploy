@@ -22,7 +22,7 @@ export const ExtractedContent: React.FC<ExtractedContentProps> = ({
         <h3 className="text-lg font-medium text-slate-800">Extracted Content</h3>
         <button
           onClick={onExport}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-black dark:bg-neutral-800 text-white rounded-lg hover:bg-neutral-900 dark:hover:bg-neutral-700 transition-colors"
         >
           <FileDown size={16} />
           Export All

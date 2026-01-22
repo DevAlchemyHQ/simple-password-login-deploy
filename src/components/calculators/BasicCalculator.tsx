@@ -112,9 +112,9 @@ export const BasicCalculator: React.FC = () => {
   );
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+    <div className="bg-white dark:bg-neutral-900 rounded-lg p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
-        <Calculator className="text-indigo-500" size={24} />
+        <Calculator className="text-neutral-700 dark:text-neutral-300" size={24} />
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">
           Calculator
         </h2>
@@ -145,13 +145,13 @@ export const BasicCalculator: React.FC = () => {
           <Delete size={20} />
         </button>
         <Button label="%" onClick={handlePercentage} />
-        <Button label="÷" onClick={() => handleOperation('÷')} className="bg-indigo-500 text-white hover:bg-indigo-600" />
+        <Button label="÷" onClick={() => handleOperation('÷')} className="bg-black dark:bg-neutral-800 text-white hover:bg-neutral-900 dark:hover:bg-neutral-700" />
 
         {/* Row 2 */}
         <Button label="7" onClick={() => handleNumber('7')} />
         <Button label="8" onClick={() => handleNumber('8')} />
         <Button label="9" onClick={() => handleNumber('9')} />
-        <Button label="×" onClick={() => handleOperation('×')} className="bg-indigo-500 text-white hover:bg-indigo-600" />
+        <Button label="×" onClick={() => handleOperation('×')} className="bg-black dark:bg-neutral-800 text-white hover:bg-neutral-900 dark:hover:bg-neutral-700" />
 
         {/* Row 3 */}
         <Button label="4" onClick={() => handleNumber('4')} />
@@ -163,7 +163,7 @@ export const BasicCalculator: React.FC = () => {
         <Button label="1" onClick={() => handleNumber('1')} />
         <Button label="2" onClick={() => handleNumber('2')} />
         <Button label="3" onClick={() => handleNumber('3')} />
-        <Button label="+" onClick={() => handleOperation('+')} className="bg-indigo-500 text-white hover:bg-indigo-600" />
+        <Button label="+" onClick={() => handleOperation('+')} className="bg-black dark:bg-neutral-800 text-white hover:bg-neutral-900 dark:hover:bg-neutral-700" />
 
         {/* Row 5 */}
         <Button label="+/-" onClick={handleNegate} />

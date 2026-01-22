@@ -14,7 +14,7 @@ export const FeedbackTab: React.FC = () => {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 bg-accent text-white p-3 rounded-xl shadow-large hover:bg-accent-dark transition-all z-40 hover:scale-105 active:scale-95"
+        className="fixed bottom-6 left-6 bg-black dark:bg-neutral-800 text-white p-3 rounded-xl shadow-large hover:bg-neutral-900 dark:hover:bg-neutral-700 transition-all z-40 hover:scale-105 active:scale-95"
         title="Contact Support"
       >
         <Mail size={20} />
@@ -42,7 +42,7 @@ export const FeedbackTab: React.FC = () => {
               <button
                 type="button"
                 onClick={handleEmailClick}
-                className="w-full flex items-center justify-center gap-2 bg-accent text-white px-4 py-2.5 rounded-lg hover:bg-accent-dark transition-colors font-medium text-sm"
+                className="w-full flex items-center justify-center gap-2 bg-black dark:bg-neutral-800 text-white px-4 py-2.5 rounded-lg hover:bg-neutral-900 dark:hover:bg-neutral-700 transition-colors font-medium text-sm"
               >
                 <Mail size={18} /> Email Us
               </button>

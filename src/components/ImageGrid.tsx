@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { useMetadataStore } from '../store/metadataStore';
 import { ImageGridItem } from './ImageGridItem';
 import { GridWidthControl } from './GridWidthControl';
 import { useGridWidth } from '../hooks/useGridWidth';
-import { Calendar, ChevronDown } from 'lucide-react';
+import { Calendar, ChevronDown, CheckCircle2, Upload } from 'lucide-react';
+import { DatePickerModal } from './DatePickerModal';
+import { validateFileSize } from '../utils/fileValidation';
 
 // Separate component for editable date input to maintain focus
 const EditableDateInput: React.FC<{
@@ -50,7 +52,7 @@ const EditableDateInput: React.FC<{
         }}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-accent focus:border-transparent focus:outline-none transition-all duration-200 hover:border-neutral-400 dark:hover:border-neutral-600 hover:shadow-soft min-w-[200px] cursor-pointer shadow-soft"
+        className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-transparent focus:outline-none transition-all duration-200 hover:border-neutral-400 dark:hover:border-neutral-600 hover:shadow-soft min-w-[200px] cursor-pointer shadow-soft"
         title="Click to edit date (including year). Press Enter to save, Escape to cancel."
       />
     </div>
@@ -58,9 +60,12 @@ const EditableDateInput: React.FC<{
 };
 
 export const ImageGrid: React.FC = () => {
-  const { images, updateImageMetadata } = useMetadataStore();
+  const { images, updateImageMetadata, bulkDefects, dataRestoredFromStorage, addImages } = useMetadataStore();
   const { gridWidth, setGridWidth } = useGridWidth();
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
 
   // Group images by date
   const imagesByDate = useMemo(() => {
@@ -127,6 +132,57 @@ export const ImageGrid: React.FC = () => {
     });
   }, [imagesByDate.sortedDates, collapsedDates]);
 
+  // Check if data was restored from storage
+  const hasSavedMetadata = bulkDefects.length > 0 && dataRestoredFromStorage;
+
+  // Handle file upload
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      const files = Array.from(e.target.files);
+      const sizeValidation = validateFileSize(files, 500);
+
+      if (!sizeValidation.valid) {
+        alert('Some files are too large. Maximum size is 500KB per file.');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+        return;
+      }
+
+      setPendingFiles(files);
+      setIsDateModalOpen(true);
+    }
+  };
+
+  const handleDateConfirm = async (date: string) => {
+    if (!pendingFiles || pendingFiles.length === 0) return;
+    if (!date || !date.trim()) {
+      alert('Please select a date before uploading.');
+      return;
+    }
+
+    setIsDateModalOpen(false);
+    try {
+      await addImages(pendingFiles, date);
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert(`Failed to upload images: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setPendingFiles(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleDateModalClose = () => {
+    setIsDateModalOpen(false);
+    setPendingFiles(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-soft border border-neutral-200 dark:border-neutral-800 h-full flex flex-col">
       <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
@@ -148,8 +204,42 @@ export const ImageGrid: React.FC = () => {
         }}
       >
         {images.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-neutral-400 dark:text-neutral-500 text-sm">
-            Please upload your Exam photos to the canvas.
+          <div className="h-full flex items-center justify-center p-6">
+            {/* Data Persistence Notification Banner */}
+            {hasSavedMetadata ? (
+              <div className="p-5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg flex items-start gap-3 w-full max-w-2xl">
+                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
+                    Your data is safe and has been restored
+                  </p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-3">
+                    You have <strong className="font-semibold">{bulkDefects.length} tile{bulkDefects.length !== 1 ? 's' : ''}</strong> with saved descriptions and photo numbers.
+                    <br />
+                    <span className="mt-1 block">Re-upload your photos and they will <strong>automatically match</strong> to their tiles. All your work is preserved.</span>
+                  </p>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 px-4 py-2 bg-black dark:bg-neutral-800 text-white rounded-lg hover:bg-neutral-900 dark:hover:bg-neutral-700 transition-colors text-sm font-medium"
+                  >
+                    <Upload size={16} />
+                    <span>Upload Photos</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-neutral-400 dark:text-neutral-500 text-sm text-center">
+                Please upload your Exam photos to the canvas.
+              </div>
+            )}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              multiple
+              accept="image/*"
+            />
           </div>
         ) : (
           <div className="space-y-4 p-4 min-h-full flex flex-col">
@@ -223,6 +313,12 @@ export const ImageGrid: React.FC = () => {
           </div>
         )}
       </div>
+      <DatePickerModal
+        isOpen={isDateModalOpen}
+        onClose={handleDateModalClose}
+        onConfirm={handleDateConfirm}
+        defaultDate={undefined}
+      />
     </div>
   );
 };

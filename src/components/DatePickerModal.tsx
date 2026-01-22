@@ -48,8 +48,8 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-            <div className="p-2 bg-accent/10 rounded-lg">
-              <Calendar className="w-5 h-5 text-accent" />
+            <div className="p-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+              <Calendar className="w-5 h-5 text-neutral-700 dark:text-neutral-300" />
             </div>
             Select Examination Date
           </h3>
@@ -74,7 +74,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full px-4 py-3 border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent transition-all bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm"
+            className="w-full px-4 py-3 border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-transparent transition-all bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm"
             required
           />
         </div>
@@ -89,7 +89,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
           <button
             onClick={handleConfirm}
             disabled={!selectedDate}
-            className="px-4 py-2.5 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2.5 text-sm font-medium text-white bg-black dark:bg-neutral-800 rounded-lg hover:bg-neutral-900 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Confirm & Upload
           </button>

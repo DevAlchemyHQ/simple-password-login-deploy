@@ -96,21 +96,21 @@ export const CompactImageViewer: React.FC<CompactImageViewerProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-white dark:bg-neutral-900"
       onClick={onClose}
     >
       {/* Compact viewer container - 80% of screen */}
       <div
-        className="relative bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-5xl w-[90%] max-h-[85vh] flex flex-col overflow-hidden"
+        className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-2xl max-w-5xl w-[90%] max-h-[85vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header with controls */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700 dark:text-gray-300">
+            <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
               {currentIndex + 1} / {images.length}
             </span>
-            <span className="text-xs text-slate-500 dark:text-gray-400">
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">
               {currentImage.file.name}
             </span>
           </div>
@@ -120,18 +120,18 @@ export const CompactImageViewer: React.FC<CompactImageViewerProps> = ({
             <button
               onClick={handleZoomOut}
               disabled={scale <= 0.5}
-              className="p-2 hover:bg-slate-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-30"
+              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors disabled:opacity-30 text-neutral-900 dark:text-neutral-100"
               title="Zoom out"
             >
               <ZoomOut size={20} />
             </button>
-            <span className="text-sm text-slate-600 dark:text-gray-400 min-w-[4rem] text-center">
+            <span className="text-sm text-neutral-700 dark:text-neutral-300 min-w-[4rem] text-center">
               {Math.round(scale * 100)}%
             </span>
             <button
               onClick={handleZoomIn}
               disabled={scale >= 3}
-              className="p-2 hover:bg-slate-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-30"
+              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors disabled:opacity-30 text-neutral-900 dark:text-neutral-100"
               title="Zoom in"
             >
               <ZoomIn size={20} />
@@ -140,7 +140,7 @@ export const CompactImageViewer: React.FC<CompactImageViewerProps> = ({
             {/* Close button */}
             <button
               onClick={onClose}
-              className="p-2 hover:bg-slate-200 dark:hover:bg-gray-700 rounded-lg transition-colors ml-2"
+              className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors ml-2 text-neutral-900 dark:text-neutral-100"
               title="Close (Esc)"
             >
               <X size={24} />
@@ -150,7 +150,7 @@ export const CompactImageViewer: React.FC<CompactImageViewerProps> = ({
 
         {/* Image container */}
         <div
-          className="flex-1 relative overflow-hidden bg-slate-100 dark:bg-gray-800 flex items-center justify-center"
+          className="flex-1 relative overflow-hidden bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -175,14 +175,14 @@ export const CompactImageViewer: React.FC<CompactImageViewerProps> = ({
             <>
               <button
                 onClick={handlePrevious}
-                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-full shadow-lg transition-all hover:scale-110"
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-neutral-800/90 hover:bg-white dark:hover:bg-neutral-800 rounded-full shadow-lg transition-all hover:scale-110 text-neutral-900 dark:text-neutral-100"
                 title="Previous (←)"
               >
                 <ChevronLeft size={24} />
               </button>
               <button
                 onClick={handleNext}
-                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-full shadow-lg transition-all hover:scale-110"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/90 dark:bg-neutral-800/90 hover:bg-white dark:hover:bg-neutral-800 rounded-full shadow-lg transition-all hover:scale-110 text-neutral-900 dark:text-neutral-100"
                 title="Next (→)"
               >
                 <ChevronRight size={24} />

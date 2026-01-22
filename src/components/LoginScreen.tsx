@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Eye, EyeOff, Loader2, AlertCircle, Mail } from "lucide-react";
+import { Eye, EyeOff, Loader2, AlertCircle, Mail, Heart } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import { useMetadataStore } from "../store/metadataStore";
+import { DONATION_TIERS } from "../utils/donationConfig";
 
 const SUPPORT_EMAIL = 'infor@exametry.xyz';
 const SIMPLE_PASSWORD = 'Exametry55';
@@ -57,79 +58,111 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 p-6">
-      <div className="bg-white dark:bg-neutral-900 p-10 rounded-2xl shadow-large w-full max-w-md border border-neutral-200 dark:border-neutral-800">
-        <div className="flex justify-center mb-8">
-          <div className="w-16 h-16 rounded-xl bg-accent flex items-center justify-center">
-            <span className="text-white text-2xl font-bold">E</span>
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Premium gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 dark:from-black dark:via-neutral-950 dark:to-black" />
+      
+      {/* Subtle grid pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]" style={{
+        backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)`,
+        backgroundSize: '40px 40px'
+      }} />
+      
+      {/* Main card with premium styling */}
+      <div className="relative bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl p-12 pb-16 rounded-3xl shadow-2xl w-full max-w-md border border-neutral-200/50 dark:border-neutral-800/50 transform transition-all duration-300 hover:shadow-3xl">
+        {/* Logo with premium styling */}
+        <div className="flex justify-center mb-10">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 to-neutral-800 dark:from-neutral-800 dark:to-neutral-900 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+            <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 dark:from-neutral-800 dark:via-neutral-900 dark:to-neutral-800 flex items-center justify-center shadow-2xl border border-neutral-700/50 dark:border-neutral-700/30 transform transition-all duration-300 group-hover:scale-105">
+              <span className="text-white text-3xl font-bold tracking-tight">E</span>
+            </div>
           </div>
         </div>
         
-        <h1 className="text-2xl font-semibold text-center mb-2 text-neutral-900 dark:text-neutral-100">
-          Welcome to Exametry
-        </h1>
-        <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 mb-8">
-          Sign in to continue
-        </p>
+        {/* Typography with better hierarchy */}
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold mb-3 text-neutral-900 dark:text-neutral-100 tracking-tight">
+            Welcome to Exametry
+          </h1>
+          <p className="text-base text-neutral-500 dark:text-neutral-400 font-medium">
+            Sign in to continue
+          </p>
+        </div>
         
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setError(null);
-              }}
-              className="w-full px-4 py-3 border border-neutral-300 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 pr-10 transition-all focus:ring-2 focus:ring-accent focus:border-transparent outline-none placeholder-neutral-400 dark:placeholder-neutral-500 text-sm"
-              placeholder="Enter password"
-              required
-              autoFocus
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Premium input styling */}
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-neutral-100 to-transparent dark:from-neutral-800/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError(null);
+                }}
+                className="w-full px-5 py-4 border-2 border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800/50 text-neutral-900 dark:text-neutral-100 pr-12 transition-all duration-200 focus:ring-0 focus:border-neutral-900 dark:focus:border-neutral-100 focus:shadow-lg outline-none placeholder-neutral-400 dark:placeholder-neutral-500 text-base font-medium backdrop-blur-sm"
+                placeholder="Enter password"
+                required
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-all duration-200 p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700/50"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-900/50">
-              <AlertCircle size={18} />
-              <span className="text-sm">{error}</span>
+            <div className="flex items-center gap-3 text-red-600 dark:text-red-400 bg-red-50/80 dark:bg-red-900/20 backdrop-blur-sm p-4 rounded-xl border border-red-200/50 dark:border-red-900/30 animate-in slide-in-from-top-2">
+              <AlertCircle size={18} className="flex-shrink-0" />
+              <span className="text-sm font-medium">{error}</span>
             </div>
           )}
 
+          {/* Premium button */}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-accent text-white py-3 rounded-lg font-medium hover:bg-accent-dark transition-colors flex items-center justify-center gap-2 shadow-soft disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="w-full bg-gradient-to-r from-neutral-900 to-neutral-800 dark:from-neutral-800 dark:to-neutral-900 text-white py-4 rounded-xl font-semibold hover:from-neutral-800 hover:to-neutral-700 dark:hover:from-neutral-700 dark:hover:to-neutral-800 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-base transform hover:scale-[1.02] active:scale-[0.98] border border-neutral-700/20 dark:border-neutral-700/30"
           >
             {isLoading ? (
               <>
-                <Loader2 size={18} className="animate-spin" />
-                Signing in...
+                <Loader2 size={20} className="animate-spin" />
+                <span>Signing in...</span>
               </>
             ) : (
-              'Sign In'
+              <span>Sign In</span>
             )}
           </button>
         </form>
 
-        <div className="mt-8 p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700">
-          <p className="text-sm text-neutral-600 dark:text-neutral-400 text-center mb-3">
-            Need assistance or have suggestions? We'd love to hear from you.
-          </p>
-          <button
-            onClick={handleEmailClick}
-            className="w-full flex items-center justify-center gap-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-4 py-2.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm font-medium"
+        {/* Support Exametry link */}
+        <div className="mt-4 text-center">
+          <a
+            href={DONATION_TIERS[1].stripeLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors text-sm font-medium"
           >
-            <Mail size={16} />
-            Email Support
-          </button>
+            <Heart size={16} className="text-red-500 dark:text-red-400" />
+            <span>Support Exametry</span>
+          </a>
         </div>
+
+        {/* Email icon at bottom left */}
+        <button
+          onClick={handleEmailClick}
+          className="absolute bottom-6 left-6 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors p-2 rounded-lg hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50"
+          aria-label="Email Support"
+        >
+          <Mail size={20} />
+        </button>
       </div>
     </div>
   );

@@ -26,10 +26,10 @@ export const ImageUpload: React.FC = () => {
       // Store files and show date picker modal
       const files = Array.from(e.target.files);
       console.log('[ImageUpload] Files selected:', files.length);
-      
+
       // Validate file sizes before proceeding
       const sizeValidation = validateFileSize(files, 500);
-      
+
       if (!sizeValidation.valid) {
         // Show custom size warning modal
         setSizeValidationData({
@@ -44,7 +44,7 @@ export const ImageUpload: React.FC = () => {
         }
         return;
       }
-      
+
       setPendingFiles(files);
       console.log('[ImageUpload] Setting modal open, isDateModalOpen will be:', true);
       setIsDateModalOpen(true);
@@ -109,11 +109,10 @@ export const ImageUpload: React.FC = () => {
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isLoading}
-          className={`w-full flex items-center justify-center gap-2 bg-accent text-white px-4 py-3 rounded-lg transition-all font-medium text-sm shadow-soft ${
-            isLoading
+          className={`w-full flex items-center justify-center gap-2 bg-transparent text-slate-900 dark:text-white px-4 py-3 rounded-lg transition-all font-medium text-sm ${isLoading
               ? 'opacity-50 cursor-not-allowed'
-              : 'hover:bg-accent-dark hover:shadow-medium active:scale-[0.98]'
-          }`}
+              : 'hover:opacity-80 active:scale-[0.98]'
+            }`}
         >
           {isLoading ? (
             <>

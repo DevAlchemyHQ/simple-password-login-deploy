@@ -70,9 +70,9 @@ export const UnitConverter: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+    <div className="bg-white dark:bg-neutral-900 rounded-lg p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-6">
-        <Ruler className="text-indigo-500" size={24} />
+        <Ruler className="text-neutral-700 dark:text-neutral-300" size={24} />
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">
           Unit Converter
         </h2>
@@ -93,7 +93,7 @@ export const UnitConverter: React.FC = () => {
               value={conversion.value}
               onChange={(e) => handleInputChange(index, e.target.value)}
               placeholder="0"
-              className="flex-1 p-2.5 text-base bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white"
+              className="flex-1 p-2.5 text-base bg-white dark:bg-neutral-900 border border-slate-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-neutral-900 dark:focus:border-neutral-100 text-slate-900 dark:text-white"
             />
           </div>
         ))}

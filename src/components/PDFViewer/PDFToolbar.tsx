@@ -45,7 +45,7 @@ export const PDFToolbar: React.FC<PDFToolbarProps> = ({
         className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
           isLoading 
             ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-            : 'bg-indigo-500 text-white hover:bg-indigo-600'
+            : 'bg-black dark:bg-neutral-800 text-white hover:bg-neutral-900 dark:hover:bg-neutral-700'
         }`}
       >
         <Upload size={16} />
@@ -57,7 +57,7 @@ export const PDFToolbar: React.FC<PDFToolbarProps> = ({
           type="text"
           onChange={(e) => onSearch(e.target.value)}
           placeholder="Search..."
-          className="px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-neutral-900 dark:focus:border-neutral-100"
         />
         <Search size={20} className="text-slate-400" />
       </div>

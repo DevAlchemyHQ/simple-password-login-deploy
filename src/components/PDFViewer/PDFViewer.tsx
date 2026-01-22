@@ -61,15 +61,30 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
-  // Re-measure when file changes
+  // Re-measure when file or scale changes
   useEffect(() => {
-    if (file && containerRef.current) {
+    if (containerRef.current) {
       const width = containerRef.current.clientWidth - 32;
       if (width > 0) {
         setContainerWidth(width);
       }
     }
-  }, [file]);
+  }, [file, scale]);
+
+  // Restore scroll position when component mounts or becomes visible
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer || scrollPosition === 0) return;
+
+    // Restore scroll position after a short delay to ensure PDF is rendered
+    const timeoutId = setTimeout(() => {
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollPosition;
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [file, scrollPosition]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,6 +106,29 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
     }));
   };
 
+  // Restore scroll position when component mounts or becomes visible
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    // Restore scroll position after PDF is rendered
+    const restoreScroll = () => {
+      if (scrollContainer && scrollPosition > 0) {
+        scrollContainer.scrollTop = scrollPosition;
+      }
+    };
+
+    // Try immediately, then after delays to ensure PDF is rendered
+    restoreScroll();
+    const timeoutId = setTimeout(restoreScroll, 200);
+    const timeoutId2 = setTimeout(restoreScroll, 500);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearTimeout(timeoutId2);
+    };
+  }, [file, numPages, scrollPosition]);
+
   // Save scroll position on scroll
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
@@ -105,7 +143,7 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
   }, [onScrollChange]);
 
   return (
-    <div ref={containerRef} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col overflow-hidden">
+    <div ref={containerRef} className="bg-white dark:bg-neutral-900 rounded-lg shadow-sm h-[calc(100vh-96px)] flex flex-col overflow-hidden">
       <div className="p-2 border-b border-slate-200 dark:border-gray-700 flex-shrink-0">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-slate-800 dark:text-white">{title}</h3>
@@ -172,7 +210,7 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
 
       <div
         ref={scrollContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-white dark:bg-gray-800 p-4"
+        className="flex-1 min-h-0 overflow-y-auto custom-scrollbar bg-white dark:bg-neutral-900 p-4"
       >
         {file ? (
           <Document
@@ -184,7 +222,7 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
             }}
             loading={
               <div className="flex items-center justify-center p-4">
-                <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                <Loader2 className="w-6 h-6 animate-spin text-neutral-700 dark:text-neutral-300" />
               </div>
             }
           >
@@ -198,7 +236,7 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
                   <div className="relative">
                     <Page
                       pageNumber={index + 1}
-                      width={containerWidth > 100 ? containerWidth * scale : 600}
+                      width={containerWidth > 100 ? containerWidth * scale : containerWidth > 0 ? containerWidth : 600}
                       rotate={pageRotations[index + 1] || 0}
                       className="shadow-lg bg-white"
                       renderTextLayer={true}
@@ -215,7 +253,7 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
                         e.stopPropagation();
                         handleRotatePage(index + 1);
                       }}
-                      className="p-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-full shadow-lg transition-all cursor-pointer"
+                      className="p-2 bg-black dark:bg-neutral-800 hover:bg-neutral-900 dark:hover:bg-neutral-700 text-white rounded-full shadow-lg transition-all cursor-pointer"
                       title="Rotate Page"
                       type="button"
                     >
@@ -227,11 +265,16 @@ const PDFViewerSection: React.FC<PDFViewerSectionProps> = ({
             })}
           </Document>
         ) : (
-          <div className="h-full flex items-center justify-center text-slate-400 dark:text-gray-500">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <FileText size={40} />
-              <p className="font-medium">Upload Detailed or Visual Exam</p>
-              <p className="text-sm">Click the upload button above to select a PDF file</p>
+          <div
+            className="h-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="p-4 rounded-full bg-neutral-100 dark:bg-neutral-800">
+                <Upload size={48} className="text-neutral-700 dark:text-neutral-300" />
+              </div>
+              <p className="font-medium text-neutral-900 dark:text-neutral-100">Upload Detailed or Visual Exam</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400">Click here or the upload button above to select a PDF file</p>
             </div>
           </div>
         )}
@@ -256,19 +299,21 @@ interface PDFViewerProps {
 }
 
 export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
-  const { 
-    file1, 
-    file2, 
-    setFile1, 
-    setFile2, 
-    loadPDFs, 
-    scrollPosition1, 
-    scrollPosition2, 
-    setScrollPosition1, 
-    setScrollPosition2 
+  const {
+    file1,
+    file2,
+    setFile1,
+    setFile2,
+    loadPDFs,
+    scrollPosition1,
+    scrollPosition2,
+    setScrollPosition1,
+    setScrollPosition2,
+    scale1,
+    scale2,
+    setScale1,
+    setScale2
   } = usePDFStore();
-  const [scale1, setScale1] = useState(1.0);
-  const [scale2, setScale2] = useState(1.0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Load PDFs on initial mount
@@ -288,18 +333,16 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
     const currentScale = viewer === 1 ? scale1 : scale2;
     console.log(`[Zoom] Viewer ${viewer}, action: ${action}, current scale: ${currentScale}`);
 
-    setScale(prev => {
-      const newScale = action === 'in' ? Math.min(prev + 0.1, 2.0) : Math.max(prev - 0.1, 0.5);
-      console.log(`[Zoom] New scale: ${newScale}`);
-      return newScale;
-    });
+    const newScale = action === 'in' ? Math.min(currentScale + 0.1, 2.0) : Math.max(currentScale - 0.1, 0.5);
+    console.log(`[Zoom] New scale: ${newScale}`);
+    setScale(newScale);
   };
 
   if (isInitialLoad) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mx-auto mb-4" />
+          <Loader2 className="w-8 h-8 animate-spin text-neutral-700 dark:text-neutral-300 mx-auto mb-4" />
           <p className="text-slate-600 dark:text-gray-400">Loading PDFs...</p>
         </div>
       </div>

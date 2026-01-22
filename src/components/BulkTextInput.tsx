@@ -258,20 +258,22 @@ export const BulkTextInput: React.FC = () => {
               value={bulkText}
               placeholder="Paste or type multiple defect descriptions here, one per line..."
               onChange={(e) => setBulkText(e.target.value)}
-              className="w-full min-h-[96px] p-2 text-sm border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-[#28323C] text-slate-900 dark:text-white resize-y"
+              className="w-full min-h-[96px] p-2 text-sm border border-slate-200 dark:border-gray-700 rounded-lg bg-white dark:bg-[#28323C] text-slate-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 resize-y"
               style={{ height: Math.max(96, Math.min(300, 24 * (bulkText.split('\n').length + 2))) + 'px' }}
             />
-            <button
-              onClick={handleBulkPaste}
-              disabled={!bulkText.trim()}
-              className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors ${bulkText.trim()
-                ? 'bg-indigo-500 text-white hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700'
-                : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600 opacity-50 cursor-not-allowed'
-                }`}
-            >
-              <FileText size={16} />
-              <span className="text-sm">Process Bulk Text</span>
-            </button>
+            <div className="flex justify-center">
+              <button
+                onClick={handleBulkPaste}
+                disabled={!bulkText.trim()}
+                className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all ${bulkText.trim()
+                  ? 'bg-black dark:bg-neutral-800 text-white hover:bg-neutral-900 dark:hover:bg-neutral-700 ring-2 ring-neutral-900 dark:ring-neutral-100'
+                  : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-600 cursor-not-allowed'
+                  }`}
+              >
+                <FileText size={16} />
+                <span className="text-sm">Process Bulk Text</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

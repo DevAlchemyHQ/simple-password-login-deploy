@@ -116,8 +116,8 @@ export const BrowserTabs: React.FC = () => {
         {/* Resizable Divider */}
         <div
           onMouseDown={handleMouseDown}
-          className={`w-1 bg-slate-300 dark:bg-gray-600 hover:bg-indigo-500 dark:hover:bg-indigo-600 cursor-col-resize transition-colors flex-shrink-0 ${
-            isDragging ? 'bg-indigo-500 dark:bg-indigo-600' : ''
+          className={`w-1 bg-slate-300 dark:bg-gray-600 hover:bg-neutral-700 dark:hover:bg-neutral-600 cursor-col-resize transition-colors flex-shrink-0 ${
+            isDragging ? 'bg-neutral-700 dark:bg-neutral-600' : ''
           }`}
           style={{ cursor: 'col-resize' }}
         />

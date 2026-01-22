@@ -65,9 +65,9 @@ export const MeasurementReference: React.FC = () => {
   const calculatedLength = calculateLength();
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+    <div className="bg-white dark:bg-neutral-900 rounded-lg p-6 shadow-sm">
       <div className="flex items-center gap-3 mb-4">
-        <Ruler className="text-indigo-500" size={24} />
+        <Ruler className="text-neutral-700 dark:text-neutral-300" size={24} />
         <h2 className="text-xl font-bold text-slate-800 dark:text-white">
           Measurement Reference
         </h2>
@@ -82,7 +82,7 @@ export const MeasurementReference: React.FC = () => {
           <select
             value={standard}
             onChange={(e) => setStandard(e.target.value as BrickStandard)}
-            className="w-full p-2.5 text-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white"
+            className="w-full p-2.5 text-sm bg-white dark:bg-neutral-900 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-neutral-900 dark:focus:border-neutral-100 text-slate-900 dark:text-white"
           >
             <option value="victorian">Victorian Railway Brick (Pre-1965)</option>
             <option value="modern">Modern Standard Brick (Post-1965)</option>
@@ -92,7 +92,7 @@ export const MeasurementReference: React.FC = () => {
         {/* Brick Dimensions Display */}
         <div className="p-3 bg-slate-50 dark:bg-gray-700/50 rounded-lg">
           <div className="flex items-start gap-2 mb-2">
-            <Info size={14} className="text-indigo-500 mt-0.5 flex-shrink-0" />
+            <Info size={14} className="text-neutral-700 dark:text-neutral-300 mt-0.5 flex-shrink-0" />
             <p className="text-xs text-slate-600 dark:text-gray-300">
               {brick.description}
             </p>
@@ -148,13 +148,13 @@ export const MeasurementReference: React.FC = () => {
               onChange={(e) => setNumCourses(e.target.value)}
               placeholder="# courses"
               min="1"
-              className="w-full p-2 text-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white"
+              className="w-full p-2 text-sm bg-white dark:bg-neutral-900 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-neutral-900 dark:focus:border-neutral-100 text-slate-900 dark:text-white"
             />
             
             {calculatedHeight && (
-              <div className="mt-2 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+              <div className="mt-2 p-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                 <p className="text-xs text-slate-600 dark:text-gray-300">Height:</p>
-                <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                   {calculatedHeight}mm
                 </p>
                 <p className="text-xs text-slate-500 dark:text-gray-400">
@@ -175,13 +175,13 @@ export const MeasurementReference: React.FC = () => {
               onChange={(e) => setNumBricks(e.target.value)}
               placeholder="# bricks"
               min="1"
-              className="w-full p-2 text-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white"
+              className="w-full p-2 text-sm bg-white dark:bg-neutral-900 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-neutral-900 dark:focus:border-neutral-100 text-slate-900 dark:text-white"
             />
             
             {calculatedLength && (
-              <div className="mt-2 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+              <div className="mt-2 p-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
                 <p className="text-xs text-slate-600 dark:text-gray-300">Length:</p>
-                <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                   {calculatedLength}mm
                 </p>
                 <p className="text-xs text-slate-500 dark:text-gray-400">

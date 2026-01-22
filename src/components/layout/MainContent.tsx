@@ -21,7 +21,7 @@ const MainContentComponent: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
-  
+
   // Optimize store subscriptions - only subscribe to what we need
   const bulkDefects = useMetadataStore((state) => state.bulkDefects);
   const setBulkDefects = useMetadataStore((state) => state.setBulkDefects);
@@ -61,7 +61,7 @@ const MainContentComponent: React.FC = () => {
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
-    
+
     console.log('🏁 Drag End:', {
       activeId: active.id,
       activeData: active.data.current,
@@ -87,21 +87,21 @@ const MainContentComponent: React.FC = () => {
     if (active.data.current?.type === 'image') {
       const overId = over.id.toString();
       console.log('🖼️ Image drop detected, overId:', overId);
-      
+
       if (overId.startsWith('drop-')) {
         const photoNumber = overId.replace('drop-', '');
         const fileName = active.data.current.fileName;
         const imageId = active.data.current.imageId;
-        
+
         console.log('✅ Dropping image on defect:', {
           photoNumber,
           fileName,
           imageId
         });
-        
+
         // Update the defect with the image
         updateBulkDefectFile(photoNumber, fileName);
-        
+
         // Clear from selectedImages if it was selected
         const { selectedImages, toggleImageSelection } = useMetadataStore.getState();
         if (selectedImages.has(imageId)) {
@@ -113,7 +113,7 @@ const MainContentComponent: React.FC = () => {
         console.log('❌ Over ID does not start with "drop-":', overId);
       }
     }
-    
+
     // Handle defect reordering (only if dragging a defect, not an image)
     // Defects don't have active.data.current.type, images do
     if (!active.data.current?.type && active.id !== over.id && over) {
@@ -127,15 +127,15 @@ const MainContentComponent: React.FC = () => {
           activeData: active.data.current,
           currentDefects: bulkDefects.map(d => d.photoNumber)
         });
-        
+
         // Use the current state directly to ensure we have the latest
         const currentDefects = bulkDefects;
-        
+
         // Sort items by photo number first to ensure correct order
-        const sortedItems = [...currentDefects].sort((a, b) => 
+        const sortedItems = [...currentDefects].sort((a, b) =>
           parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0')
         );
-        
+
         // Find indices using the sorted array
         const oldIndex = sortedItems.findIndex((item) => item.photoNumber === active.id);
         const newIndex = sortedItems.findIndex((item) => item.photoNumber === over.id);
@@ -157,16 +157,16 @@ const MainContentComponent: React.FC = () => {
             ...item,
             photoNumber: String(index + 1),
           }));
-          
-          console.log('📝 Renumbered defects:', renumbered.map((d, idx) => ({ 
+
+          console.log('📝 Renumbered defects:', renumbered.map((d, idx) => ({
             position: idx + 1,
             photoNumber: d.photoNumber,
-            description: d.description.substring(0, 30) 
+            description: d.description.substring(0, 30)
           })));
-          
+
           // Update state immediately with the renumbered array
           setBulkDefects(renumbered);
-          
+
           console.log('💾 State updated with renumbered defects:', renumbered.map(d => d.photoNumber));
         } else {
           console.log('❌ Invalid indices or same position:', {
@@ -197,13 +197,13 @@ const MainContentComponent: React.FC = () => {
       collisionDetection={(args) => {
         const { active } = args;
         const isImage = active.data.current?.type === 'image';
-        
+
         // If dragging an image, use pointerWithin to detect drop zones
         if (isImage) {
           const pointerCollisions = pointerWithin(args);
           if (pointerCollisions.length > 0) {
             // Filter to only include drop zones (not tiles)
-            const dropZoneCollisions = pointerCollisions.filter(collision => 
+            const dropZoneCollisions = pointerCollisions.filter(collision =>
               collision.id.toString().startsWith('drop-')
             );
             if (dropZoneCollisions.length > 0) {
@@ -211,19 +211,19 @@ const MainContentComponent: React.FC = () => {
             }
           }
         }
-        
+
         // If dragging a tile, use closestCenter but exclude drop zones
         const centerCollisions = closestCenter(args);
         if (!isImage && centerCollisions.length > 0) {
           // Filter out drop zones when dragging tiles
-          const tileCollisions = centerCollisions.filter(collision => 
+          const tileCollisions = centerCollisions.filter(collision =>
             !collision.id.toString().startsWith('drop-')
           );
           if (tileCollisions.length > 0) {
             return tileCollisions;
           }
         }
-        
+
         // Fallback to closestCenter
         return centerCollisions;
       }}
@@ -234,18 +234,16 @@ const MainContentComponent: React.FC = () => {
     >
       <div className="lg:col-span-10 grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden">
         {/* Image Grid - Keep mounted but hide with CSS to prevent image reload */}
-        <div className={`h-full overflow-hidden transition-all duration-300 ${
-          isExpanded ? 'hidden lg:col-span-0' : 'block lg:col-span-6'
-        }`}>
+        <div className={`h-full overflow-hidden transition-all duration-300 ${isExpanded ? 'hidden lg:col-span-0' : 'block lg:col-span-6'
+          }`}>
           <ImageGrid />
         </div>
 
         {/* Selected Images Panel - Expand to full width when expanded */}
-        <div className={`h-full overflow-hidden transition-all duration-300 ${
-          isExpanded ? 'lg:col-span-12' : 'lg:col-span-6'
-        }`}>
-          <SelectedImagesPanel 
-            onExpand={() => setIsExpanded(!isExpanded)} 
+        <div className={`h-full overflow-hidden transition-all duration-300 ${isExpanded ? 'lg:col-span-12' : 'lg:col-span-6'
+          }`}>
+          <SelectedImagesPanel
+            onExpand={() => setIsExpanded(!isExpanded)}
             isExpanded={isExpanded}
             activeDragId={activeId}
             overDragId={overId}
@@ -268,7 +266,7 @@ const MainContentComponent: React.FC = () => {
             const draggedDefect = bulkDefects.find(d => d.photoNumber === activeId);
             const draggedImage = draggedDefect ? images.find(img => img.file.name === draggedDefect.selectedFile) : null;
             return (
-              <div className="w-48 bg-slate-50 dark:bg-gray-700 rounded-lg shadow-2xl ring-4 ring-indigo-500 ring-opacity-75 overflow-hidden border-2 border-indigo-400">
+              <div className="w-48 bg-slate-50 dark:bg-gray-700 rounded-lg shadow-2xl ring-4 ring-neutral-900 dark:ring-neutral-100 ring-opacity-75 overflow-hidden border-2 border-neutral-900 dark:border-neutral-100">
                 <div className="relative aspect-square">
                   {draggedImage ? (
                     <img

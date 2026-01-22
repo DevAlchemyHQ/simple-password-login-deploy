@@ -825,35 +825,35 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
   const cropOverlayStyle = getCropOverlayStyle();
 
   return (
-    <div className="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-4">
-      <div className="w-full max-w-7xl h-full max-h-[90vh] flex flex-col bg-white dark:bg-gray-900 rounded-lg overflow-hidden">
+    <div className="fixed inset-0 bg-white dark:bg-neutral-900 z-[9999] flex items-center justify-center p-4">
+      <div className="w-full max-w-7xl h-full max-h-[90vh] flex flex-col bg-white dark:bg-neutral-900 rounded-lg overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
           <div className="flex items-center gap-4">
             <div className="text-center">
-              <div className="text-sm text-slate-500 dark:text-gray-400">
+              <div className="text-sm text-neutral-500 dark:text-neutral-400">
                 Image {currentIndex + 1} of {defects.length}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {/* Undo/Redo */}
-            <div className="flex items-center gap-1 border-r border-slate-200 dark:border-gray-700 pr-2 mr-2">
+            <div className="flex items-center gap-1 border-r border-neutral-200 dark:border-neutral-800 pr-2 mr-2">
               <button
                 onClick={handleUndo}
                 disabled={!canUndo}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100"
                 title="Undo (Ctrl+Z)"
               >
-                <Undo2 size={20} className="text-slate-600 dark:text-gray-300" />
+                <Undo2 size={20} className="text-neutral-900 dark:text-neutral-100" />
               </button>
               <button
                 onClick={handleRedo}
                 disabled={!canRedo}
-                className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100"
                 title="Redo (Ctrl+Y)"
               >
-                <Redo2 size={20} className="text-slate-600 dark:text-gray-300" />
+                <Redo2 size={20} className="text-neutral-900 dark:text-neutral-100" />
               </button>
             </div>
 
@@ -864,9 +864,9 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                 className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 title="Zoom Out"
               >
-                <ZoomOut size={20} className="text-slate-600 dark:text-gray-300" />
+                <ZoomOut size={20} className="text-neutral-900 dark:text-neutral-100" />
               </button>
-              <span className="text-sm text-slate-600 dark:text-gray-400 min-w-[3rem] text-center">
+              <span className="text-sm text-neutral-700 dark:text-neutral-300 min-w-[3rem] text-center">
                 {Math.round(scale * 100)}%
               </span>
               <button
@@ -874,7 +874,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                 className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 title="Zoom In"
               >
-                <ZoomIn size={20} className="text-slate-600 dark:text-gray-300" />
+                <ZoomIn size={20} className="text-neutral-900 dark:text-neutral-100" />
               </button>
             </div>
 
@@ -883,7 +883,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
               onClick={() => setShowAdjustments(!showAdjustments)}
               className={`p-2 rounded-lg transition-colors ${showAdjustments
                 ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                : 'hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300'
+                : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
                 }`}
               title="Image Adjustments"
             >
@@ -911,7 +911,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
               }}
               className={`p-2 rounded-lg transition-colors ${isCropping
                 ? 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                : 'hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-600 dark:text-gray-300'
+                : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
                 }`}
               title="Crop Image"
             >
@@ -932,7 +932,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
               className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               title="Reset All"
             >
-              <RotateCcw size={20} className="text-slate-600 dark:text-gray-300" />
+              <RotateCcw size={20} className="text-neutral-900 dark:text-neutral-100" />
             </button>
 
             <button
@@ -946,18 +946,18 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
               onClick={onClose}
               className="p-2 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <X size={24} className="text-slate-600 dark:text-gray-300" />
+              <X size={24} className="text-neutral-900 dark:text-neutral-100" />
             </button>
           </div>
         </div>
 
         {/* Image Adjustments Panel */}
         {showAdjustments && (
-          <div className="border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 p-4 overflow-x-auto">
+          <div className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 p-4 overflow-x-auto">
             <div className="flex gap-6 flex-wrap">
               {(['brightness', 'contrast', 'saturation', 'exposure', 'highlights', 'shadows', 'temperature', 'tint'] as const).map((key) => (
                 <div key={key} className="flex flex-col gap-2 min-w-[140px]">
-                  <label className="text-xs font-medium text-slate-600 dark:text-gray-400 capitalize">
+                  <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 capitalize">
                     {key}
                   </label>
                   <div className="relative">
@@ -968,7 +968,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                       step="1"
                       value={adjustments[key]}
                       onChange={(e) => handleAdjustmentChange(key, Number(e.target.value))}
-                      className="w-full h-2 bg-slate-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider-with-zero"
+                      className="w-full h-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer slider-with-zero"
                       style={{
                         background: `linear-gradient(to right, 
                           rgb(203 213 225) 0%, 
@@ -979,8 +979,8 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
                           rgb(203 213 225) 100%)`
                       }}
                     />
-                    <div className="absolute top-0 left-1/2 w-0.5 h-full bg-slate-400 dark:bg-gray-500 -translate-x-1/2 pointer-events-none z-10" />
-                    <span className="text-xs text-slate-600 dark:text-gray-400 w-10 text-right mt-1 block ml-auto">
+                    <div className="absolute top-0 left-1/2 w-0.5 h-full bg-neutral-400 dark:bg-neutral-500 -translate-x-1/2 pointer-events-none z-10" />
+                    <span className="text-xs text-neutral-700 dark:text-neutral-300 w-10 text-right mt-1 block ml-auto">
                       {adjustments[key]}
                     </span>
                   </div>
@@ -995,7 +995,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
           {/* Image Section with Navigation Arrows */}
           <div
             ref={imageContainerRef}
-            className="flex-1 flex items-center justify-center bg-slate-50 dark:bg-gray-800 p-4 overflow-hidden relative"
+            className="flex-1 flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4 overflow-hidden relative"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -1006,10 +1006,10 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
             {defects.length > 1 && (
               <button
                 onClick={handlePrevious}
-                className="absolute left-4 z-10 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute left-4 z-10 p-3 bg-white/90 dark:bg-neutral-800/90 hover:bg-white dark:hover:bg-neutral-800 rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100"
                 disabled={defects.length <= 1}
               >
-                <ChevronLeft size={28} className="text-slate-600 dark:text-gray-300" />
+                <ChevronLeft size={28} className="text-neutral-900 dark:text-neutral-100" />
               </button>
             )}
 
@@ -1135,10 +1135,10 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
             {defects.length > 1 && (
               <button
                 onClick={handleNext}
-                className="absolute right-4 z-10 p-3 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute right-4 z-10 p-3 bg-white/90 dark:bg-neutral-800/90 hover:bg-white dark:hover:bg-neutral-800 rounded-full shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100"
                 disabled={defects.length <= 1}
               >
-                <ChevronRight size={28} className="text-slate-600 dark:text-gray-300" />
+                <ChevronRight size={28} className="text-neutral-900 dark:text-neutral-100" />
               </button>
             )}
 
@@ -1148,31 +1148,31 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
           </div>
 
           {/* Description Section */}
-          <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 overflow-y-auto">
+          <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 overflow-y-auto">
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium text-slate-500 dark:text-gray-400 mb-1">
+                <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                   Photo Number
                 </h3>
-                <p className="text-xl font-semibold text-slate-800 dark:text-white">
+                <p className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
                   {currentDefect.photoNumber}
                 </p>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-slate-500 dark:text-gray-400 mb-1">
+                <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                   Description
                 </h3>
-                <p className="text-base text-slate-700 dark:text-gray-300 whitespace-pre-wrap">
+                <p className="text-base text-neutral-900 dark:text-neutral-100 whitespace-pre-wrap">
                   {currentDefect.description || 'No description'}
                 </p>
               </div>
 
               <div>
-                <h3 className="text-sm font-medium text-slate-500 dark:text-gray-400 mb-1">
+                <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">
                   File Name
                 </h3>
-                <p className="text-sm text-slate-600 dark:text-gray-400 break-all">
+                <p className="text-sm text-neutral-700 dark:text-neutral-300 break-all">
                   {currentDefect.image.file.name}
                 </p>
               </div>
@@ -1182,7 +1182,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
 
         {/* Thumbnail Navigation */}
         {defects.length > 1 && (
-          <div className="p-4 border-t border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-x-auto">
+          <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-x-auto">
             <div className="flex gap-2 justify-center">
               {defects.map((defect, index) => (
                 <button

@@ -26,7 +26,7 @@ export const TextLayer: React.FC<TextLayerProps> = ({
         return (
           <div
             key={index}
-            className={`absolute ${isEditable ? 'cursor-text hover:bg-blue-50' : ''}`}
+            className={`absolute ${isEditable ? 'cursor-text hover:bg-neutral-100 dark:hover:bg-neutral-800' : ''}`}
             style={{
               transform,
               transformOrigin: '0% 0%',
@@ -43,7 +43,7 @@ export const TextLayer: React.FC<TextLayerProps> = ({
                 type="text"
                 value={item.str}
                 onChange={(e) => onTextChange?.(index, e.target.value)}
-                className="bg-transparent border-none outline-none focus:ring-1 focus:ring-indigo-500 w-full h-full"
+                className="bg-transparent border-none outline-none focus:ring-1 focus:ring-neutral-900 dark:focus:ring-neutral-100 w-full h-full"
               />
             ) : (
               <span className="select-text">{item.str}</span>

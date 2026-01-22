@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { AlertTriangle, Heart, ChevronDown } from 'lucide-react';
 import { MetadataForm } from '../MetadataForm';
 import { ImageUpload } from '../ImageUpload';
 import { DownloadButton } from '../DownloadButton';
 import { useMetadataStore } from '../../store/metadataStore';
+import { DONATION_TIERS } from '../../utils/donationConfig';
 
 export const Sidebar: React.FC = () => {
   const { reset } = useMetadataStore();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showDonateMenu, setShowDonateMenu] = useState(false);
+  const donateMenuRef = useRef<HTMLDivElement>(null);
 
   const handleClearCanvas = () => {
     // Clear localStorage first
@@ -23,6 +26,23 @@ export const Sidebar: React.FC = () => {
     window.location.reload();
   };
 
+  // Close donate menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (donateMenuRef.current && !donateMenuRef.current.contains(event.target as Node)) {
+        setShowDonateMenu(false);
+      }
+    };
+
+    if (showDonateMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDonateMenu]);
+
   return (
     <div className="lg:col-span-2 space-y-4 overflow-container">
       <div className="space-y-4 h-full overflow-y-auto p-0.5">
@@ -30,6 +50,49 @@ export const Sidebar: React.FC = () => {
         <ImageUpload />
         <div className="mt-4 sticky bottom-0 bg-white dark:bg-neutral-950 pt-2 space-y-2">
           <DownloadButton />
+
+          {/* Support/Donate Dropdown */}
+          <div className="relative" ref={donateMenuRef}>
+            <button
+              onClick={() => setShowDonateMenu(!showDonateMenu)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-lg transition-all duration-200 font-medium text-sm"
+            >
+              <Heart size={16} className="text-red-500 dark:text-red-400" />
+              <span>Support Exametry</span>
+              <ChevronDown size={16} className={`transition-transform ${showDonateMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showDonateMenu && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-neutral-900 rounded-lg shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden z-50">
+                <div className="p-2">
+                  {DONATION_TIERS.map((tier, index) => (
+                    <a
+                      key={index}
+                      href={tier.stripeLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowDonateMenu(false)}
+                      className="block px-4 py-2.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-neutral-900 dark:text-neutral-100 text-sm">
+                            {tier.label}
+                          </div>
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                            {tier.description}
+                          </div>
+                        </div>
+                        <div className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">
+                          {tier.amount}
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Clear Canvas Link */}
           <div className="pt-3 border-t border-neutral-200 dark:border-neutral-800">
