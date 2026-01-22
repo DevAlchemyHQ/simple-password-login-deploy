@@ -111,7 +111,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               {/* Single PDF + Image Tiles View */}
               <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden min-h-0 ${!showBothPDFs ? '' : 'hidden'}`}>
                 {/* Left PDF Viewer */}
-                <div className="h-full overflow-hidden lg:col-span-7 min-h-0">
+                <div className="h-full overflow-hidden lg:col-span-7 min-h-0" key="pdf-viewer-left">
                   <PDFViewerLeft onToggleBoth={() => setShowBothPDFs(true)} />
                 </div>
 

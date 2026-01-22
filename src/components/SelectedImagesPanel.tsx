@@ -696,6 +696,12 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               target.closest('.image-selector-dropdown')) {
                               return;
                             }
+                            // Don't start drag if clicking in the bottom section (description/selector area)
+                            const tileElement = e.currentTarget as HTMLElement;
+                            const bottomSection = tileElement.querySelector('.p-2.space-y-1');
+                            if (bottomSection && bottomSection.contains(target)) {
+                              return;
+                            }
                             // Call original listener to enable drag
                             if (listeners?.onPointerDown) {
                               listeners.onPointerDown(e);
@@ -810,6 +816,10 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 e.stopPropagation();
                                 e.preventDefault();
                               }}
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                              }}
                               style={{ pointerEvents: 'auto' }}
                             >
                               {/* Image selector dropdown - like DefectTile */}
@@ -819,7 +829,14 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                     e.stopPropagation();
                                     setImageSelectorOpen(isSelectorOpen ? null : defect.photoNumber);
                                   }}
-                                  onMouseDown={(e) => e.stopPropagation()}
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                  }}
+                                  onPointerDown={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                  }}
                                   className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors font-medium ${defect.selectedFile
                                     ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
                                     : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-700'
@@ -835,6 +852,9 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                   <div
                                     className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-neutral-900 rounded-lg shadow-large border border-neutral-200 dark:border-neutral-800 z-[100] flex flex-col"
                                     onClick={(e) => e.stopPropagation()}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    onWheel={(e) => e.stopPropagation()}
                                   >
                                     {/* Search Input */}
                                     <div className="p-2 border-b border-neutral-200 dark:border-neutral-800">
@@ -866,6 +886,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                           className="w-full pl-9 pr-3 py-2 text-xs border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 transition-all"
                                           autoFocus
                                           onClick={(e) => e.stopPropagation()}
+                                          onMouseDown={(e) => e.stopPropagation()}
+                                          onPointerDown={(e) => e.stopPropagation()}
                                           onKeyDown={(e) => {
                                             const currentFocus = focusedImageIndex[defect.photoNumber] ?? -1;
 
@@ -912,7 +934,22 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                     </div>
 
                                     {/* File List */}
-                                    <div className="overflow-y-auto max-h-48">
+                                    <div 
+                                      className="overflow-y-auto max-h-48 scrollbar-thin"
+                                      style={{
+                                        overscrollBehavior: 'contain',
+                                        WebkitOverflowScrolling: 'touch',
+                                        touchAction: 'pan-y'
+                                      }}
+                                      onWheel={(e) => {
+                                        e.stopPropagation();
+                                        // Allow normal scrolling within this element
+                                      }}
+                                      onMouseDown={(e) => e.stopPropagation()}
+                                      onPointerDown={(e) => e.stopPropagation()}
+                                      onTouchStart={(e) => e.stopPropagation()}
+                                      onTouchMove={(e) => e.stopPropagation()}
+                                    >
                                       {/* None option at the top - always grey */}
                                       <button
                                         onClick={(e) => {
@@ -924,6 +961,14 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                             delete next[defect.photoNumber];
                                             return next;
                                           });
+                                        }}
+                                        onMouseDown={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                        }}
+                                        onPointerDown={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
                                         }}
                                         className="w-full px-3 py-2 text-left text-xs hover:bg-neutral-50 dark:hover:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 transition-colors"
                                       >
@@ -952,6 +997,14 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                                   delete next[defect.photoNumber];
                                                   return next;
                                                 });
+                                              }}
+                                              onMouseDown={(e) => {
+                                                e.stopPropagation();
+                                                e.preventDefault();
+                                              }}
+                                              onPointerDown={(e) => {
+                                                e.stopPropagation();
+                                                e.preventDefault();
                                               }}
                                               onMouseEnter={() => {
                                                 setFocusedImageIndex(prev => ({

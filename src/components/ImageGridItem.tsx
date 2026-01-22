@@ -52,7 +52,14 @@ const DraggableImage: React.FC<{
       style={style}
       className={`relative aspect-square cursor-pointer group touch-manipulation ${isDragging ? 'opacity-50 z-50' : ''
         } ${isDragModeActive ? 'cursor-grab active:cursor-grabbing' : ''}`}
-      onClick={isDragModeActive ? undefined : onToggle}
+      onClick={(e) => {
+        if (!isDragModeActive) {
+          const target = e.target as HTMLElement;
+          if (!target.closest('button')) {
+            onToggle();
+          }
+        }
+      }}
       {...(isDragModeActive ? { ...listeners, ...attributes } : {})}
     >
       <div className={`relative rounded-lg overflow-hidden h-full ${!isDragModeActive && isSelected ? 'ring-2 ring-white' : ''
@@ -129,11 +136,15 @@ export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth 
   const [viewerInitialIndex, setViewerInitialIndex] = useState(0);
   const parentRef = React.useRef<HTMLDivElement>(null);
 
+  // Memoize row count to prevent unnecessary recalculations
+  const rowCount = React.useMemo(() => Math.ceil(images.length / gridWidth), [images.length, gridWidth]);
+  
   const rowVirtualizer = useVirtualizer({
-    count: Math.ceil(images.length / gridWidth),
+    count: rowCount,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 200,
-    overscan: 5,
+    overscan: 3,
+    scrollMargin: 0,
   });
 
   // Handle opening viewer
@@ -145,14 +156,25 @@ export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth 
     }
   };
 
+
   return (
     <>
       <div
         ref={parentRef}
-        className="absolute inset-0 overflow-y-auto overflow-x-hidden scrollbar-thin"
+        className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin"
         style={{
-          overscrollBehavior: 'contain',
-          WebkitOverflowScrolling: 'touch'
+          overscrollBehavior: 'contain', // Prevent scroll chaining but allow normal scrolling
+          WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y',
+          minHeight: 0,
+          // Ensure it fills the flex parent and maintains height
+          height: '100%',
+          // Prevent layout shifts
+          contain: 'layout style',
+        }}
+        onWheel={(e) => {
+          // Allow normal wheel scrolling
+          e.stopPropagation();
         }}
       >
         <div

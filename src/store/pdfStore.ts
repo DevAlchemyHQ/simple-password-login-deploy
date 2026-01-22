@@ -27,7 +27,7 @@ export const usePDFStore = create<PDFState>()(
     (set, get) => ({
       file1: null,
       file2: null,
-      showBothPDFs: true,
+      showBothPDFs: false, // Always start with false - user wants single tile view
       scrollPosition1: 0,
       scrollPosition2: 0,
       scale1: 1.0,
@@ -156,7 +156,7 @@ export const usePDFStore = create<PDFState>()(
         // We don't persist the actual files since they can't be serialized
         file1: null,
         file2: null,
-        showBothPDFs: state.showBothPDFs,
+        showBothPDFs: false, // Always persist as false - user wants single tile view
         scrollPosition1: state.scrollPosition1,
         scrollPosition2: state.scrollPosition2,
         scale1: state.scale1,

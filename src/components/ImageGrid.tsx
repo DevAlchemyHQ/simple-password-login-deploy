@@ -195,7 +195,7 @@ export const ImageGrid: React.FC = () => {
         <GridWidthControl value={gridWidth} onChange={setGridWidth} />
       </div>
 
-      <div 
+      <div
         className="flex-1 min-h-0 overflow-y-auto scroll-smooth"
         style={{
           transform: 'translateZ(0)',
@@ -255,8 +255,12 @@ export const ImageGrid: React.FC = () => {
               return (
                 <div
                   key={date}
-                  className={`rounded-xl shadow-soft hover:shadow-medium transition-all duration-200 overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex flex-col ${isLastExpandedGroup ? 'flex-1' : ''
+                  className={`rounded-xl shadow-soft hover:shadow-medium transition-all duration-200 overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex flex-col ${isLastExpandedGroup ? 'flex-1 min-h-0' : ''
                     }`}
+                  style={{
+                    // Ensure stable height for flex children
+                    ...(isLastExpandedGroup ? { minHeight: 0 } : { minHeight: '400px', maxHeight: '600px' }),
+                  }}
                 >
                   {/* Date Group Header with Editable Date */}
                   <div className="w-full py-2 px-4 bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-800 transition-all duration-200 flex items-center justify-between gap-3 flex-shrink-0">
@@ -286,8 +290,17 @@ export const ImageGrid: React.FC = () => {
 
                   {/* Images Grid (collapsible with smooth transition) */}
                   {!isCollapsed && (
-                    <div className={`relative p-3 animate-in fade-in-0 slide-in-from-top-2 duration-300 ${isLastExpandedGroup ? 'flex-1 min-h-0' : 'min-h-[400px] max-h-[600px]'
-                      }`}>
+                    <div 
+                      className="relative flex-1 min-h-0"
+                      style={{
+                        padding: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 0,
+                        // Ensure this container has a defined height for flex children
+                        height: '100%',
+                      }}
+                    >
                       <ImageGridItem images={imagesByDate.grouped[date]} gridWidth={gridWidth} />
                     </div>
                   )}
@@ -305,7 +318,15 @@ export const ImageGrid: React.FC = () => {
                     {imagesByDate.noDate.length} {imagesByDate.noDate.length === 1 ? 'photo' : 'photos'}
                   </span>
                 </div>
-                <div className="relative p-3 min-h-[400px] max-h-[600px]">
+                <div 
+                  className="relative min-h-[400px] max-h-[600px]"
+                  style={{
+                    padding: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: 0,
+                  }}
+                >
                   <ImageGridItem images={imagesByDate.noDate} gridWidth={gridWidth} />
                 </div>
               </div>

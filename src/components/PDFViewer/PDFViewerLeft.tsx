@@ -16,7 +16,14 @@ interface PDFViewerLeftProps {
 }
 
 export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) => {
-  const { file1, setFile1, loadPDFs, scrollPosition1, setScrollPosition1, scale1, setScale1 } = usePDFStore();
+  const { file1, setFile1, loadPDFs, scrollPosition1, setScrollPosition1, scale1, setScale1, showBothPDFs, setShowBothPDFs } = usePDFStore();
+  
+  // Force showBothPDFs to false on mount if it's true (user wants single tile view)
+  useEffect(() => {
+    if (showBothPDFs) {
+      setShowBothPDFs(false);
+    }
+  }, [showBothPDFs, setShowBothPDFs]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -38,45 +45,61 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
     loadFiles();
   }, []);
 
-  // Measure container width on mount and resize
+  // Measure container width on mount, resize, and when component becomes visible
   useEffect(() => {
     const updateWidth = () => {
       if (containerRef.current) {
+        const isVisible = containerRef.current.offsetParent !== null;
         // Subtract padding (p-4 = 16px on each side = 32px total)
         const width = containerRef.current.clientWidth - 32;
-        if (width > 0) {
+        if (width > 0 && isVisible) {
           setContainerWidth(width);
         }
       }
     };
 
-    // Initial measurement with delay to ensure DOM is ready
+    // Use IntersectionObserver to detect when component becomes visible
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Component is visible, measure width
+            setTimeout(updateWidth, 50);
+            setTimeout(updateWidth, 200);
+            setTimeout(updateWidth, 500);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    // Initial measurement with delays to ensure DOM is ready
     setTimeout(updateWidth, 100);
-    updateWidth();
+    setTimeout(updateWidth, 300);
+    setTimeout(updateWidth, 600);
 
     window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    return () => {
+      window.removeEventListener('resize', updateWidth);
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
   }, []);
 
-  // Re-measure when scale changes to ensure proper fit
+  // Re-measure when scale or file changes (only if component is visible)
   useEffect(() => {
-    if (containerRef.current) {
+    if (containerRef.current && containerRef.current.offsetParent !== null) {
       const width = containerRef.current.clientWidth - 32;
       if (width > 0) {
         setContainerWidth(width);
       }
     }
-  }, [scale1]);
-
-  // Re-measure when file or scale changes
-  useEffect(() => {
-    if (containerRef.current) {
-      const width = containerRef.current.clientWidth - 32;
-      if (width > 0) {
-        setContainerWidth(width);
-      }
-    }
-  }, [file1, scale1]);
+  }, [scale1, file1]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,10 +122,9 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
   };
 
   const handleZoom = (action: 'in' | 'out') => {
-    setScale1(prev => {
-      const newScale = action === 'in' ? Math.min(prev + 0.1, 2.0) : Math.max(prev - 0.1, 0.5);
-      return newScale;
-    });
+    const currentScale = scale1;
+    const newScale = action === 'in' ? Math.min(currentScale + 0.1, 2.0) : Math.max(currentScale - 0.1, 0.5);
+    setScale1(newScale);
   };
 
   // Restore scroll position when component mounts or becomes visible
@@ -191,13 +213,7 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
             >
               <ZoomIn size={16} className="text-slate-600 dark:text-white" />
             </button>
-            <button
-              onClick={onToggleBoth}
-              className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
-              title="Show both PDFs (Detailed + Visual)"
-            >
-              <Columns size={16} className="text-slate-600 dark:text-white" />
-            </button>
+            {/* Columns button disabled - user wants single tile view always */}
           </div>
         </div>
       </div>
@@ -217,23 +233,46 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
               </div>
             }
           >
-            {Array.from(new Array(numPages), (_, index) => (
-              <div
-                key={`page-${index + 1}`}
-                className="mb-4 relative"
-                data-page-number={index + 1}
-              >
-                <div className="relative">
-                  <Page
-                    pageNumber={index + 1}
-                    width={containerWidth > 100 ? containerWidth * scale1 : containerWidth > 0 ? containerWidth : 600}
-                    rotate={pageRotations[index + 1] || 0}
-                    className="shadow-lg bg-white"
-                    renderTextLayer={true}
-                    renderAnnotationLayer={true}
-                  />
-                </div>
-                <div className="absolute top-2 right-2 flex gap-2 z-50" style={{ pointerEvents: 'auto' }}>
+            {Array.from(new Array(numPages), (_, index) => {
+              // Calculate base width (without scale) - this stays constant
+              const baseWidth = containerWidth > 0 ? containerWidth : 600;
+              
+              return (
+                <div
+                  key={`page-${index + 1}`}
+                  className="relative"
+                  style={{
+                    marginBottom: `${16 * scale1}px`, // Scale the margin to match visual size
+                  }}
+                  data-page-number={index + 1}
+                >
+                  <div 
+                    className="relative"
+                    style={{
+                      transform: `scale(${scale1})`,
+                      transformOrigin: 'top center',
+                      width: `${baseWidth}px`,
+                      marginLeft: 'auto',
+                      marginRight: 'auto',
+                    }}
+                  >
+                    <Page
+                      pageNumber={index + 1}
+                      width={baseWidth}
+                      rotate={pageRotations[index + 1] || 0}
+                      className="shadow-lg bg-white"
+                      renderTextLayer={true}
+                      renderAnnotationLayer={true}
+                    />
+                  </div>
+                <div 
+                  className="absolute top-2 right-2 flex gap-2 z-50" 
+                  style={{ 
+                    pointerEvents: 'auto',
+                    transform: `scale(${scale1})`,
+                    transformOrigin: 'top right',
+                  }}
+                >
                   <div className="text-xs bg-black/70 text-white px-2 py-1 rounded" style={{ pointerEvents: 'none' }}>
                     Page {index + 1}
                   </div>
@@ -251,7 +290,8 @@ export const PDFViewerLeft: React.FC<PDFViewerLeftProps> = ({ onToggleBoth }) =>
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </Document>
         ) : (
           <div
