@@ -72,6 +72,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   const isScrollingRef = React.useRef<Record<string, boolean>>({});
   // Store scroll timeout IDs
   const scrollTimeoutRefs = React.useRef<Record<string, NodeJS.Timeout>>({});
+  // Ref for defect list panel to detect clicks outside
+  const defectListPanelRef = React.useRef<HTMLDivElement>(null);
 
   // Load defect list panel state from localStorage
   useEffect(() => {
@@ -103,6 +105,27 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
       };
     }
   }, [imageSelectorOpen]);
+
+  // Close defect list panel when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Check if click is outside the defect list panel
+      if (defectListPanelRef.current && !defectListPanelRef.current.contains(target)) {
+        // Also check if click is not on the toggle button
+        if (!target.closest('button[title*="defect list"]')) {
+          setIsDefectListPanelOpen(false);
+        }
+      }
+    };
+
+    if (isDefectListPanelOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [isDefectListPanelOpen]);
 
 
   // Group bulk defects by date for batch drag mode
@@ -517,21 +540,30 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
       {/* Collapsible Defect List Panel */}
       {isDefectListPanelOpen && (
-        <div className="p-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
+        <div ref={defectListPanelRef} className="p-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
           <div className="flex items-center justify-between mb-3">
             <label className="text-xs font-semibold text-neutral-600 dark:text-neutral-400 uppercase tracking-wide">
               Defect List ({bulkDefects.length})
             </label>
-            <button
-              onClick={handleCopyDefectList}
-              disabled={bulkDefects.length === 0}
-              className={`text-xs px-3 py-1.5 rounded-lg transition-colors font-medium ${bulkDefects.length === 0
-                  ? 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-600 cursor-not-allowed'
-                  : 'bg-black dark:bg-neutral-800 text-white hover:bg-neutral-900 dark:hover:bg-neutral-700'
-                }`}
-            >
-              Copy List
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCopyDefectList}
+                disabled={bulkDefects.length === 0}
+                className={`text-xs px-3 py-1.5 rounded-lg transition-colors font-medium ${bulkDefects.length === 0
+                    ? 'bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-600 cursor-not-allowed'
+                    : 'bg-black dark:bg-neutral-800 text-white hover:bg-neutral-900 dark:hover:bg-neutral-700'
+                  }`}
+              >
+                Copy List
+              </button>
+              <button
+                onClick={() => setIsDefectListPanelOpen(false)}
+                className="p-1.5 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+                title="Close defect list"
+              >
+                <X size={16} className="text-neutral-600 dark:text-neutral-400" />
+              </button>
+            </div>
           </div>
 
           <div className="max-h-64 overflow-y-auto space-y-1 p-3 bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
@@ -564,7 +596,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
               overscrollBehavior: 'contain',
               WebkitOverflowScrolling: 'touch',
               transform: 'translateZ(0)',
-              contain: 'layout style',
+              willChange: 'scroll-position'
             }}
             onWheel={(e) => {
               // Don't scroll parent if event originated from dropdown
@@ -765,18 +797,18 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                               transform: CSS.Transform.toString(transform),
                               transition: isDragging ? 'none' : (transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'),
                               opacity: isDragging ? 0.4 : 1,
-                              // Ensure tile independence - prevent layout shifts affecting other tiles
-                              contain: 'layout style paint',
-                              isolation: isSelectorOpen ? 'auto' : 'isolate',
-                              zIndex: isSelectorOpen ? 1000 : 'auto',
-                              willChange: isDragging ? 'transform' : 'auto',
+                              // Prevent layout shifts but allow dropdown to extend beyond tile
+                              // Remove 'paint' containment when dropdown is open to allow overflow
+                              contain: isSelectorOpen ? 'layout style' : 'layout style paint',
+                              isolation: 'isolate',
+                              willChange: isSelectorOpen ? 'auto' : 'transform',
                             }}
-                            className={`group flex flex-col bg-neutral-50 dark:bg-neutral-800 rounded-lg overflow-visible relative border border-neutral-200 dark:border-neutral-700 ${isDragging
+                            className={`group flex flex-col bg-neutral-50 dark:bg-neutral-800 rounded-lg overflow-visible transition-opacity duration-200 relative border border-neutral-200 dark:border-neutral-700 ${isDragging
                               ? 'shadow-large ring-2 ring-neutral-900 dark:ring-neutral-100 ring-opacity-50 z-50 cursor-grabbing'
                               : (overDragId === defect.photoNumber && activeDragId && activeDragId !== defect.photoNumber)
-                                ? 'ring-2 ring-neutral-900 dark:ring-neutral-100 border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 shadow-medium border-2'
+                                ? 'ring-2 ring-neutral-900 dark:ring-neutral-100 border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 shadow-medium scale-[1.02] border-2'
                                 : isSelectorOpen
-                                  ? 'cursor-default z-[1000]' // Don't show grab cursor when dropdown is open
+                                  ? 'cursor-default z-[1000]' // High z-index when dropdown is open to appear above other tiles
                                   : 'cursor-grab'
                               }`}
                             {...attributes}
@@ -860,7 +892,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                             </div>
 
                             <div
-                              className="p-2 space-y-1 flex-shrink-0 relative pb-2"
+                              className="p-2 space-y-1 flex-shrink-0 relative z-10 pb-2"
                               onClick={(e) => e.stopPropagation()}
                               onMouseDown={(e) => {
                                 e.stopPropagation();
@@ -870,10 +902,13 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                 e.stopPropagation();
                                 e.preventDefault();
                               }}
-                              style={{ pointerEvents: 'auto', zIndex: isSelectorOpen ? 1001 : 'auto' }}
+                              style={{ 
+                                pointerEvents: 'auto',
+                                overflow: 'visible', // Allow dropdown to extend beyond
+                              }}
                             >
                               {/* Image selector dropdown - like DefectTile */}
-                              <div className="relative" style={{ zIndex: isSelectorOpen ? 1002 : 'auto' }}>
+                              <div className="relative z-[100]">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -905,7 +940,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
 
                                 {isSelectorOpen && (
                                   <div
-                                    className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-64 overflow-hidden bg-white dark:bg-neutral-900 rounded-lg shadow-large border border-neutral-200 dark:border-neutral-800 flex flex-col"
+                                    className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-[500px] overflow-visible bg-white dark:bg-neutral-900 rounded-lg shadow-large border border-neutral-200 dark:border-neutral-800 flex flex-col"
                                     data-defect-id={defect.photoNumber}
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -937,10 +972,11 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                     }}
                                     style={{
                                       pointerEvents: 'auto',
-                                      isolation: 'auto',
-                                      contain: 'layout style paint',
-                                      transform: 'translateZ(0)', // GPU acceleration
-                                      zIndex: 9999,
+                                      // Remove isolation: 'isolate' - it creates a stacking context that prevents appearing above other tiles
+                                      // Don't use contain: paint - it clips the dropdown
+                                      contain: 'layout style', // Prevent layout shifts but allow overflow
+                                      position: 'absolute', // Ensure it can extend beyond parent
+                                      zIndex: 1001, // Higher z-index than the tile to appear above it and other tiles
                                     }}
                                   >
                                     {/* Search Input */}
@@ -967,7 +1003,7 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                             }
                                           }}
                                           placeholder="Search by title or last 4 digits..."
-                                          className="w-full pl-9 pr-3 py-2 text-xs border border-neutral-300 dark:border-neutral-700 rounded-lg focus:ring-2 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:border-transparent bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 transition-all"
+                                          className="w-full pl-9 pr-3 py-2 text-xs border-0 bg-transparent dark:bg-transparent text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-0"
                                           autoFocus
                                           onClick={(e) => e.stopPropagation()}
                                           onMouseDown={(e) => e.stopPropagation()}
@@ -1036,46 +1072,61 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                           }
                                         }
                                       }}
-                                      className="overflow-y-auto max-h-48 scrollbar-thin"
+                                      className="overflow-y-auto max-h-[180px] scrollbar-thin"
                                       style={{
                                         overscrollBehavior: 'contain',
                                         WebkitOverflowScrolling: 'touch',
                                         touchAction: 'pan-y',
                                         isolation: 'isolate',
-                                        contain: 'layout style paint',
-                                        transform: 'translateZ(0)', // GPU acceleration for smooth scrolling
+                                        // Don't use contain: paint - it clips the scrollable content
+                                      contain: 'layout style',
+                                        willChange: 'scroll-position'
                                       }}
                                       onWheel={(e) => {
-                                        // Stop propagation immediately
-                                        e.stopPropagation();
-                                        // Mark scrolling with debounce
+                                        // Mark that user is scrolling
                                         const defectId = defect.photoNumber;
                                         isScrollingRef.current[defectId] = true;
+                                        // Stop ALL propagation to prevent parent scrolling
+                                        e.stopPropagation();
+                                        // Allow normal scrolling within this container
+                                        // Don't preventDefault to allow natural scroll behavior
+                                        // Clear scrolling flag after scroll ends
                                         if (scrollTimeoutRefs.current[defectId]) {
                                           clearTimeout(scrollTimeoutRefs.current[defectId]);
                                         }
                                         scrollTimeoutRefs.current[defectId] = setTimeout(() => {
                                           isScrollingRef.current[defectId] = false;
-                                        }, 200);
+                                        }, 150);
                                       }}
                                       onScroll={(e) => {
-                                        // Save scroll position efficiently
+                                        // Mark that user is scrolling
                                         const defectId = defect.photoNumber;
+                                        isScrollingRef.current[defectId] = true;
+                                        // Save scroll position to preserve across re-renders
                                         const scrollTop = e.currentTarget.scrollTop;
-                                        if (!scrollPositionRefs.current[defectId]) {
+                                        if (scrollPositionRefs.current[defectId]) {
+                                          scrollPositionRefs.current[defectId].position = scrollTop;
+                                          scrollPositionRefs.current[defectId].element = e.currentTarget;
+                                        } else {
                                           scrollPositionRefs.current[defectId] = {
                                             element: e.currentTarget,
                                             position: scrollTop
                                           };
-                                        } else {
-                                          scrollPositionRefs.current[defectId].position = scrollTop;
                                         }
-                                        // Stop propagation
+                                        // Stop scroll event propagation completely
                                         e.stopPropagation();
+                                        // Prevent any scroll event from bubbling up
                                         const event = e.nativeEvent;
                                         if (event.stopImmediatePropagation) {
                                           event.stopImmediatePropagation();
                                         }
+                                        // Clear scrolling flag after scroll ends
+                                        if (scrollTimeoutRefs.current[defectId]) {
+                                          clearTimeout(scrollTimeoutRefs.current[defectId]);
+                                        }
+                                        scrollTimeoutRefs.current[defectId] = setTimeout(() => {
+                                          isScrollingRef.current[defectId] = false;
+                                        }, 150);
                                       }}
                                       onMouseDown={(e) => {
                                         e.stopPropagation();
@@ -1128,19 +1179,21 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                               onClick={(e) => {
                                                 e.stopPropagation();
                                                 e.preventDefault();
-                                                // Update the selected file immediately
-                                                updateBulkDefectFile(defect.photoNumber, img.file.name);
-                                                // Close dropdown immediately but preserve scroll position
-                                                setImageSelectorOpen(null);
-                                                setImageSearchQuery(prev => {
-                                                  const next = { ...prev };
-                                                  delete next[defect.photoNumber];
-                                                  return next;
-                                                });
-                                                setFocusedImageIndex(prev => {
-                                                  const next = { ...prev };
-                                                  delete next[defect.photoNumber];
-                                                  return next;
+                                                // Update the selected file immediately - batch state updates to prevent lag
+                                                React.startTransition(() => {
+                                                  updateBulkDefectFile(defect.photoNumber, img.file.name);
+                                                  // Close dropdown and clear state
+                                                  setImageSelectorOpen(null);
+                                                  setImageSearchQuery(prev => {
+                                                    const next = { ...prev };
+                                                    delete next[defect.photoNumber];
+                                                    return next;
+                                                  });
+                                                  setFocusedImageIndex(prev => {
+                                                    const next = { ...prev };
+                                                    delete next[defect.photoNumber];
+                                                    return next;
+                                                  });
                                                 });
                                               }}
                                               onMouseDown={(e) => {
@@ -1151,21 +1204,8 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                                                 e.stopPropagation();
                                                 e.preventDefault();
                                               }}
-                                              onMouseEnter={() => {
-                                                // Debounce focus updates to prevent lag during scrolling
-                                                const defectId = defect.photoNumber;
-                                                if (!isScrollingRef.current[defectId]) {
-                                                  // Use requestAnimationFrame to batch updates and reduce lag
-                                                  requestAnimationFrame(() => {
-                                                    if (!isScrollingRef.current[defectId]) {
-                                                      setFocusedImageIndex(prev => ({
-                                                        ...prev,
-                                                        [defectId]: index
-                                                      }));
-                                                    }
-                                                  });
-                                                }
-                                              }}
+                                              // Removed onMouseEnter to prevent re-renders that cause tile bobbing
+                                              // Visual focus is handled by CSS hover states only
                                               className={`w-full px-3 py-2 text-left text-xs hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors ${img.file.name === defect.selectedFile
                                                 ? 'text-neutral-900 dark:text-neutral-100 font-semibold bg-neutral-100 dark:bg-neutral-800'
                                                 : isFocused

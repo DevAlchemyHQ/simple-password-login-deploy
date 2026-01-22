@@ -53,7 +53,9 @@ const DraggableImage: React.FC<{
       className={`relative aspect-square cursor-pointer group touch-manipulation ${isDragging ? 'opacity-50 z-50' : ''
         } ${isDragModeActive ? 'cursor-grab active:cursor-grabbing' : ''}`}
       onClick={(e) => {
-        if (!isDragModeActive) {
+        // Disable selection when there are no tiles (bulkDefectsCount === 0)
+        // Only allow selection when tiles exist
+        if (bulkDefectsCount > 0 && !isDragModeActive) {
           const target = e.target as HTMLElement;
           if (!target.closest('button')) {
             onToggle();
@@ -72,7 +74,8 @@ const DraggableImage: React.FC<{
           draggable="false"
         />
         {/* Show selected state - photo number with black background and white text */}
-        {isSelected && !isDragModeActive && (
+        {/* Only show when tiles exist - no selection when there are no tiles */}
+        {isSelected && !isDragModeActive && bulkDefectsCount > 0 && (
           <div className="absolute top-2 right-2 bg-black rounded-full w-6 h-6 flex items-center justify-center">
             {img.photoNumber ? (
               <span className="text-white text-sm font-medium">{img.photoNumber}</span>

@@ -10,7 +10,7 @@ export const GridWidthControl: React.FC<GridWidthControlProps> = ({ value, onCha
   return (
     <div className="flex items-center gap-2">
       <button
-        onClick={() => onChange(Math.max(3, value - 1))}
+        onClick={() => onChange(Math.max(4, value - 1))}
         className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors"
         title="Decrease width"
       >
