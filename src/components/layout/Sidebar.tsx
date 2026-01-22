@@ -63,7 +63,7 @@ export const Sidebar: React.FC = () => {
             </button>
 
             {showDonateMenu && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-neutral-900 rounded-lg shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden z-50">
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-neutral-900 rounded-lg shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden z-50 min-w-[280px]">
                 <div className="p-2">
                   {DONATION_TIERS.map((tier, index) => (
                     <a

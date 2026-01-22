@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Eye, EyeOff, Loader2, AlertCircle, Mail, Heart } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Eye, EyeOff, Loader2, AlertCircle, Mail, Heart, ChevronDown } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import { useMetadataStore } from "../store/metadataStore";
 import { DONATION_TIERS } from "../utils/donationConfig";
@@ -12,6 +12,8 @@ export const LoginScreen: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDonateMenu, setShowDonateMenu] = useState(false);
+  const donateMenuRef = useRef<HTMLDivElement>(null);
   const setAuth = useAuthStore((state) => state.setAuth);
   const loadUserData = useMetadataStore((state) => state.loadUserData);
 
@@ -23,6 +25,23 @@ export const LoginScreen: React.FC = () => {
       loadUserData();
     }
   }, [setAuth, loadUserData]);
+
+  // Close donate menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (donateMenuRef.current && !donateMenuRef.current.contains(event.target as Node)) {
+        setShowDonateMenu(false);
+      }
+    };
+
+    if (showDonateMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDonateMenu]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,33 +145,67 @@ export const LoginScreen: React.FC = () => {
           )}
 
           {/* Premium button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-neutral-900 to-neutral-800 dark:from-neutral-800 dark:to-neutral-900 text-white py-4 rounded-xl font-semibold hover:from-neutral-800 hover:to-neutral-700 dark:hover:from-neutral-700 dark:hover:to-neutral-800 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-base transform hover:scale-[1.02] active:scale-[0.98] border border-neutral-700/20 dark:border-neutral-700/30"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 size={20} className="animate-spin" />
-                <span>Signing in...</span>
-              </>
-            ) : (
-              <span>Sign In</span>
-            )}
-          </button>
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-8 bg-gradient-to-r from-neutral-900 to-neutral-800 dark:from-neutral-800 dark:to-neutral-900 text-white py-3 rounded-xl font-semibold hover:from-neutral-800 hover:to-neutral-700 dark:hover:from-neutral-700 dark:hover:to-neutral-800 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm transform hover:scale-[1.02] active:scale-[0.98] border border-neutral-700/20 dark:border-neutral-700/30"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <span>Sign In</span>
+              )}
+            </button>
+          </div>
         </form>
 
-        {/* Support Exametry link */}
+        {/* Support Exametry Dropdown */}
         <div className="mt-4 text-center">
-          <a
-            href={DONATION_TIERS[1].stripeLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors text-sm font-medium"
-          >
-            <Heart size={16} className="text-red-500 dark:text-red-400" />
-            <span>Support Exametry</span>
-          </a>
+          <div className="relative inline-block" ref={donateMenuRef}>
+            <button
+              onClick={() => setShowDonateMenu(!showDonateMenu)}
+              className="inline-flex items-center gap-2 text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors text-sm font-medium"
+            >
+              <Heart size={16} className="text-red-500 dark:text-red-400" />
+              <span>Support Exametry</span>
+              <ChevronDown size={16} className={`transition-transform ${showDonateMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showDonateMenu && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-white dark:bg-neutral-900 rounded-lg shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden z-50 min-w-[280px]">
+                <div className="p-2">
+                  {DONATION_TIERS.map((tier, index) => (
+                    <a
+                      key={index}
+                      href={tier.stripeLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowDonateMenu(false)}
+                      className="block px-4 py-2.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-neutral-900 dark:text-neutral-100 text-sm">
+                            {tier.label}
+                          </div>
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                            {tier.description}
+                          </div>
+                        </div>
+                        <div className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">
+                          {tier.amount}
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Email icon at bottom left */}
