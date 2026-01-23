@@ -92,7 +92,7 @@ Complete migration from Supabase to full AWS backend infrastructure with Stripe 
 
 ---
 
-### 3. Frontend Migration (Core Complete ~70%)
+### 3. Frontend Migration (Core Complete ~85%)
 
 #### Completed:
 ✅ Removed Supabase completely
@@ -116,6 +116,8 @@ Complete migration from Supabase to full AWS backend infrastructure with Stripe 
 ✅ Updated `src/store/pdfStore.ts` - Simplified, local state only
 ✅ Updated `src/components/profile/UserProfile.tsx` - Full integration with new API
 ✅ Updated `src/types/profile.ts` - Matches DynamoDB schema
+✅ Updated `src/components/DownloadButton.tsx` - Full download quota integration with Stripe Checkout
+✅ Replaced `src/pages/FeedbackAdmin.tsx` - Placeholder for AWS migration
 
 #### New Files Created:
 ```
@@ -139,22 +141,20 @@ MIGRATION-SUMMARY.md                    - This file
 1. **Storage:**
    - `src/lib/storage.ts` - Currently unused, references Supabase (can be removed or updated for S3)
 
-2. **Admin:**
-   - `src/pages/FeedbackAdmin.tsx` - References Supabase (feedback system not in new architecture)
-
 ### New Features to Implement (Next Phase):
 
-1. **Download Quota System (Backend Ready, Frontend Needed):**
-   - Integrate download check API before allowing downloads
-   - Display remaining downloads for free users in download UI
-   - Show Stripe Checkout when limit reached
-   - Wire up download creation to backend API
+1. **Download System Backend Integration:**
+   - ✅ Frontend checks quota before download (`checkDownloadQuota()`)
+   - ✅ Display remaining downloads for free users
+   - ✅ Show Stripe Checkout modal when limit reached
+   - ⏳ Wire actual download to backend API (call `createDownload()` after local ZIP creation)
+   - ⏳ Test download count increment in DynamoDB
 
-2. **Stripe Checkout Integration (Backend Ready, Frontend Needed):**
-   - Add Stripe Checkout component for subscription flow
-   - Handle post-checkout success/cancel redirects
-   - Display subscription upgrade prompts
-   - Test end-to-end subscription flow
+2. **Stripe Checkout Post-Flow:**
+   - ✅ Upgrade modal with Checkout redirect implemented
+   - ⏳ Handle post-checkout success/cancel redirects (landing pages)
+   - ⏳ Show "subscription activated" success message
+   - ⏳ Test end-to-end subscription flow (signup → 3 downloads → upgrade → unlimited)
 
 3. **Admin Dashboard (Backend Ready, Frontend Needed):**
    - Create admin dashboard page
@@ -281,11 +281,11 @@ aws cognito-idp admin-add-user-to-group \
 **Frontend Auth:** ✅ 100% Complete (Full Cognito integration)
 **Frontend Profile:** ✅ 100% Complete (Profile management with API)
 **Frontend Stores:** ✅ 100% Complete (All migrated from Supabase)
-**Stripe Integration:** 🟡 70% Complete (Backend done, Customer Portal integrated, Checkout pending)
-**Download System:** 🟡 50% Complete (Backend ready, Frontend integration pending)
+**Stripe Integration:** ✅ 90% Complete (Backend done, Customer Portal integrated, Checkout modal done, post-flow pending)
+**Download System:** 🟡 85% Complete (Backend ready, Frontend quota check done, backend call integration pending)
 **Admin Dashboard:** ⏳ 20% Complete (Backend ready, UI pending)
 
-**Overall Project Completion:** ~75%
+**Overall Project Completion:** ~85%
 
 ---
 
@@ -301,16 +301,18 @@ aws cognito-idp admin-add-user-to-group \
 
 ## 📝 Next Session Tasks
 
-### Priority 1: Download System Integration
-1. Wire up download button to backend API
-2. Add download quota check before processing
-3. Display remaining downloads in UI
-4. Show Stripe Checkout when quota exceeded
+### Priority 1: Complete Download System Backend Integration
+1. ✅ Download quota check integrated
+2. ✅ Remaining downloads displayed
+3. ✅ Upgrade modal with Stripe Checkout
+4. ⏳ Call `createDownload()` API after local download completes
+5. ⏳ Test download count increments in DynamoDB
 
-### Priority 2: Stripe Checkout Flow
-1. Create StripeCheckout component
-2. Handle checkout success/cancel redirects
-3. Test full subscription flow (signup → 3 downloads → subscribe → unlimited)
+### Priority 2: Stripe Checkout Post-Flow
+1. ✅ Checkout modal and redirect implemented
+2. ⏳ Create success/cancel landing pages
+3. ⏳ Handle URL params for success/cancel flows
+4. ⏳ Test full subscription flow (signup → 3 downloads → subscribe → unlimited)
 
 ### Priority 3: Admin Dashboard
 1. Create admin dashboard page
@@ -319,8 +321,8 @@ aws cognito-idp admin-add-user-to-group \
 
 ### Priority 4: Testing & Deployment
 1. End-to-end testing of complete user flow
-2. Test Stripe webhook events
-3. Deploy to Amplify with production environment variables
+2. Test Stripe webhook events (subscription created/updated/deleted)
+3. Deploy to AWS Amplify with production environment variables
 4. Switch to Stripe live keys for production
 
 ---
@@ -328,11 +330,11 @@ aws cognito-idp admin-add-user-to-group \
 ## ⚠️ Known Issues / Notes
 
 - `.env` file is not committed (add to .gitignore if not already)
-- Admin user needs to be created manually via AWS CLI (see commands below)
+- Admin user needs to be created manually via AWS CLI (see commands above)
 - Stripe test keys are being used (switch to live for production)
-- `src/lib/storage.ts` and `src/pages/FeedbackAdmin.tsx` still reference Supabase but are unused
-- Download button in main app not yet wired to backend API (needs integration)
-- Stripe Checkout component not yet created (backend ready)
+- `src/lib/storage.ts` references Supabase but is unused (can be removed or updated for S3)
+- Download button checks quota but doesn't call backend `createDownload()` yet (tracks locally only)
+- Need success/cancel pages for post-Stripe-Checkout flow
 
 ---
 
