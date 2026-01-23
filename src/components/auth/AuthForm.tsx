@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { Mail, Lock, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
-import { signInWithEmail, signUpWithEmail, resetPassword } from '../../lib/supabase';
+import { Mail, Lock, Loader2, AlertCircle, ArrowRight, User } from 'lucide-react';
+import { cognitoSignIn, cognitoSignUp, cognitoResetPassword } from '../../lib/cognito';
 import { useAuthStore } from '../../store/authStore';
+import { OTPVerification } from './OTPVerification';
 
 type AuthMode = 'signin' | 'signup' | 'reset';
 
@@ -9,9 +10,12 @@ export const AuthForm: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [otpPurpose, setOtpPurpose] = useState<'signup' | 'reset'>('signup');
   const setAuth = useAuthStore((state) => state.setAuth);
 
   const validateForm = useCallback(() => {
@@ -29,28 +33,35 @@ export const AuthForm: React.FC = () => {
       return false;
     }
 
-    // Password validation
-    if (!password.trim()) {
-      setError('Password is required');
+    // Full name validation for signup
+    if (mode === 'signup' && !fullName.trim()) {
+      setError('Full name is required');
       return false;
     }
-    if (mode === 'signup') {
-      if (password.length < 8) {
-        setError('Password must be at least 8 characters long');
+
+    // Password validation (not needed for reset)
+    if (mode !== 'reset') {
+      if (!password.trim()) {
+        setError('Password is required');
         return false;
       }
-      // Add more password requirements as needed
-      const hasUpperCase = /[A-Z]/.test(password);
-      const hasLowerCase = /[a-z]/.test(password);
-      const hasNumbers = /\d/.test(password);
-      if (!(hasUpperCase && hasLowerCase && hasNumbers)) {
-        setError('Password must contain uppercase, lowercase, and numbers');
-        return false;
+      if (mode === 'signup') {
+        if (password.length < 8) {
+          setError('Password must be at least 8 characters long');
+          return false;
+        }
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumbers = /\d/.test(password);
+        if (!(hasUpperCase && hasLowerCase && hasNumbers)) {
+          setError('Password must contain uppercase, lowercase, and numbers');
+          return false;
+        }
       }
     }
 
     return true;
-  }, [email, password, mode]);
+  }, [email, password, fullName, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,46 +74,90 @@ export const AuthForm: React.FC = () => {
 
     try {
       switch (mode) {
-        case 'signin':
-          const signInResult = await signInWithEmail(email, password);
-          if (signInResult) {
+        case 'signin': {
+          const result = await cognitoSignIn(email, password);
+          if (result.success && result.user) {
             setAuth(true);
+          } else if (result.error) {
+            const errorCode = result.error.code;
+            if (errorCode === 'UserNotConfirmedException') {
+              setError('Please verify your email address before signing in');
+              setOtpPurpose('signup');
+              setShowOTPVerification(true);
+            } else if (errorCode === 'NotAuthorizedException' || errorCode === 'UserNotFoundException') {
+              setError('Invalid email or password');
+            } else {
+              setError(result.error.message);
+            }
           }
           break;
+        }
 
-        case 'signup':
-          await signUpWithEmail(email, password);
-          setMessage('Account created! Please check your email to verify your account.');
+        case 'signup': {
+          const result = await cognitoSignUp(email, password, fullName);
+          if (result.success) {
+            setMessage('Account created! Please check your email for a verification code.');
+            setOtpPurpose('signup');
+            setShowOTPVerification(true);
+          } else if (result.error) {
+            const errorCode = result.error.code;
+            if (errorCode === 'UsernameExistsException') {
+              setError('An account with this email already exists');
+            } else if (errorCode === 'InvalidPasswordException') {
+              setError('Password does not meet requirements');
+            } else {
+              setError(result.error.message);
+            }
+          }
           break;
+        }
 
-        case 'reset':
-          await resetPassword(email);
-          setMessage('Password reset instructions have been sent to your email.');
+        case 'reset': {
+          const result = await cognitoResetPassword(email);
+          if (result.success) {
+            setMessage('Password reset code sent! Please check your email.');
+            setOtpPurpose('reset');
+            setShowOTPVerification(true);
+          } else if (result.error) {
+            setError(result.error.message);
+          }
           break;
+        }
       }
     } catch (err) {
       console.error('Auth error:', err);
-      if (err instanceof Error) {
-        // Handle specific error messages
-        const errorMsg = err.message.toLowerCase();
-        if (errorMsg.includes('invalid login credentials')) {
-          setError('Invalid email or password');
-        } else if (errorMsg.includes('email not confirmed')) {
-          setError('Please verify your email address before signing in');
-        } else if (errorMsg.includes('already registered')) {
-          setError('An account with this email already exists');
-        } else if (errorMsg.includes('rate limit')) {
-          setError('Too many attempts. Please try again later');
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError('An unexpected error occurred');
-      }
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleOTPSuccess = () => {
+    setShowOTPVerification(false);
+    if (otpPurpose === 'signup') {
+      setMode('signin');
+      setMessage('Email verified! You can now sign in.');
+    }
+    // For reset, the OTP component will handle the flow
+  };
+
+  const handleOTPCancel = () => {
+    setShowOTPVerification(false);
+    setEmail('');
+    setPassword('');
+    setFullName('');
+  };
+
+  if (showOTPVerification) {
+    return (
+      <OTPVerification
+        email={email}
+        purpose={otpPurpose}
+        onSuccess={handleOTPSuccess}
+        onCancel={handleOTPCancel}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 p-6">
@@ -110,8 +165,8 @@ export const AuthForm: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {mode === 'signin' ? 'Welcome back' : 
-               mode === 'signup' ? 'Create account' : 
+              {mode === 'signin' ? 'Welcome back' :
+               mode === 'signup' ? 'Create account' :
                'Reset password'}
             </h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
@@ -122,6 +177,27 @@ export const AuthForm: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {mode === 'signup' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      setError(null);
+                    }}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
+                  />
+                  <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email address
@@ -160,6 +236,11 @@ export const AuthForm: React.FC = () => {
                   />
                   <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                 </div>
+                {mode === 'signup' && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Must be 8+ characters with uppercase, lowercase, and numbers
+                  </p>
+                )}
               </div>
             )}
 

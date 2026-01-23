@@ -1,50 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Package, Crown, Loader2, AlertCircle, Check } from 'lucide-react';
-import { getCurrentUser, getOrCreateUserProfile, updateUserProfile } from '../../lib/supabase';
-import type { UserProfile as UserProfileType } from '../../types/profile';
+import { User, Mail, Package, Crown, Loader2, AlertCircle, Check, ExternalLink } from 'lucide-react';
+import { useProfileStore } from '../../store/profileStore';
+import { getCustomerPortalUrl } from '../../lib/api';
 
 export const UserProfile: React.FC = () => {
-  const [profile, setProfile] = useState<UserProfileType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { profile, isLoading, error: storeError, fetchProfile, updateProfile } = useProfileStore();
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedEmoji, setSelectedEmoji] = useState<string>('😊');
+  const [fullName, setFullName] = useState<string>('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoadingPortal, setIsLoadingPortal] = useState(false);
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    fetchProfile();
+  }, [fetchProfile]);
 
-  const loadProfile = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const user = await getCurrentUser();
-      if (!user) {
-        throw new Error('Not authenticated');
-      }
-
-      // Use getOrCreateUserProfile to ensure we always have a valid profile
-      const userProfile = await getOrCreateUserProfile(user.id, user.email || '');
-      setProfile(userProfile);
-      setSelectedEmoji(userProfile.avatar_emoji);
-    } catch (err) {
-      console.error('Error loading profile:', err);
-      setError('Failed to load profile');
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (profile) {
+      setSelectedEmoji(profile.avatarEmoji);
+      setFullName(profile.fullName);
     }
-  };
+  }, [profile]);
 
-  const handleUpdateProfile = async (updates: Partial<UserProfileType>) => {
-    if (!profile) return;
+  const handleUpdateProfile = async (updates: { fullName?: string; avatarEmoji?: string }) => {
     try {
-      setIsLoading(true);
+      setIsUpdating(true);
       setError(null);
       setMessage(null);
 
-      await updateUserProfile(profile.id, updates);
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      await updateProfile(updates);
       setMessage('Profile updated successfully');
 
       setTimeout(() => setMessage(null), 3000);
@@ -52,11 +37,63 @@ export const UserProfile: React.FC = () => {
       console.error('Error updating profile:', err);
       setError('Failed to update profile');
     } finally {
-      setIsLoading(false);
+      setIsUpdating(false);
     }
   };
 
-  if (isLoading) {
+  const handleOpenCustomerPortal = async () => {
+    try {
+      setIsLoadingPortal(true);
+      setError(null);
+
+      const result = await getCustomerPortalUrl();
+      if (result.success && result.data) {
+        window.open(result.data.url, '_blank');
+      } else {
+        setError(result.error || 'Failed to open customer portal');
+      }
+    } catch (err) {
+      console.error('Error opening customer portal:', err);
+      setError('Failed to open customer portal');
+    } finally {
+      setIsLoadingPortal(false);
+    }
+  };
+
+  const getSubscriptionLabel = () => {
+    if (!profile) return 'Free';
+
+    switch (profile.subscriptionStatus) {
+      case 'active':
+        return 'Pro';
+      case 'canceling':
+        return 'Pro (Canceling)';
+      default:
+        return 'Free';
+    }
+  };
+
+  const getSubscriptionColor = () => {
+    if (!profile) return 'bg-slate-100 text-slate-800 dark:bg-slate-900/50 dark:text-slate-300';
+
+    switch (profile.subscriptionStatus) {
+      case 'active':
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300';
+      case 'canceling':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300';
+      default:
+        return 'bg-slate-100 text-slate-800 dark:bg-slate-900/50 dark:text-slate-300';
+    }
+  };
+
+  const getRemainingDownloads = () => {
+    if (!profile) return '0';
+    if (profile.subscriptionStatus === 'active') return 'Unlimited';
+    const remaining = 3 - profile.downloadCount;
+    return remaining > 0 ? remaining.toString() : '0';
+  };
+
+  if (isLoading && !profile) {
     return (
       <div className="max-w-4xl mx-auto p-6 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
@@ -66,9 +103,11 @@ export const UserProfile: React.FC = () => {
 
   if (!profile) {
     return (
-      <div className="max-w-4xl mx-auto p-6 flex items-center justify-center text-red-500">
-        <AlertCircle className="w-6 h-6 mr-2" />
-        Failed to load profile
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="flex items-center justify-center text-red-600 bg-red-50 dark:bg-red-900/20 p-6 rounded-lg">
+          <AlertCircle className="w-6 h-6 mr-2" />
+          <span>{storeError || 'Failed to load profile'}</span>
+        </div>
       </div>
     );
   }
@@ -80,19 +119,20 @@ export const UserProfile: React.FC = () => {
         <div className="p-6 border-b border-slate-200 dark:border-gray-700">
           <div className="flex items-center gap-4">
             <button
-              className="w-16 h-16 text-3xl bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors"
+              className="w-16 h-16 text-3xl bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center hover:bg-indigo-200 dark:hover:bg-indigo-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => {
                 const currentIndex = EMOJIS.indexOf(selectedEmoji);
                 const nextEmoji = EMOJIS[(currentIndex + 1) % EMOJIS.length];
                 setSelectedEmoji(nextEmoji);
-                handleUpdateProfile({ avatar_emoji: nextEmoji });
+                handleUpdateProfile({ avatarEmoji: nextEmoji });
               }}
+              disabled={isUpdating}
             >
               {selectedEmoji}
             </button>
             <div>
               <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-                {profile.full_name || 'Your Profile'}
+                {profile.fullName || 'Your Profile'}
               </h1>
               <p className="text-slate-500 dark:text-gray-400">
                 Manage your account settings
@@ -106,14 +146,14 @@ export const UserProfile: React.FC = () => {
           {/* Messages */}
           {error && (
             <div className="flex items-center gap-2 text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-              <AlertCircle size={18} />
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
               <p className="text-sm">{error}</p>
             </div>
           )}
 
           {message && (
             <div className="flex items-center gap-2 text-green-600 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-              <Check size={18} />
+              <Check className="h-5 w-5 flex-shrink-0" />
               <p className="text-sm">{message}</p>
             </div>
           )}
@@ -127,14 +167,24 @@ export const UserProfile: React.FC = () => {
                   Full Name
                 </div>
               </label>
-              <input
-                type="text"
-                value={profile.full_name}
-                onChange={(e) =>
-                  handleUpdateProfile({ full_name: e.target.value })
-                }
-                className="w-full p-2.5 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="flex-1 p-2.5 border border-slate-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
+                  disabled={isUpdating}
+                />
+                {fullName !== profile.fullName && (
+                  <button
+                    onClick={() => handleUpdateProfile({ fullName })}
+                    disabled={isUpdating}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  >
+                    {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+                  </button>
+                )}
+              </div>
             </div>
 
             <div>
@@ -160,10 +210,8 @@ export const UserProfile: React.FC = () => {
                 </div>
               </label>
               <div className="p-2.5 border border-slate-200 dark:border-gray-700 rounded-lg bg-slate-50 dark:bg-gray-700">
-                <span className="text-slate-700 dark:text-gray-300">
-                  {profile.downloads_remaining === null
-                    ? 'Unlimited'
-                    : profile.downloads_remaining}
+                <span className="text-slate-700 dark:text-gray-300 font-medium">
+                  {getRemainingDownloads()}
                 </span>
               </div>
             </div>
@@ -175,17 +223,30 @@ export const UserProfile: React.FC = () => {
                   Subscription Status
                 </div>
               </label>
-              <div className="p-2.5 border border-slate-200 dark:border-gray-700 rounded-lg bg-slate-50 dark:bg-gray-700">
-                <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    profile.subscription_status === 'premium'
-                      ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300'
-                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
-                  }`}
-                >
-                  {profile.subscription_status.charAt(0).toUpperCase() +
-                    profile.subscription_status.slice(1)}
-                </span>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 p-2.5 border border-slate-200 dark:border-gray-700 rounded-lg bg-slate-50 dark:bg-gray-700">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSubscriptionColor()}`}
+                  >
+                    {getSubscriptionLabel()}
+                  </span>
+                </div>
+                {profile.subscriptionStatus !== 'free' && (
+                  <button
+                    onClick={handleOpenCustomerPortal}
+                    disabled={isLoadingPortal}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                  >
+                    {isLoadingPortal ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <span>Manage</span>
+                        <ExternalLink size={14} />
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
+import { cognitoGetCurrentUser } from '../lib/cognito';
+import { getUserProfile, updateUserProfile, UpdateProfileRequest } from '../lib/api';
 import { UserProfile } from '../types/profile';
 
 interface ProfileState {
@@ -7,8 +8,7 @@ interface ProfileState {
   isLoading: boolean;
   error: string | null;
   fetchProfile: () => Promise<void>;
-  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  updateAvatar: (file: File) => Promise<void>;
+  updateProfile: (updates: UpdateProfileRequest) => Promise<void>;
 }
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
@@ -19,19 +19,22 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   fetchProfile: async () => {
     try {
       set({ isLoading: true, error: null });
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      // Check if user is authenticated via Cognito
+      const user = await cognitoGetCurrentUser();
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
 
-      if (error) throw error;
-      set({ profile: data });
+      // Fetch profile from backend
+      const result = await getUserProfile();
+      if (result.success && result.data) {
+        set({ profile: result.data });
+      } else {
+        throw new Error(result.error || 'Failed to fetch profile');
+      }
     } catch (error) {
+      console.error('Fetch profile error:', error);
       set({ error: error instanceof Error ? error.message : 'Failed to fetch profile' });
     } finally {
       set({ isLoading: false });
@@ -41,52 +44,23 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   updateProfile: async (updates) => {
     try {
       set({ isLoading: true, error: null });
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('id', user.id);
+      // Check if user is authenticated
+      const user = await cognitoGetCurrentUser();
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
 
-      if (error) throw error;
-      
-      // Refresh profile
-      await get().fetchProfile();
+      // Update profile via backend
+      const result = await updateUserProfile(updates);
+      if (result.success && result.data) {
+        set({ profile: result.data });
+      } else {
+        throw new Error(result.error || 'Failed to update profile');
+      }
     } catch (error) {
+      console.error('Update profile error:', error);
       set({ error: error instanceof Error ? error.message : 'Failed to update profile' });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  updateAvatar: async (file) => {
-    try {
-      set({ isLoading: true, error: null });
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Upload avatar
-      const fileExt = file.name.split('.').pop();
-      const filePath = `avatars/${user.id}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // Update profile with new avatar URL
-      await get().updateProfile({ avatar_url: publicUrl });
-    } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'Failed to update avatar' });
     } finally {
       set({ isLoading: false });
     }
