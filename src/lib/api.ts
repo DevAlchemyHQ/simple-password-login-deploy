@@ -89,6 +89,27 @@ export async function createDownload(
   });
 }
 
+// Track download (for client-side downloads)
+export interface TrackDownloadRequest {
+  fileName: string;
+  fileSize?: number;
+}
+
+export interface TrackDownloadResponse {
+  success: boolean;
+  downloadId: string;
+  remaining: number;
+}
+
+export async function trackDownload(
+  request: TrackDownloadRequest
+): Promise<ApiResponse<TrackDownloadResponse>> {
+  return apiCall<TrackDownloadResponse>('/downloads/track', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
 // Get Stripe Customer Portal URL
 export interface CustomerPortalResponse {
   url: string;

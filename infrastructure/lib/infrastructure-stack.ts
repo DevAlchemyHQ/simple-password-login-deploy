@@ -230,6 +230,20 @@ export class InfrastructureStack extends cdk.Stack {
     downloadsBucket.grantPut(downloadHandlerLambda);
     downloadsBucket.grantRead(downloadHandlerLambda);
 
+    // Download Track Lambda (for client-side downloads)
+    const downloadTrackLambda = new NodejsFunction(this, 'DownloadTrackLambda', {
+      functionName: `exametry-download-track-${env}`,
+      entry: 'lambda/download-track.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      timeout: cdk.Duration.seconds(10),
+      environment: lambdaEnvironment,
+      logRetention: logs.RetentionDays.ONE_WEEK,
+    });
+
+    usersTable.grantReadWriteData(downloadTrackLambda);
+    downloadsTable.grantWriteData(downloadTrackLambda);
+
     // Stripe Webhook Lambda
     const stripeWebhookLambda = new NodejsFunction(this, 'StripeWebhookLambda', {
       functionName: `exametry-stripe-webhook-${env}`,
@@ -334,6 +348,13 @@ export class InfrastructureStack extends cdk.Stack {
       path: '/downloads',
       methods: [apigateway.HttpMethod.POST],
       integration: new apigatewayIntegrations.HttpLambdaIntegration('DownloadHandlerIntegration', downloadHandlerLambda),
+      authorizer,
+    });
+
+    httpApi.addRoutes({
+      path: '/downloads/track',
+      methods: [apigateway.HttpMethod.POST],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration('DownloadTrackIntegration', downloadTrackLambda),
       authorizer,
     });
 

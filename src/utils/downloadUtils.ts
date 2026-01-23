@@ -2,6 +2,7 @@ import { ImageMetadata, FormData } from '../types';
 import { createDownloadPackage, generateMetadataContent } from './fileUtils';
 import { validateDescription } from './fileValidation';
 import { generateMetadataFileName, generateImageFileName } from './fileNaming';
+import { trackDownload } from '../lib/api';
 
 /**
  * Check if File System Access API is supported
@@ -135,6 +136,18 @@ export const handleSingleSelectDownload = async (
       label: `${formData.elr.trim()}_${formData.structureNo.trim()}_${primaryDate}`,
       value: selectedImagesList.length
     });
+
+    // Track download in backend
+    try {
+      await trackDownload({
+        fileName: folderName,
+        fileSize: selectedImagesList.length,
+      });
+    } catch (error) {
+      console.error('Failed to track download:', error);
+      // Don't fail the download if tracking fails
+    }
+
     return {
       success: true,
       message: `Successfully saved ${selectedImagesList.length} file${selectedImagesList.length > 1 ? 's' : ''} to folder: ${folderName}`
@@ -163,6 +176,17 @@ export const handleSingleSelectDownload = async (
     label: `${formData.elr.trim()}_${formData.structureNo.trim()}_${dateStr}`,
     value: selectedImagesList.length
   });
+
+  // Track download in backend
+  try {
+    await trackDownload({
+      fileName: zipFileName,
+      fileSize: zipBlob.size,
+    });
+  } catch (error) {
+    console.error('Failed to track download:', error);
+    // Don't fail the download if tracking fails
+  }
 
   return {
     success: true,
@@ -251,6 +275,18 @@ export const handleBatchDragDownload = async (
       label: `${formData.elr.trim()}_${formData.structureNo.trim()}_${primaryDate}`,
       value: imagesForDownload.length
     });
+
+    // Track download in backend
+    try {
+      await trackDownload({
+        fileName: folderName,
+        fileSize: imagesForDownload.length,
+      });
+    } catch (error) {
+      console.error('Failed to track download:', error);
+      // Don't fail the download if tracking fails
+    }
+
     return {
       success: true,
       message: `Successfully saved ${imagesForDownload.length} file${imagesForDownload.length > 1 ? 's' : ''} to folder: ${folderName}`
@@ -279,6 +315,17 @@ export const handleBatchDragDownload = async (
     label: `${formData.elr.trim()}_${formData.structureNo.trim()}_${dateStr}`,
     value: imagesForDownload.length
   });
+
+  // Track download in backend
+  try {
+    await trackDownload({
+      fileName: zipFileName,
+      fileSize: zipBlob.size,
+    });
+  } catch (error) {
+    console.error('Failed to track download:', error);
+    // Don't fail the download if tracking fails
+  }
 
   return {
     success: true,
