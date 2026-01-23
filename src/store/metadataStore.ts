@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { ImageMetadata, FormData, BulkDefect, ViewMode, SortDirection } from '../types';
-import { supabase } from '../lib/supabase';
 
 const initialFormData: FormData = {
   elr: '',

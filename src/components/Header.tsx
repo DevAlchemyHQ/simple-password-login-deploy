@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { LogOut, Info, Sun, Moon, Heart, User } from 'lucide-react';
+import { LogOut, Info, Sun, Moon, User } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
-import { signOut } from '../lib/supabase';
-import { DONATION_TIERS } from '../utils/donationConfig';
+import { cognitoSignOut } from '../lib/cognito';
 
 interface HeaderProps {
   activeTab: string;
@@ -41,8 +40,12 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
   const handleLogout = async () => {
     try {
       setShowProfileMenu(false);
-      await signOut();
-      await logout();
+      const result = await cognitoSignOut();
+      if (result.success) {
+        logout();
+      } else {
+        console.error('Logout error:', result.error);
+      }
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -148,16 +151,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
 
                 {showProfileMenu && (
                   <div className="profile-menu absolute right-0 top-11 w-48 bg-neutral-800 rounded-lg shadow-large border border-neutral-700 z-50 overflow-hidden">
-                    <a
-                      href={DONATION_TIERS[1].stripeLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setShowProfileMenu(false)}
-                      className="w-full px-4 py-2.5 text-left text-sm text-neutral-300 hover:bg-neutral-700 flex items-center gap-2 transition-colors border-b border-neutral-700"
-                    >
-                      <Heart size={16} className="text-red-500" />
-                      Support Us
-                    </a>
                     <button
                       onClick={handleLogout}
                       className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-neutral-700 flex items-center gap-2 transition-colors"

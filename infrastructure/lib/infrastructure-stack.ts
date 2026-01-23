@@ -288,6 +288,19 @@ export class InfrastructureStack extends cdk.Stack {
     downloadsTable.grantReadData(adminMetricsLambda);
     stripeSecretKey.grantRead(adminMetricsLambda);
 
+    // User Profile Lambda
+    const userProfileLambda = new NodejsFunction(this, 'UserProfileLambda', {
+      functionName: `exametry-user-profile-${env}`,
+      entry: 'lambda/user-profile.ts',
+      handler: 'handler',
+      runtime: lambda.Runtime.NODEJS_20_X,
+      timeout: cdk.Duration.seconds(10),
+      environment: lambdaEnvironment,
+      logRetention: logs.RetentionDays.ONE_WEEK,
+    });
+
+    usersTable.grantReadWriteData(userProfileLambda);
+
     // ============================================
     // API Gateway
     // ============================================
@@ -336,6 +349,14 @@ export class InfrastructureStack extends cdk.Stack {
       path: '/subscription/checkout',
       methods: [apigateway.HttpMethod.POST],
       integration: new apigatewayIntegrations.HttpLambdaIntegration('SubscriptionCheckoutIntegration', subscriptionCheckoutLambda),
+      authorizer,
+    });
+
+    // User profile routes
+    httpApi.addRoutes({
+      path: '/user/profile',
+      methods: [apigateway.HttpMethod.GET, apigateway.HttpMethod.PUT],
+      integration: new apigatewayIntegrations.HttpLambdaIntegration('UserProfileIntegration', userProfileLambda),
       authorizer,
     });
 

@@ -139,3 +139,35 @@ export interface AdminMetricsResponse {
 export async function getAdminMetrics(): Promise<ApiResponse<AdminMetricsResponse>> {
   return apiCall<AdminMetricsResponse>('/admin/metrics');
 }
+
+// User Profile
+export interface UserProfileResponse {
+  userId: string;
+  email: string;
+  fullName: string;
+  avatarEmoji: string;
+  avatarUrl?: string;
+  subscriptionStatus: 'free' | 'active' | 'canceling';
+  downloadCount: number;
+  stripeCustomerId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getUserProfile(): Promise<ApiResponse<UserProfileResponse>> {
+  return apiCall<UserProfileResponse>('/user/profile');
+}
+
+export interface UpdateProfileRequest {
+  fullName?: string;
+  avatarEmoji?: string;
+}
+
+export async function updateUserProfile(
+  updates: UpdateProfileRequest
+): Promise<ApiResponse<UserProfileResponse>> {
+  return apiCall<UserProfileResponse>('/user/profile', {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
+}
