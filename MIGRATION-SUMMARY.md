@@ -40,7 +40,7 @@ Complete migration from Supabase to full AWS backend infrastructure with Stripe 
 - `exametry-avatars-dev-913524945607` - User avatars
 - `exametry-downloads-dev-913524945607` - Processed downloads (7-day lifecycle)
 
-**Lambda Functions (7):**
+**Lambda Functions (8):**
 1. `exametry-auth-post-confirmation-dev` - Creates user in DynamoDB + Stripe customer
 2. `exametry-download-check-dev` - Validates download quota
 3. `exametry-download-handler-dev` - Generates presigned URLs
@@ -48,6 +48,7 @@ Complete migration from Supabase to full AWS backend infrastructure with Stripe 
 5. `exametry-subscription-portal-dev` - Generates Customer Portal URL
 6. `exametry-subscription-checkout-dev` - Creates Stripe Checkout session
 7. `exametry-admin-metrics-dev` - Dashboard data aggregation
+8. `exametry-user-profile-dev` - User profile GET/PUT operations
 
 **API Gateway:**
 - Base URL: `https://3hbkcdkri1.execute-api.eu-west-2.amazonaws.com`
@@ -56,6 +57,8 @@ Complete migration from Supabase to full AWS backend infrastructure with Stripe 
   - POST `/downloads` - Create download (JWT auth)
   - GET `/subscription/portal` - Get Stripe portal URL (JWT auth)
   - POST `/subscription/checkout` - Create checkout session (JWT auth)
+  - GET `/user/profile` - Get user profile (JWT auth)
+  - PUT `/user/profile` - Update user profile (JWT auth)
   - GET `/admin/metrics` - Dashboard metrics (Admin JWT auth)
   - POST `/webhooks/stripe` - Stripe webhook handler (Signature auth)
 
@@ -89,7 +92,7 @@ Complete migration from Supabase to full AWS backend infrastructure with Stripe 
 
 ---
 
-### 3. Frontend Migration (Partial - Foundation Complete)
+### 3. Frontend Migration (Core Complete ~70%)
 
 #### Completed:
 ✅ Removed Supabase completely
@@ -102,60 +105,58 @@ Complete migration from Supabase to full AWS backend infrastructure with Stripe 
 ✅ Created `.env.supabase.backup` (backup of old config)
 ✅ Deleted `src/lib/supabase.ts`
 ✅ Created `src/lib/cognito.ts` - Full Cognito authentication library
-✅ Created `src/lib/api.ts` - Backend API client
+✅ Created `src/lib/api.ts` - Backend API client with all endpoints
 ✅ Updated `src/components/auth/AuthForm.tsx` - Now uses Cognito with OTP flow
+✅ Updated `src/components/auth/OTPVerification.tsx` - Handles signup & password reset
+✅ Removed legacy password reset components (ResetPassword.tsx, SetNewPassword.tsx)
+✅ Updated `src/components/Header.tsx` - Uses Cognito signOut
+✅ Updated `src/store/profileStore.ts` - Uses Cognito and new API
+✅ Updated `src/store/projectStore.ts` - Simplified, removed Supabase
+✅ Updated `src/store/metadataStore.ts` - Removed Supabase import
+✅ Updated `src/store/pdfStore.ts` - Simplified, local state only
+✅ Updated `src/components/profile/UserProfile.tsx` - Full integration with new API
+✅ Updated `src/types/profile.ts` - Matches DynamoDB schema
 
 #### New Files Created:
 ```
-src/lib/cognito.ts          - Cognito authentication functions
-src/lib/api.ts              - API client for backend calls
-.env                        - AWS/Stripe configuration
-.env.supabase.backup        - Backup of Supabase config
-infrastructure/             - Complete AWS CDK project
-AWS_OUTPUTS.md              - Deployment outputs reference
-ARCHITECTURE-sonnet-4.5.md  - Full architecture documentation
-MIGRATION-SUMMARY.md        - This file
+src/lib/cognito.ts                      - Cognito authentication functions
+src/lib/api.ts                          - API client for backend calls
+.env                                    - AWS/Stripe configuration
+.env.supabase.backup                    - Backup of Supabase config
+infrastructure/                         - Complete AWS CDK project
+infrastructure/lambda/user-profile.ts   - User profile Lambda handler
+AWS_OUTPUTS.md                          - Deployment outputs reference
+ARCHITECTURE-sonnet-4.5.md              - Full architecture documentation
+MIGRATION-SUMMARY.md                    - This file
 ```
 
 ---
 
 ## ⏳ REMAINING WORK
 
-### Components Still Using Supabase (Need Updates):
+### Minor Cleanup (Optional):
 
-1. **Auth Components:**
-   - `src/components/auth/OTPVerification.tsx` - Update to use Cognito
-   - `src/components/auth/ResetPassword.tsx` - Update to use Cognito
-   - `src/components/auth/SetNewPassword.tsx` - Update to use Cognito
+1. **Storage:**
+   - `src/lib/storage.ts` - Currently unused, references Supabase (can be removed or updated for S3)
 
-2. **Profile & Stores:**
-   - `src/components/profile/UserProfile.tsx` - Update to use Cognito user
-   - `src/components/Header.tsx` - Update auth state
-   - `src/store/profileStore.ts` - Replace Supabase calls with API calls
-   - `src/store/projectStore.ts` - Remove Supabase references
-   - `src/store/metadataStore.ts` - Remove Supabase references
-   - `src/store/pdfStore.ts` - Remove Supabase references
+2. **Admin:**
+   - `src/pages/FeedbackAdmin.tsx` - References Supabase (feedback system not in new architecture)
 
-3. **Storage:**
-   - `src/lib/storage.ts` - Update to use S3 presigned URLs
+### New Features to Implement (Next Phase):
 
-4. **Admin:**
-   - `src/pages/FeedbackAdmin.tsx` - Update to use new admin API
+1. **Download Quota System (Backend Ready, Frontend Needed):**
+   - Integrate download check API before allowing downloads
+   - Display remaining downloads for free users in download UI
+   - Show Stripe Checkout when limit reached
+   - Wire up download creation to backend API
 
-### New Features to Implement:
+2. **Stripe Checkout Integration (Backend Ready, Frontend Needed):**
+   - Add Stripe Checkout component for subscription flow
+   - Handle post-checkout success/cancel redirects
+   - Display subscription upgrade prompts
+   - Test end-to-end subscription flow
 
-1. **Download Quota System:**
-   - Integrate download check before allowing downloads
-   - Display remaining downloads for free users
-   - Show upgrade prompt when limit reached
-
-2. **Stripe Integration:**
-   - Add Stripe Checkout component
-   - Add Customer Portal link in user profile
-   - Display subscription status badge
-   - Handle subscription success/cancel flows
-
-3. **Admin Dashboard:**
+3. **Admin Dashboard (Backend Ready, Frontend Needed):**
    - Create admin dashboard page
    - Display metrics from `/admin/metrics` endpoint
    - User management interface
@@ -275,13 +276,16 @@ aws cognito-idp admin-add-user-to-group \
 
 ## 📊 Progress Metrics
 
-**Backend:** ✅ 100% Complete (Deployed & Tested)
-**Frontend Foundation:** ✅ 100% Complete
-**Frontend Components:** 🟡 ~15% Complete
-**Stripe Integration:** 🟡 50% Complete (Backend done, Frontend pending)
-**Admin Dashboard:** ⏳ 0% Complete
+**Backend Infrastructure:** ✅ 100% Complete (8 Lambda functions deployed)
+**Backend API:** ✅ 100% Complete (All endpoints tested and working)
+**Frontend Auth:** ✅ 100% Complete (Full Cognito integration)
+**Frontend Profile:** ✅ 100% Complete (Profile management with API)
+**Frontend Stores:** ✅ 100% Complete (All migrated from Supabase)
+**Stripe Integration:** 🟡 70% Complete (Backend done, Customer Portal integrated, Checkout pending)
+**Download System:** 🟡 50% Complete (Backend ready, Frontend integration pending)
+**Admin Dashboard:** ⏳ 20% Complete (Backend ready, UI pending)
 
-**Overall Project Completion:** ~60%
+**Overall Project Completion:** ~75%
 
 ---
 
@@ -297,26 +301,38 @@ aws cognito-idp admin-add-user-to-group \
 
 ## 📝 Next Session Tasks
 
-1. Update OTPVerification component to use Cognito
-2. Update password reset components
-3. Update profileStore to use Cognito and API
-4. Remove remaining Supabase references
-5. Implement download quota checking UI
-6. Add Stripe Checkout integration
-7. Add Customer Portal integration
-8. Build admin dashboard
-9. Test complete user flow
-10. Deploy to Amplify
+### Priority 1: Download System Integration
+1. Wire up download button to backend API
+2. Add download quota check before processing
+3. Display remaining downloads in UI
+4. Show Stripe Checkout when quota exceeded
+
+### Priority 2: Stripe Checkout Flow
+1. Create StripeCheckout component
+2. Handle checkout success/cancel redirects
+3. Test full subscription flow (signup → 3 downloads → subscribe → unlimited)
+
+### Priority 3: Admin Dashboard
+1. Create admin dashboard page
+2. Display metrics from `/admin/metrics` API
+3. Add user management interface
+
+### Priority 4: Testing & Deployment
+1. End-to-end testing of complete user flow
+2. Test Stripe webhook events
+3. Deploy to Amplify with production environment variables
+4. Switch to Stripe live keys for production
 
 ---
 
 ## ⚠️ Known Issues / Notes
 
 - `.env` file is not committed (add to .gitignore if not already)
-- Some components still reference Supabase and will throw errors
-- AuthForm expects OTPVerification component to accept new props
-- Admin user needs to be created manually via AWS CLI
+- Admin user needs to be created manually via AWS CLI (see commands below)
 - Stripe test keys are being used (switch to live for production)
+- `src/lib/storage.ts` and `src/pages/FeedbackAdmin.tsx` still reference Supabase but are unused
+- Download button in main app not yet wired to backend API (needs integration)
+- Stripe Checkout component not yet created (backend ready)
 
 ---
 
