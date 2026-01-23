@@ -12,6 +12,7 @@ const FeedbackAdmin = lazy(() => import('./pages/FeedbackAdmin').then(m => ({ de
 const UserProfile = lazy(() => import('./components/profile/UserProfile').then(m => ({ default: m.UserProfile })));
 const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess').then(m => ({ default: m.CheckoutSuccess })));
 const CheckoutCancel = lazy(() => import('./pages/CheckoutCancel').then(m => ({ default: m.CheckoutCancel })));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -44,6 +45,16 @@ const App: React.FC = () => {
               <ErrorBoundary>
                 <Suspense fallback={<PageLoader />}>
                   <FeedbackAdmin />
+                </Suspense>
+              </ErrorBoundary>
+            ) : <Navigate to="/" replace />}
+          />
+          <Route
+            path="/admin"
+            element={isAuthenticated ? (
+              <ErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
+                  <AdminDashboard />
                 </Suspense>
               </ErrorBoundary>
             ) : <Navigate to="/" replace />}
