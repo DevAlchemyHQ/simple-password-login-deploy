@@ -92,7 +92,7 @@ Complete migration from Supabase to full AWS backend infrastructure with Stripe 
 
 ---
 
-### 3. Frontend Migration (Core Complete ~85%)
+### 3. Frontend Migration (Core Complete ~90%)
 
 #### Completed:
 ✅ Removed Supabase completely
@@ -118,6 +118,9 @@ Complete migration from Supabase to full AWS backend infrastructure with Stripe 
 ✅ Updated `src/types/profile.ts` - Matches DynamoDB schema
 ✅ Updated `src/components/DownloadButton.tsx` - Full download quota integration with Stripe Checkout
 ✅ Replaced `src/pages/FeedbackAdmin.tsx` - Placeholder for AWS migration
+✅ Created `src/pages/CheckoutSuccess.tsx` - Post-checkout success page with profile refresh
+✅ Created `src/pages/CheckoutCancel.tsx` - Post-checkout cancel page
+✅ Updated `src/App.tsx` - Added /checkout/success and /checkout/cancel routes
 
 #### New Files Created:
 ```
@@ -152,8 +155,11 @@ MIGRATION-SUMMARY.md                    - This file
 
 2. **Stripe Checkout Post-Flow:**
    - ✅ Upgrade modal with Checkout redirect implemented
-   - ⏳ Handle post-checkout success/cancel redirects (landing pages)
-   - ⏳ Show "subscription activated" success message
+   - ✅ Handle post-checkout success/cancel redirects (landing pages created)
+   - ✅ Show "subscription activated" success message with auto-refresh
+   - ✅ Created CheckoutSuccess page (/checkout/success)
+   - ✅ Created CheckoutCancel page (/checkout/cancel)
+   - ✅ Updated Lambda with correct redirect URLs
    - ⏳ Test end-to-end subscription flow (signup → 3 downloads → upgrade → unlimited)
 
 3. **Admin Dashboard (Backend Ready, Frontend Needed):**
@@ -281,11 +287,11 @@ aws cognito-idp admin-add-user-to-group \
 **Frontend Auth:** ✅ 100% Complete (Full Cognito integration)
 **Frontend Profile:** ✅ 100% Complete (Profile management with API)
 **Frontend Stores:** ✅ 100% Complete (All migrated from Supabase)
-**Stripe Integration:** ✅ 90% Complete (Backend done, Customer Portal integrated, Checkout modal done, post-flow pending)
+**Stripe Integration:** ✅ 95% Complete (Backend done, Customer Portal, Checkout modal, success/cancel pages done)
 **Download System:** 🟡 85% Complete (Backend ready, Frontend quota check done, backend call integration pending)
 **Admin Dashboard:** ⏳ 20% Complete (Backend ready, UI pending)
 
-**Overall Project Completion:** ~85%
+**Overall Project Completion:** ~90%
 
 ---
 
@@ -310,9 +316,10 @@ aws cognito-idp admin-add-user-to-group \
 
 ### Priority 2: Stripe Checkout Post-Flow
 1. ✅ Checkout modal and redirect implemented
-2. ⏳ Create success/cancel landing pages
-3. ⏳ Handle URL params for success/cancel flows
-4. ⏳ Test full subscription flow (signup → 3 downloads → subscribe → unlimited)
+2. ✅ Create success/cancel landing pages (CheckoutSuccess and CheckoutCancel)
+3. ✅ Handle URL routing for /checkout/success and /checkout/cancel
+4. ✅ Auto-refresh profile after successful subscription
+5. ⏳ Test full subscription flow (signup → 3 downloads → subscribe → unlimited)
 
 ### Priority 3: Admin Dashboard
 1. Create admin dashboard page
@@ -334,7 +341,7 @@ aws cognito-idp admin-add-user-to-group \
 - Stripe test keys are being used (switch to live for production)
 - `src/lib/storage.ts` references Supabase but is unused (can be removed or updated for S3)
 - Download button checks quota but doesn't call backend `createDownload()` yet (tracks locally only)
-- Need success/cancel pages for post-Stripe-Checkout flow
+- End-to-end testing needed for complete subscription flow
 
 ---
 
