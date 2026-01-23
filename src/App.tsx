@@ -10,6 +10,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 // Lazy load non-critical routes
 const FeedbackAdmin = lazy(() => import('./pages/FeedbackAdmin').then(m => ({ default: m.FeedbackAdmin })));
 const UserProfile = lazy(() => import('./components/profile/UserProfile').then(m => ({ default: m.UserProfile })));
+const CheckoutSuccess = lazy(() => import('./pages/CheckoutSuccess').then(m => ({ default: m.CheckoutSuccess })));
+const CheckoutCancel = lazy(() => import('./pages/CheckoutCancel').then(m => ({ default: m.CheckoutCancel })));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -59,6 +61,34 @@ const App: React.FC = () => {
                     </ErrorBoundary>
                   </MainLayout>
                 </div>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/checkout/success"
+            element={
+              isAuthenticated ? (
+                <ErrorBoundary>
+                  <Suspense fallback={<PageLoader />}>
+                    <CheckoutSuccess />
+                  </Suspense>
+                </ErrorBoundary>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/checkout/cancel"
+            element={
+              isAuthenticated ? (
+                <ErrorBoundary>
+                  <Suspense fallback={<PageLoader />}>
+                    <CheckoutCancel />
+                  </Suspense>
+                </ErrorBoundary>
               ) : (
                 <Navigate to="/" replace />
               )
