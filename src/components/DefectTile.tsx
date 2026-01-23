@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, GripVertical, ChevronDown, AlertCircle, Search, Plus } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { validateDescription } from '../utils/fileValidation';
-import { useMetadataStore } from '../store/metadataStore';
+import { useClickOutside } from '../hooks/useClickOutside';
+import { filterFilesByQuery } from '../utils/imageFiltering';
 
 interface DefectTileProps {
   id: string;
@@ -19,7 +20,7 @@ interface DefectTileProps {
   onAddBelow?: () => void;
 }
 
-export const DefectTile: React.FC<DefectTileProps> = ({
+export const DefectTile: React.FC<DefectTileProps> = React.memo(({
   id,
   photoNumber,
   description,
@@ -52,20 +53,8 @@ export const DefectTile: React.FC<DefectTileProps> = ({
   }, [isDropdownOpen]);
 
   // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-
-    if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [isDropdownOpen]);
+  const closeDropdown = useCallback(() => setIsDropdownOpen(false), []);
+  useClickOutside(dropdownRef, closeDropdown, isDropdownOpen);
 
   const {
     attributes,
@@ -141,86 +130,8 @@ export const DefectTile: React.FC<DefectTileProps> = ({
   };
 
   // Filter files based on search query (by title/filename or last 4 digits)
-  const getLastFourDigits = (filename: string): string => {
-    // Remove file extension first
-    const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
-    
-    // Strategy: Find the last sequence of 4+ consecutive digits in the filename
-    // This correctly handles cases like "PB080001" -> "0001", "PB080001 copy" -> "0001"
-    // We look for the last occurrence of 4+ consecutive digits and take the last 4
-    
-    // Find all sequences of consecutive digits
-    const digitSequences = nameWithoutExt.match(/\d+/g);
-    if (!digitSequences || digitSequences.length === 0) {
-      return ''; // No digits found
-    }
-    
-    // Get the last sequence of digits (this is the photo number)
-    const lastSequence = digitSequences[digitSequences.length - 1];
-    
-    // If the sequence has 4 or more digits, take the last 4
-    if (lastSequence.length >= 4) {
-      return lastSequence.slice(-4);
-    }
-    
-    // If less than 4 digits, pad with leading zeros
-    return lastSequence.padStart(4, '0');
-  };
-
   const filteredFiles = React.useMemo(() => {
-    // Early return if no search query
-    if (!searchQuery) {
-      return availableFiles;
-    }
-
-    const query = String(searchQuery).trim();
-    if (!query || query.length === 0) {
-      return availableFiles;
-    }
-
-    // Check if query is purely numeric (only digits, no letters, spaces, or special chars)
-    // This must be checked BEFORE any other processing
-    const isNumericQuery = /^\d+$/.test(query);
-    
-    // If numeric, we MUST only search by last 4 digits, never by title
-    if (isNumericQuery) {
-      const filtered = availableFiles.filter(file => {
-        const lastFour = getLastFourDigits(file);
-        
-        // Must have exactly 4 digits
-        if (!lastFour || lastFour.length !== 4) {
-          return false;
-        }
-        
-        if (query.length === 1) {
-          // Single digit: must be the last digit, and all preceding digits must be zeros
-          // Example: Query "1" matches "0001" (ends with "1" and preceding are "000")
-          //          Query "1" does NOT match "0011" (ends with "1" but preceding are "001", not all zeros)
-          //          Query "4" matches "0004" but NOT "0001"
-          const lastDigit = lastFour.slice(-1);
-          const precedingDigits = lastFour.slice(0, -1);
-          
-          // Strict check: last digit must match AND all preceding must be zeros
-          const digitMatches = lastDigit === query;
-          const precedingAreZeros = /^0+$/.test(precedingDigits);
-          
-          return digitMatches && precedingAreZeros;
-        } else {
-          // Multi-digit: must end with query
-          // Example: Query "01" matches "0001", "001" matches "0001"
-          return lastFour.endsWith(query);
-        }
-      });
-      
-      return filtered;
-    }
-    
-    // Non-numeric query: search by title/filename
-    const queryLower = query.toLowerCase();
-    return availableFiles.filter(file => {
-      const fileName = file.toLowerCase();
-      return fileName.includes(queryLower);
-    });
+    return filterFilesByQuery(availableFiles, searchQuery);
   }, [availableFiles, searchQuery]);
 
   // Auto-focus first result when search changes
@@ -438,4 +349,4 @@ export const DefectTile: React.FC<DefectTileProps> = ({
       )}
     </div>
   );
-};
+});

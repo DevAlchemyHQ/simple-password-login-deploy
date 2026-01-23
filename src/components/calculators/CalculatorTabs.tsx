@@ -7,7 +7,7 @@ import { BasicCalculator } from './BasicCalculator';
 export const CalculatorTabs: React.FC = () => {
   return (
     <div className="h-[calc(100vh-120px)] overflow-auto p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-4 gap-6">
         <BasicCalculator />
         <MeasurementReference />
         <UnitConverter />

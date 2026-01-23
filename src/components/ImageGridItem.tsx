@@ -11,7 +11,7 @@ interface ImageGridItemProps {
   gridWidth: number;
 }
 
-// Component for draggable image
+// Component for draggable image - memoized to prevent unnecessary re-renders
 const DraggableImage: React.FC<{
   img: ImageMetadata;
   isSelected: boolean;
@@ -19,7 +19,7 @@ const DraggableImage: React.FC<{
   onToggle: () => void;
   onEnlarge: (imageId: string) => void;
   bulkDefectsCount: number;
-}> = ({ img, isSelected, onToggle, onEnlarge, bulkDefectsCount }) => {
+}> = React.memo(({ img, isSelected, onToggle, onEnlarge, bulkDefectsCount }) => {
   const { bulkDefects } = useMetadataStore();
 
   // Automatically enable drag mode when tiles exist
@@ -131,7 +131,7 @@ const DraggableImage: React.FC<{
       </div>
     </div>
   );
-};
+});
 
 export const ImageGridItem: React.FC<ImageGridItemProps> = ({ images, gridWidth }) => {
   const { selectedImages, toggleImageSelection, bulkDefects } = useMetadataStore();

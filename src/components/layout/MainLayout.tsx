@@ -91,8 +91,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           <div className="h-full">
             {/* Images Tab */}
             <div className={`h-full ${activeTab === 'images' ? '' : 'hidden'}`}>
-              <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-4">
-                <div className="lg:col-span-2 overflow-hidden">
+              <div className="h-full grid grid-cols-12 gap-4">
+                <div className="col-span-2 overflow-hidden">
                   <Sidebar />
                 </div>
                 <MainContent />
@@ -107,16 +107,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
 
             {/* PDF Tab */}
-            <div className={`lg:col-span-10 h-full overflow-hidden ${activeTab === 'pdf' ? '' : 'hidden'}`}>
+            <div className={`col-span-10 h-full overflow-hidden ${activeTab === 'pdf' ? '' : 'hidden'}`}>
               {/* Single PDF + Image Tiles View */}
-              <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 h-full overflow-hidden min-h-0 ${!showBothPDFs ? '' : 'hidden'}`}>
+              <div className={`grid grid-cols-12 gap-4 h-full overflow-hidden min-h-0 ${!showBothPDFs ? '' : 'hidden'}`}>
                 {/* Left PDF Viewer */}
-                <div className="h-full overflow-hidden lg:col-span-7 min-h-0" key="pdf-viewer-left">
+                <div className="h-full overflow-hidden col-span-7 min-h-0" key="pdf-viewer-left">
                   <PDFViewerLeft onToggleBoth={() => setShowBothPDFs(true)} />
                 </div>
 
                 {/* Selected Images Panel on right side */}
-                <div className="h-full overflow-hidden lg:col-span-5 min-h-0">
+                <div className="h-full overflow-hidden col-span-5 min-h-0">
                   <SelectedImagesPanel
                     key="pdf-panel"
                     onExpand={() => setIsPDFExpanded(!isPDFExpanded)}

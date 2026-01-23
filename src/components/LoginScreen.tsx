@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Eye, EyeOff, Loader2, AlertCircle, Mail, Heart, ChevronDown } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 import { useMetadataStore } from "../store/metadataStore";
 import { DONATION_TIERS } from "../utils/donationConfig";
+import { useClickOutside } from "../hooks/useClickOutside";
 
 const SUPPORT_EMAIL = 'infor@exametry.xyz';
 const SIMPLE_PASSWORD = 'Exametry55';
@@ -27,21 +28,8 @@ export const LoginScreen: React.FC = () => {
   }, [setAuth, loadUserData]);
 
   // Close donate menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (donateMenuRef.current && !donateMenuRef.current.contains(event.target as Node)) {
-        setShowDonateMenu(false);
-      }
-    };
-
-    if (showDonateMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDonateMenu]);
+  const closeDonateMenu = useCallback(() => setShowDonateMenu(false), []);
+  useClickOutside(donateMenuRef, closeDonateMenu, showDonateMenu);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

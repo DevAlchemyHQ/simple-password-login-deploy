@@ -1,12 +1,6 @@
 import { create } from 'zustand';
-import { ImageMetadata, FormData } from '../types';
+import { ImageMetadata, FormData, BulkDefect, ViewMode, SortDirection } from '../types';
 import { supabase } from '../lib/supabase';
-
-interface BulkDefect {
-  photoNumber: string;
-  description: string;
-  selectedFile?: string;
-}
 
 const initialFormData: FormData = {
   elr: '',
@@ -16,20 +10,20 @@ const initialFormData: FormData = {
 interface MetadataState {
   images: ImageMetadata[];
   formData: FormData;
-  defectSortDirection: 'asc' | 'desc' | null;
+  defectSortDirection: SortDirection;
   bulkDefects: BulkDefect[];
   selectedImages: Set<string>;
-  viewMode: 'images' | 'text';
+  viewMode: ViewMode;
   dataRestoredFromStorage: boolean;
   setFormData: (data: Partial<FormData>) => void;
   addImages: (files: File[], date: string) => Promise<void>;
   updateImageMetadata: (id: string, data: Partial<Omit<ImageMetadata, 'id' | 'file' | 'preview'>>) => void;
   removeImage: (id: string) => Promise<void>;
-  setDefectSortDirection: (direction: 'asc' | 'desc' | null) => void;
+  setDefectSortDirection: (direction: SortDirection) => void;
   setBulkDefects: (defects: BulkDefect[] | ((prev: BulkDefect[]) => BulkDefect[])) => void;
   updateBulkDefectFile: (photoNumber: string, fileName: string) => void;
   toggleImageSelection: (imageId: string) => void;
-  setViewMode: (mode: 'images' | 'text') => void;
+  setViewMode: (mode: ViewMode) => void;
   reset: () => void;
   loadUserData: () => Promise<void>;
   saveUserData: () => Promise<void>;

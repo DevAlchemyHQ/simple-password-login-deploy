@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { AlertTriangle, Heart, ChevronDown } from 'lucide-react';
 import { MetadataForm } from '../MetadataForm';
 import { ImageUpload } from '../ImageUpload';
 import { DownloadButton } from '../DownloadButton';
 import { useMetadataStore } from '../../store/metadataStore';
 import { DONATION_TIERS } from '../../utils/donationConfig';
+import { useClickOutside } from '../../hooks/useClickOutside';
 
 export const Sidebar: React.FC = () => {
   const { reset } = useMetadataStore();
@@ -27,21 +28,8 @@ export const Sidebar: React.FC = () => {
   };
 
   // Close donate menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (donateMenuRef.current && !donateMenuRef.current.contains(event.target as Node)) {
-        setShowDonateMenu(false);
-      }
-    };
-
-    if (showDonateMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDonateMenu]);
+  const closeDonateMenu = useCallback(() => setShowDonateMenu(false), []);
+  useClickOutside(donateMenuRef, closeDonateMenu, showDonateMenu);
 
   return (
     <div className="lg:col-span-2 space-y-4 overflow-container">

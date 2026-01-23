@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-
-type Layout = 'grid' | 'list';
+import { Layout } from '../types';
 
 interface LayoutState {
   layout: Layout;

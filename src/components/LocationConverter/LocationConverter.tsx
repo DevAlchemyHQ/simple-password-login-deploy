@@ -38,7 +38,7 @@ export const LocationConverter: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-slate-200 dark:border-gray-700">
-      <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] h-[calc(100vh-120px)]">
+      <div className="grid grid-cols-[350px_1fr] h-[calc(100vh-120px)]">
         {/* Left Panel */}
         <div className="p-4 border-r border-slate-200 dark:border-gray-700 overflow-y-auto">
           <div className="space-y-4">

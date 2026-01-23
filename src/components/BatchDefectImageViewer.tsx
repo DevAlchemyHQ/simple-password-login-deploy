@@ -991,7 +991,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
         )}
 
         {/* Image and Description Container */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-row overflow-hidden">
           {/* Image Section with Navigation Arrows */}
           <div
             ref={imageContainerRef}
@@ -1148,7 +1148,7 @@ export const BatchDefectImageViewer: React.FC<BatchDefectImageViewerProps> = ({
           </div>
 
           {/* Description Section */}
-          <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 overflow-y-auto">
+          <div className="w-80 border-l border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 overflow-y-auto flex-shrink-0">
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">

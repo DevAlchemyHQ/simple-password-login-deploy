@@ -4,16 +4,14 @@ import { X, Trash2, ArrowUpDown, AlertTriangle, Grid, List, Images, FileText, Pl
 import { BatchDefectImageViewer } from './BatchDefectImageViewer';
 import { validateDescription } from '../utils/fileValidation';
 import { BulkTextInput } from './BulkTextInput';
-import type { ImageMetadata } from '../types';
-import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useDroppable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
-
-type ViewMode = 'images' | 'text';
+import type { ImageMetadata, SortDirection } from '../types';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useClickOutside, useClickOutsideSelector } from '../hooks/useClickOutside';
+import { BulkDefectTile } from './BulkDefectTile';
 
 const SortButton: React.FC<{
-  direction: 'asc' | 'desc' | null;
-  onChange: (direction: 'asc' | 'desc' | null) => void;
+  direction: SortDirection;
+  onChange: (direction: SortDirection) => void;
 }> = ({ direction, onChange }) => (
   <button
     onClick={() => onChange(
@@ -89,43 +87,14 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
   }, [isDefectListPanelOpen]);
 
   // Close selectors when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      // Check if click is outside any selector
-      if (!target.closest('.image-selector-dropdown')) {
-        setImageSelectorOpen(null);
-      }
-    };
-
-    if (imageSelectorOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [imageSelectorOpen]);
+  const closeImageSelector = useCallback(() => setImageSelectorOpen(null), []);
+  useClickOutsideSelector('.image-selector-dropdown', closeImageSelector, !!imageSelectorOpen);
 
   // Close defect list panel when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      // Check if click is outside the defect list panel
-      if (defectListPanelRef.current && !defectListPanelRef.current.contains(target)) {
-        // Also check if click is not on the toggle button
-        if (!target.closest('button[title*="defect list"]')) {
-          setIsDefectListPanelOpen(false);
-        }
-      }
-    };
-
-    if (isDefectListPanelOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [isDefectListPanelOpen]);
+  const closeDefectListPanel = useCallback(() => setIsDefectListPanelOpen(false), []);
+  useClickOutside(defectListPanelRef, closeDefectListPanel, isDefectListPanelOpen, {
+    ignoreSelector: 'button[title*="defect list"]'
+  });
 
 
   // Group bulk defects by date for batch drag mode
@@ -632,621 +601,53 @@ export const SelectedImagesPanel: React.FC<SelectedImagesPanelProps> = ({ onExpa
                 strategy={verticalListSortingStrategy}
               >
                 <div className={`grid gap-2 ${activeTab === 'browser'
-                  ? 'grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5'
-                  : 'grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7'
+                  ? 'grid-cols-5'
+                  : 'grid-cols-6'
                   }`}>
                   {bulkDefects
                     .sort((a, b) => parseInt(a.photoNumber || '0') - parseInt(b.photoNumber || '0'))
-                    .map((defect) => {
-                      const BulkDefectTile = () => {
-                        const {
-                          attributes,
-                          listeners,
-                          setNodeRef,
-                          transform,
-                          transition,
-                          isDragging,
-                        } = useSortable({
-                          id: defect.photoNumber,
-                          disabled: false,
-                        });
-
-                        // Add droppable to show drop zone feedback
-                        const {
-                          setNodeRef: setDroppableRef,
-                          isOver,
-                        } = useDroppable({
-                          id: defect.photoNumber,
-                        });
-
-
-
-                        const image = getImageForDefect(defect.selectedFile || '');
-                        const isSelectorOpen = imageSelectorOpen === defect.photoNumber;
-                        const searchQuery = imageSearchQuery[defect.photoNumber] || '';
-
-                        // Filter images based on search query
-                        const getLastFourDigits = (filename: string): string => {
-                          const nameWithoutExt = filename.replace(/\.[^.]+$/, '');
-                          const digitSequences = nameWithoutExt.match(/\d+/g);
-                          if (!digitSequences || digitSequences.length === 0) return '';
-                          const lastSequence = digitSequences[digitSequences.length - 1];
-                          if (lastSequence.length >= 4) {
-                            return lastSequence.slice(-4);
-                          }
-                          return lastSequence.padStart(4, '0');
-                        };
-
-                        const filteredImages = React.useMemo(() => {
-                          // Early return if no search query
-                          if (!searchQuery) {
-                            return images;
-                          }
-
-                          const query = String(searchQuery).trim();
-                          if (!query || query.length === 0) {
-                            return images;
-                          }
-
-                          // Check if query is purely numeric (only digits, no letters, spaces, or special chars)
-                          // This must be checked BEFORE any other processing
-                          const isNumericQuery = /^\d+$/.test(query);
-
-                          // If numeric, we MUST only search by last 4 digits, never by title
-                          if (isNumericQuery) {
-                            const filtered = images.filter(img => {
-                              const lastFour = getLastFourDigits(img.file.name);
-
-                              // Must have exactly 4 digits
-                              if (!lastFour || lastFour.length !== 4) {
-                                return false;
-                              }
-
-                              if (query.length === 1) {
-                                // Single digit: must be the last digit, and all preceding digits must be zeros
-                                const lastDigit = lastFour.slice(-1);
-                                const precedingDigits = lastFour.slice(0, -1);
-
-                                // Strict check: last digit must match AND all preceding must be zeros
-                                const digitMatches = lastDigit === query;
-                                const precedingAreZeros = /^0+$/.test(precedingDigits);
-
-                                return digitMatches && precedingAreZeros;
-                              } else {
-                                // Multi-digit: must end with query
-                                return lastFour.endsWith(query);
-                              }
+                    .map((defect) => (
+                      <BulkDefectTile
+                        key={defect.photoNumber}
+                        defect={defect}
+                        images={images}
+                        activeDragId={activeDragId}
+                        overDragId={overDragId}
+                        isSelectorOpen={imageSelectorOpen === defect.photoNumber}
+                        searchQuery={imageSearchQuery[defect.photoNumber] || ''}
+                        focusedIndex={focusedImageIndex[defect.photoNumber] ?? -1}
+                        onSelectorOpen={setImageSelectorOpen}
+                        onSearchQueryChange={(photoNumber, query) => {
+                          setImageSearchQuery(prev => ({
+                            ...prev,
+                            [photoNumber]: query
+                          }));
+                        }}
+                        onFocusedIndexChange={(photoNumber, index) => {
+                          if (index === null) {
+                            setFocusedImageIndex(prev => {
+                              const next = { ...prev };
+                              delete next[photoNumber];
+                              return next;
                             });
-
-                            return filtered;
+                          } else {
+                            setFocusedImageIndex(prev => ({
+                              ...prev,
+                              [photoNumber]: index
+                            }));
                           }
-
-                          // Non-numeric query: search by title/filename
-                          const queryLower = query.toLowerCase();
-                          return images.filter(img => {
-                            const fileName = img.file.name.toLowerCase();
-                            return fileName.includes(queryLower);
-                          });
-                        }, [images, searchQuery]);
-
-                        // Auto-scroll completely removed - all scrolling is user-controlled
-
-                        // Create custom listeners that exclude interactive elements
-                        const customListeners = {
-                          ...listeners,
-                          onPointerDown: (e: React.PointerEvent) => {
-                            const target = e.target as HTMLElement;
-                            // Don't start drag if clicking on interactive elements (buttons, inputs, etc.)
-                            // Images are now draggable since we have a separate expand button
-                            if (target.closest('button') ||
-                              target.closest('input') ||
-                              target.closest('textarea') ||
-                              target.closest('.image-selector-dropdown') ||
-                              target.closest('[data-defect-id]')) {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              return;
-                            }
-                            // Don't start drag if clicking in the bottom section (description/selector area)
-                            const tileElement = e.currentTarget as HTMLElement;
-                            const bottomSection = tileElement.querySelector('.p-2.space-y-1');
-                            if (bottomSection && bottomSection.contains(target)) {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              return;
-                            }
-                            // Don't start drag if dropdown is open for this tile
-                            if (isSelectorOpen) {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              return;
-                            }
-                            // Call original listener to enable drag
-                            if (listeners?.onPointerDown) {
-                              listeners.onPointerDown(e);
-                            }
-                          },
-                          onMouseDown: (e: React.MouseEvent) => {
-                            const target = e.target as HTMLElement;
-                            // Prevent drag if interacting with dropdown or bottom section
-                            if (target.closest('.image-selector-dropdown') ||
-                              target.closest('[data-defect-id]') ||
-                              target.closest('.p-2.space-y-1') ||
-                              isSelectorOpen) {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              return;
-                            }
-                            // Call original listener if it exists
-                            if (listeners?.onMouseDown) {
-                              listeners.onMouseDown(e as any);
-                            }
-                          },
-                        };
-
-                        // Combine refs for both sortable and droppable
-                        const combinedRef = (node: HTMLDivElement | null) => {
-                          setNodeRef(node);
-                          setDroppableRef(node);
-                        };
-
-                        return (
-                          <div
-                            ref={combinedRef}
-                            style={{
-                              transform: CSS.Transform.toString(transform),
-                              transition: isDragging ? 'none' : (transition || 'transform 200ms cubic-bezier(0.2, 0, 0, 1)'),
-                              opacity: isDragging ? 0.4 : 1,
-                              // Prevent layout shifts but allow dropdown to extend beyond tile
-                              // Remove 'paint' containment when dropdown is open to allow overflow
-                              contain: isSelectorOpen ? 'layout style' : 'layout style paint',
-                              isolation: 'isolate',
-                              willChange: isSelectorOpen ? 'auto' : 'transform',
-                            }}
-                            className={`group flex flex-col bg-neutral-50 dark:bg-neutral-800 rounded-lg overflow-visible transition-opacity duration-200 relative border border-neutral-200 dark:border-neutral-700 ${isDragging
-                              ? 'shadow-large ring-2 ring-neutral-900 dark:ring-neutral-100 ring-opacity-50 z-50 cursor-grabbing'
-                              : (overDragId === defect.photoNumber && activeDragId && activeDragId !== defect.photoNumber)
-                                ? 'ring-2 ring-neutral-900 dark:ring-neutral-100 border-neutral-900 dark:border-neutral-100 bg-neutral-100 dark:bg-neutral-800 shadow-medium scale-[1.02] border-2'
-                                : isSelectorOpen
-                                  ? 'cursor-default z-[1000]' // High z-index when dropdown is open to appear above other tiles
-                                  : 'cursor-grab'
-                              }`}
-                            {...attributes}
-                            {...customListeners}
-                          >
-                            {/* Delete button - X icon, positioned at top left, visible on hover */}
-                            <div className="absolute top-2 left-2 z-40 opacity-0 group-hover:opacity-100 transition-opacity" style={{ pointerEvents: 'auto' }}>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  deleteBulkDefect(defect.photoNumber);
-                                }}
-                                onMouseDown={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                }}
-                                className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all shadow-lg"
-                                title="Delete tile"
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-
-                            {/* Add button - Plus icon, positioned at bottom right, always visible */}
-                            <div className="absolute bottom-2 right-2 z-40" style={{ pointerEvents: 'auto' }}>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  addDefectBelow(defect.photoNumber);
-                                }}
-                                onMouseDown={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                }}
-                                className="p-2 bg-black dark:bg-neutral-800 hover:bg-neutral-900 dark:hover:bg-neutral-700 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-110"
-                                title="Add tile below"
-                              >
-                                <PlusCircle size={16} />
-                              </button>
-                            </div>
-                            <div className="relative aspect-square overflow-hidden rounded-t-lg">
-                              {image ? (
-                                <>
-                                  <img
-                                    src={image.preview}
-                                    alt={image.file.name}
-                                    className="w-full h-full object-cover cursor-grab hover:opacity-95 transition-opacity select-none"
-                                    draggable="false"
-                                  />
-                                  {/* Expand button - bottom right corner, always visible */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleImageClick(defect.photoNumber);
-                                    }}
-                                    onMouseDown={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                    }}
-                                    className="absolute bottom-2 right-2 bg-white text-gray-800 p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto z-30"
-                                    title="Expand image"
-                                    style={{ pointerEvents: 'auto' }}
-                                  >
-                                    <Maximize2 size={16} />
-                                  </button>
-                                </>
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-700 text-neutral-400 dark:text-neutral-500 text-xs">
-                                  No image
-                                </div>
-                              )}
-                              {/* Photo number badge - top right corner like images assigned tile, always visible */}
-                              {defect.photoNumber && (
-                                <div className="absolute top-2 right-2 bg-[#28323C] w-6 h-6 rounded-full flex items-center justify-center z-30">
-                                  <span className="text-white text-sm font-semibold">{defect.photoNumber}</span>
-                                </div>
-                              )}
-                            </div>
-
-                            <div
-                              className="p-2 space-y-1 flex-shrink-0 relative z-10 pb-2"
-                              onClick={(e) => e.stopPropagation()}
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                              }}
-                              onPointerDown={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                              }}
-                              style={{ 
-                                pointerEvents: 'auto',
-                                overflow: 'visible', // Allow dropdown to extend beyond
-                              }}
-                            >
-                              {/* Image selector dropdown - like DefectTile */}
-                              <div className="relative z-[100]">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Toggle dropdown - preserve scroll position when reopening
-                                    if (isSelectorOpen) {
-                                      setImageSelectorOpen(null);
-                                    } else {
-                                      setImageSelectorOpen(defect.photoNumber);
-                                    }
-                                  }}
-                                  onMouseDown={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                  }}
-                                  onPointerDown={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                  }}
-                                  className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-lg transition-colors font-medium ${defect.selectedFile
-                                    ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-700'
-                                    }`}
-                                >
-                                  <div className="flex-1 text-left truncate">
-                                    {defect.selectedFile || 'Select image'}
-                                  </div>
-                                  <ChevronDown size={14} className={isSelectorOpen ? 'rotate-180' : ''} />
-                                </button>
-
-                                {isSelectorOpen && (
-                                  <div
-                                    className="image-selector-dropdown absolute left-0 right-0 mt-1 w-full max-h-[500px] overflow-visible bg-white dark:bg-neutral-900 rounded-lg shadow-large border border-neutral-200 dark:border-neutral-800 flex flex-col"
-                                    data-defect-id={defect.photoNumber}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                    }}
-                                    onMouseDown={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                    }}
-                                    onPointerDown={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                    }}
-                                    onWheel={(e) => {
-                                      // Completely stop wheel events from propagating
-                                      e.stopPropagation();
-                                      const event = e.nativeEvent;
-                                      if (event.stopImmediatePropagation) {
-                                        event.stopImmediatePropagation();
-                                      }
-                                    }}
-                                    onScroll={(e) => {
-                                      // Completely stop scroll events from propagating
-                                      e.stopPropagation();
-                                      const event = e.nativeEvent;
-                                      if (event.stopImmediatePropagation) {
-                                        event.stopImmediatePropagation();
-                                      }
-                                    }}
-                                    style={{
-                                      pointerEvents: 'auto',
-                                      // Remove isolation: 'isolate' - it creates a stacking context that prevents appearing above other tiles
-                                      // Don't use contain: paint - it clips the dropdown
-                                      contain: 'layout style', // Prevent layout shifts but allow overflow
-                                      position: 'absolute', // Ensure it can extend beyond parent
-                                      zIndex: 1001, // Higher z-index than the tile to appear above it and other tiles
-                                    }}
-                                  >
-                                    {/* Search Input */}
-                                    <div className="p-2 border-b border-neutral-200 dark:border-neutral-800">
-                                      <div className="relative">
-                                        <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500" />
-                                        <input
-                                          type="text"
-                                          value={searchQuery}
-                                          onChange={(e) => {
-                                            setImageSearchQuery(prev => ({
-                                              ...prev,
-                                              [defect.photoNumber]: e.target.value
-                                            }));
-                                            // Don't auto-focus first result on search change - this causes unwanted scrolling
-                                            // Only update focus if user explicitly navigates with keyboard
-                                            // Clear focus when search is cleared
-                                            if (!e.target.value) {
-                                              setFocusedImageIndex(prev => {
-                                                const next = { ...prev };
-                                                delete next[defect.photoNumber];
-                                                return next;
-                                              });
-                                            }
-                                          }}
-                                          placeholder="Search by title or last 4 digits..."
-                                          className="w-full pl-9 pr-3 py-2 text-xs border-0 bg-transparent dark:bg-transparent text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-0"
-                                          autoFocus
-                                          onClick={(e) => e.stopPropagation()}
-                                          onMouseDown={(e) => e.stopPropagation()}
-                                          onPointerDown={(e) => e.stopPropagation()}
-                                          onKeyDown={(e) => {
-                                            const currentFocus = focusedImageIndex[defect.photoNumber] ?? -1;
-
-                                            if (e.key === 'Escape') {
-                                              setImageSelectorOpen(null);
-                                              setFocusedImageIndex(prev => {
-                                                const next = { ...prev };
-                                                delete next[defect.photoNumber];
-                                                return next;
-                                              });
-                                            } else if (e.key === 'Enter') {
-                                              e.preventDefault();
-                                              const indexToSelect = currentFocus >= 0 ? currentFocus : 0;
-                                              if (filteredImages[indexToSelect]) {
-                                                updateBulkDefectFile(defect.photoNumber, filteredImages[indexToSelect].file.name);
-                                                setImageSelectorOpen(null);
-                                                setImageSearchQuery(prev => {
-                                                  const next = { ...prev };
-                                                  delete next[defect.photoNumber];
-                                                  return next;
-                                                });
-                                                setFocusedImageIndex(prev => {
-                                                  const next = { ...prev };
-                                                  delete next[defect.photoNumber];
-                                                  return next;
-                                                });
-                                              }
-                                            } else if (e.key === 'ArrowDown') {
-                                              e.preventDefault();
-                                              setFocusedImageIndex(prev => ({
-                                                ...prev,
-                                                [defect.photoNumber]: currentFocus < filteredImages.length - 1 ? currentFocus + 1 : currentFocus
-                                              }));
-                                            } else if (e.key === 'ArrowUp') {
-                                              e.preventDefault();
-                                              setFocusedImageIndex(prev => ({
-                                                ...prev,
-                                                [defect.photoNumber]: currentFocus > 0 ? currentFocus - 1 : -1
-                                              }));
-                                            }
-                                          }}
-                                        />
-                                      </div>
-                                    </div>
-
-                                    {/* File List */}
-                                    <div 
-                                      ref={(node) => {
-                                        // Store scroll position ref to preserve across re-renders
-                                        if (node) {
-                                          const defectId = defect.photoNumber;
-                                          if (!scrollPositionRefs.current[defectId]) {
-                                            scrollPositionRefs.current[defectId] = { element: node, position: 0 };
-                                          } else {
-                                            scrollPositionRefs.current[defectId].element = node;
-                                            // Restore scroll position if it was saved
-                                            if (scrollPositionRefs.current[defectId].position > 0) {
-                                              requestAnimationFrame(() => {
-                                                node.scrollTop = scrollPositionRefs.current[defectId].position;
-                                              });
-                                            }
-                                          }
-                                        }
-                                      }}
-                                      className="overflow-y-auto max-h-[180px] scrollbar-thin"
-                                      style={{
-                                        overscrollBehavior: 'contain',
-                                        WebkitOverflowScrolling: 'touch',
-                                        touchAction: 'pan-y',
-                                        isolation: 'isolate',
-                                        // Don't use contain: paint - it clips the scrollable content
-                                      contain: 'layout style',
-                                        willChange: 'scroll-position'
-                                      }}
-                                      onWheel={(e) => {
-                                        // Mark that user is scrolling
-                                        const defectId = defect.photoNumber;
-                                        isScrollingRef.current[defectId] = true;
-                                        // Stop ALL propagation to prevent parent scrolling
-                                        e.stopPropagation();
-                                        // Allow normal scrolling within this container
-                                        // Don't preventDefault to allow natural scroll behavior
-                                        // Clear scrolling flag after scroll ends
-                                        if (scrollTimeoutRefs.current[defectId]) {
-                                          clearTimeout(scrollTimeoutRefs.current[defectId]);
-                                        }
-                                        scrollTimeoutRefs.current[defectId] = setTimeout(() => {
-                                          isScrollingRef.current[defectId] = false;
-                                        }, 150);
-                                      }}
-                                      onScroll={(e) => {
-                                        // Mark that user is scrolling
-                                        const defectId = defect.photoNumber;
-                                        isScrollingRef.current[defectId] = true;
-                                        // Save scroll position to preserve across re-renders
-                                        const scrollTop = e.currentTarget.scrollTop;
-                                        if (scrollPositionRefs.current[defectId]) {
-                                          scrollPositionRefs.current[defectId].position = scrollTop;
-                                          scrollPositionRefs.current[defectId].element = e.currentTarget;
-                                        } else {
-                                          scrollPositionRefs.current[defectId] = {
-                                            element: e.currentTarget,
-                                            position: scrollTop
-                                          };
-                                        }
-                                        // Stop scroll event propagation completely
-                                        e.stopPropagation();
-                                        // Prevent any scroll event from bubbling up
-                                        const event = e.nativeEvent;
-                                        if (event.stopImmediatePropagation) {
-                                          event.stopImmediatePropagation();
-                                        }
-                                        // Clear scrolling flag after scroll ends
-                                        if (scrollTimeoutRefs.current[defectId]) {
-                                          clearTimeout(scrollTimeoutRefs.current[defectId]);
-                                        }
-                                        scrollTimeoutRefs.current[defectId] = setTimeout(() => {
-                                          isScrollingRef.current[defectId] = false;
-                                        }, 150);
-                                      }}
-                                      onMouseDown={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                      }}
-                                      onPointerDown={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                      }}
-                                      onTouchStart={(e) => {
-                                        e.stopPropagation();
-                                      }}
-                                      onTouchMove={(e) => {
-                                        e.stopPropagation();
-                                      }}
-                                    >
-                                      {/* None option at the top - always grey */}
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          updateBulkDefectFile(defect.photoNumber, '');
-                                          setImageSelectorOpen(null);
-                                          setImageSearchQuery(prev => {
-                                            const next = { ...prev };
-                                            delete next[defect.photoNumber];
-                                            return next;
-                                          });
-                                        }}
-                                        onMouseDown={(e) => {
-                                          e.stopPropagation();
-                                          e.preventDefault();
-                                        }}
-                                        onPointerDown={(e) => {
-                                          e.stopPropagation();
-                                          e.preventDefault();
-                                        }}
-                                        className="w-full px-3 py-2 text-left text-xs hover:bg-neutral-50 dark:hover:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-800 text-neutral-500 dark:text-neutral-400 transition-colors"
-                                      >
-                                        <div className="truncate">None</div>
-                                      </button>
-
-                                      {filteredImages.length > 0 ? (
-                                        filteredImages.map((img, index) => {
-                                          const currentFocus = focusedImageIndex[defect.photoNumber] ?? -1;
-                                          const isFocused = currentFocus === index;
-
-                                          return (
-                                            <button
-                                              key={img.id}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                e.preventDefault();
-                                                // Update the selected file immediately - batch state updates to prevent lag
-                                                React.startTransition(() => {
-                                                  updateBulkDefectFile(defect.photoNumber, img.file.name);
-                                                  // Close dropdown and clear state
-                                                  setImageSelectorOpen(null);
-                                                  setImageSearchQuery(prev => {
-                                                    const next = { ...prev };
-                                                    delete next[defect.photoNumber];
-                                                    return next;
-                                                  });
-                                                  setFocusedImageIndex(prev => {
-                                                    const next = { ...prev };
-                                                    delete next[defect.photoNumber];
-                                                    return next;
-                                                  });
-                                                });
-                                              }}
-                                              onMouseDown={(e) => {
-                                                e.stopPropagation();
-                                                e.preventDefault();
-                                              }}
-                                              onPointerDown={(e) => {
-                                                e.stopPropagation();
-                                                e.preventDefault();
-                                              }}
-                                              // Removed onMouseEnter to prevent re-renders that cause tile bobbing
-                                              // Visual focus is handled by CSS hover states only
-                                              className={`w-full px-3 py-2 text-left text-xs hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors ${img.file.name === defect.selectedFile
-                                                ? 'text-neutral-900 dark:text-neutral-100 font-semibold bg-neutral-100 dark:bg-neutral-800'
-                                                : isFocused
-                                                  ? 'bg-neutral-50 dark:bg-neutral-800/50 text-neutral-900 dark:text-neutral-100'
-                                                  : 'text-neutral-700 dark:text-neutral-300'
-                                                }`}
-                                            >
-                                              <div className="truncate">{img.file.name}</div>
-                                            </button>
-                                          );
-                                        })
-                                      ) : (
-                                        <div className="px-3 py-3 text-xs text-neutral-500 dark:text-neutral-400 text-center">
-                                          No photos found matching "{searchQuery}"
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                              <div
-                                onMouseDown={(e) => {
-                                  e.stopPropagation();
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                }}
-                                onPointerDown={(e) => {
-                                  e.stopPropagation();
-                                }}
-                                className="pb-0 mb-0"
-                                style={{ pointerEvents: 'auto' }}
-                              >
-                                {renderBulkDefectDescriptionField(defect)}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      };
-                      return <BulkDefectTile key={defect.photoNumber} />;
-                    })}
+                        }}
+                        onDelete={deleteBulkDefect}
+                        onAddBelow={addDefectBelow}
+                        onImageClick={handleImageClick}
+                        onFileSelect={updateBulkDefectFile}
+                        scrollPositionRefs={scrollPositionRefs}
+                        isScrollingRef={isScrollingRef}
+                        scrollTimeoutRefs={scrollTimeoutRefs}
+                        renderDescriptionField={renderBulkDefectDescriptionField}
+                        getImageForDefect={getImageForDefect}
+                      />
+                    ))}
                 </div>
               </SortableContext>
             </div>

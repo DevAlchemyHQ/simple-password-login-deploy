@@ -351,7 +351,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({ onToggleBack }) => {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0 overflow-hidden">
+      <div className="flex-1 grid grid-cols-2 gap-4 min-h-0 overflow-hidden">
         {/* PDF Viewer 1 */}
         <PDFViewerSection
           title="Upload detailed report/Site notes"
