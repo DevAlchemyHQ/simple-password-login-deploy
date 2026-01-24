@@ -1,5 +1,6 @@
 import React, { useEffect, Suspense, lazy } from 'react';
 import { useAuthStore } from './store/authStore';
+import { useProfileStore } from './store/profileStore';
 import { LoginScreen } from './components/LoginScreen';
 import { MainLayout } from './components/layout/MainLayout';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -21,6 +22,7 @@ const PageLoader = () => (
 const App: React.FC = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isDark = useThemeStore((state) => state.isDark);
+  const { fetchProfile } = useProfileStore();
 
   // Apply dark mode class
   useEffect(() => {
@@ -30,6 +32,13 @@ const App: React.FC = () => {
       document.documentElement.classList.remove('dark');
     }
   }, [isDark]);
+
+  // Fetch profile when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProfile();
+    }
+  }, [isAuthenticated, fetchProfile]);
 
   return (
     <ErrorBoundary>
